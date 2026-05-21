@@ -29,7 +29,6 @@
 #++
 
 class CustomStylesController < ApplicationController
-  include EnterpriseHelper
   include CustomStylesControllerHelper
 
   layout "admin"
@@ -44,8 +43,6 @@ class CustomStylesController < ApplicationController
   skip_before_action :check_if_login_required,
                      only: UNGUARDED_ACTIONS
   no_authorization_required! *UNGUARDED_ACTIONS
-
-  guard_enterprise_feature(:define_custom_style, except: UNGUARDED_ACTIONS + %i[show])
 
   def default_url_options
     super.merge(tab: params[:tab])

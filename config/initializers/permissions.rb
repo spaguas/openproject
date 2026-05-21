@@ -482,6 +482,19 @@ Rails.application.reloader.to_prepare do
                       permissible_on: :project
     end
 
+    map.project_module :kpis do |kpis|
+      kpis.permission :view_kpis,
+                      { kpis: %i[index show] },
+                      permissible_on: :project,
+                      public: true
+
+      kpis.permission :manage_kpis,
+                      { kpis: %i[new create edit update destroy] },
+                      permissible_on: :project,
+                      require: :member,
+                      dependencies: :view_kpis
+    end
+
     map.project_module :wiki do |wiki|
       wiki.permission :view_wiki_pages,
                       { wiki: %i[index show special menu] },

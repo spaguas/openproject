@@ -116,8 +116,6 @@ module Notifications
     def query_path(query_params)
       if query_params[:name] == "shared" && show_enterprise_icon?("shared")
         return notifications_share_upsell_path(query_params)
-      elsif query_params[:name] == "dateAlert" && show_enterprise_icon?("dateAlert")
-        return notifications_date_alert_upsell_path(query_params)
       end
 
       notifications_center_path(query_params)
@@ -138,8 +136,6 @@ module Notifications
     def show_enterprise_icon?(reason)
       if reason == "shared"
         !EnterpriseToken.allows_to?(:work_package_sharing)
-      elsif reason == "dateAlert"
-        !EnterpriseToken.allows_to?(:date_alerts)
       else
         false
       end

@@ -35,6 +35,8 @@ See COPYRIGHT and LICENSE files for more details.
 
 <%= render Homescreen::AnnouncementComponent.new(announcement: @announcement) %>
 
+<%= render Homescreen::ProjectOverviewComponent.new(overview: @project_overview) %>
+
 <%= render Homescreen::BlocksGridComponent.new(homescreen: @homescreen) %>
 
 <%= render Homescreen::LinksComponent.new(homescreen: @homescreen) %>

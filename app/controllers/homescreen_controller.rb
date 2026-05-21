@@ -38,6 +38,7 @@ class HomescreenController < ApplicationController
   def index
     @announcement = Announcement.active_and_current
     @homescreen = OpenProject::Static::Homescreen
+    @project_overview = Homescreen::ProjectOverview.new(user: current_user)
   end
 
   current_menu_item [:index] do

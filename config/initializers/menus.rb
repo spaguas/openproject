@@ -584,14 +584,19 @@ Redmine::MenuManager.map :admin_menu do |menu|
             { controller: "/custom_styles", action: :show },
             if: ->(_) { User.current.admin? },
             caption: :label_custom_style,
-            icon: "paintbrush",
-            enterprise_feature: "define_custom_style"
+            icon: "paintbrush"
 
   menu.push :colors,
             { controller: "/colors", action: "index" },
             if: ->(_) { User.current.admin? },
             caption: :label_color_plural,
             icon: "meter"
+
+  menu.push :admin_kpis,
+            { controller: "/admin/kpis", action: "show" },
+            if: ->(_) { User.current.admin? },
+            caption: :label_kpi_settings,
+            icon: "graph"
 
   menu.push :enterprise,
             { controller: "/enterprise_tokens", action: :index },
@@ -644,6 +649,12 @@ Redmine::MenuManager.map :project_menu do |menu|
             { controller: "/news", action: "index" },
             caption: :label_news_plural,
             icon: "megaphone"
+
+  menu.push :kpis,
+            { controller: "/kpis", action: "index" },
+            caption: :label_kpi_plural,
+            if: ->(project) { project.module_enabled?("kpis") },
+            icon: "meter"
 
   menu.push :forums,
             { controller: "/forums", action: "index", id: nil },

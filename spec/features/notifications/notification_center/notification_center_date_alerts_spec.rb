@@ -192,22 +192,7 @@ RSpec.describe "Notification center date alerts", :js, with_settings: { journal_
     wait_for_reload
   end
 
-  context "without date alerts ee" do
-    it "shows the upsell page" do
-      side_menu.click_item "Date alert"
-
-      expect(page).to have_current_path(/notifications\/date_alerts/)
-      expect(page).to have_enterprise_banner(:basic)
-
-      # It does not allows direct url access
-      visit notifications_center_path(filter: "reason", name: "dateAlert")
-
-      expect(page).to have_current_path(/notifications\/date_alerts/)
-      expect(page).to have_enterprise_banner(:basic)
-    end
-  end
-
-  context "with date alerts ee", with_ee: %i[date_alerts] do
+  context "with date alerts" do
     it "shows the date alerts according to specification" do
       center.expect_item(notification_wp_start_past, "Start date was 1 day ago.")
       center.expect_item(notification_wp_start_future, "Start date is in 7 days.")

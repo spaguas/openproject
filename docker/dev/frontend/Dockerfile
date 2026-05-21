@@ -6,7 +6,11 @@ ARG DEV_GID=1001
 
 ENV USER=node
 
-RUN apt-get update && apt-get install -y chromium
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources && \
+  rm -rf /var/lib/apt/lists/* && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends chromium && \
+  rm -rf /var/lib/apt/lists/*
 
 ENV CHROME_BIN=/usr/bin/chromium
 

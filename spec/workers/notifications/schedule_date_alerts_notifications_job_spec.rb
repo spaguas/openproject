@@ -174,10 +174,11 @@ RSpec.describe Notifications::ScheduleDateAlertsNotificationsJob,
     end
 
     context "without enterprise token", with_ee: false do
-      it_behaves_like "job execution creates no date alerts creation job" do
+      it_behaves_like "job execution creates date alerts creation job" do
         let(:timezone) { timezone_paris }
         let(:cron_at) { "1:00" }
         let(:local_time) { "1:04" }
+        let(:user) { user_paris }
       end
     end
 

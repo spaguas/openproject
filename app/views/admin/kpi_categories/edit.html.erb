@@ -1,0 +1,14 @@
+<% html_title t(:label_administration), t(:label_kpi_category_edit) %>
+
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { t(:label_kpi_category_edit) }
+    header.with_breadcrumbs(
+      [{ href: admin_index_path, text: t(:label_administration) },
+       { href: admin_kpis_path, text: t(:label_kpi_settings) },
+       @category.name]
+    )
+  end
+%>
+
+<%= render "form" %>

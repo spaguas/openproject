@@ -78,6 +78,23 @@ export class WorkPackageViewHierarchiesService extends WorkPackageQueryStateServ
   }
 
   /**
+   * Set the collapse/expand state for multiple visible hierarchy roots at once.
+   */
+  public setAll(ids:string[], isCollapsed:boolean):void {
+    const state = {
+      ...this.current,
+      last: null,
+      collapsed: { ...this.current.collapsed },
+    };
+
+    ids.forEach((id) => {
+      state.collapsed[id] = isCollapsed;
+    });
+
+    this.update(state);
+  }
+
+  /**
    * Set the collapse/expand state of the given work package id.
    */
   private setState(wpId:string, isCollapsed:boolean):void {

@@ -225,11 +225,11 @@ RSpec.describe Notifications::CreateDateAlertsNotificationsJob, type: :job, with
     end
 
     context "without enterprise token", with_ee: false do
-      it "does not create any date alerts" do
+      it "creates date alerts" do
         work_package = alertable_work_package
 
         run_job do
-          expect(user).not_to have_a_start_date_alert_notification_for(work_package)
+          expect(user).to have_a_start_date_alert_notification_for(work_package)
         end
       end
     end

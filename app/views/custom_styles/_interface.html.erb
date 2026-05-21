@@ -3,33 +3,39 @@
     <fieldset class="form--fieldset">
       <legend class="form--fieldset-legend"><%= I18n.t(:label_interface_colors) %></legend>
       <p> <%= t("label_interface_colors_description") %> </p>
-      <% DesignColor.setables.each do |design_color| %>
-        <div class="form--field -required">
-          <label class="form--label"><%= I18n.t("admin.custom_styles.colors.#{design_color.variable}") %>:</label>
-          <span class="form--field-container">
-            <div class="form--field-affix">
-              <%= icon_for_color(
-                    Color.new(
-                      hexcode: design_color.hexcode
-                    ),
-                    data: { target: "#design_colors_" + design_color.variable }
-                  ) %>
-            </div>
-            <span class="form--text-field-container">
-              <%= styled_text_field_tag "design_colors[]" + design_color.variable,
-                                        design_color.hexcode,
-                                        class: "design-color--variable-input",
-                                        data: { "variable-name": design_color.variable } %>
+
+      <% interface_design_color_groups.each do |group| %>
+        <h3><%= group[:title] %></h3>
+
+        <% group[:colors].each do |design_color| %>
+          <div class="form--field -required">
+            <label class="form--label"><%= I18n.t("admin.custom_styles.colors.#{design_color.variable}") %>:</label>
+            <span class="form--field-container">
+              <div class="form--field-affix">
+                <%= icon_for_color(
+                      Color.new(
+                        hexcode: design_color.hexcode
+                      ),
+                      data: { target: "#design_colors_" + design_color.variable }
+                    ) %>
+              </div>
+              <span class="form--text-field-container">
+                <%= styled_text_field_tag "design_colors[]" + design_color.variable,
+                                          design_color.hexcode,
+                                          class: "design-color--variable-input",
+                                          data: { "variable-name": design_color.variable } %>
+              </span>
             </span>
-          </span>
-          <div class="form--field-instructions">
-            <% instruction_key = "admin.custom_styles.instructions.#{design_color.variable}" %>
-            <% if I18n.exists?(instruction_key, :en) %>
-              <%= I18n.t(instruction_key) %>
-            <% end %>
+            <div class="form--field-instructions">
+              <% instruction_key = "admin.custom_styles.instructions.#{design_color.variable}" %>
+              <% if I18n.exists?(instruction_key) %>
+                <%= I18n.t(instruction_key) %>
+              <% end %>
+            </div>
           </div>
-        </div>
+        <% end %>
       <% end %>
+
       <button type="submit" class="button -hide-when-collapsed" data-test-selector="interface-colors-button"><%= I18n.t(:button_save) %></button>
     </fieldset>
   </section>

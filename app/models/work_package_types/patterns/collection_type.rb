@@ -31,6 +31,8 @@
 module WorkPackageTypes
   module Patterns
     class CollectionType < ActiveModel::Type::Value
+      Collection = WorkPackageTypes::Patterns::Collection
+
       def assert_valid_value(value)
         cast(value)
       end

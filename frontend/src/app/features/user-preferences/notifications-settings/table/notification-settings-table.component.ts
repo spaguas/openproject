@@ -1,12 +1,11 @@
 // noinspection ES6UnusedImports
 
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { UntypedFormArray, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import idFromLink from 'core-app/features/hal/helpers/id-from-link';
 import { HalSourceLink } from 'core-app/features/hal/resources/hal-resource';
-import { BannersService } from 'core-app/core/enterprise/banners.service';
 import { overDueReminderTimes, reminderAvailableTimeframes } from '../overdue-reminder-available-times';
 import { ConfigurationService } from 'core-app/core/config/configuration.service';
 
@@ -17,12 +16,12 @@ import { ConfigurationService } from 'core-app/core/config/configuration.service
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: false,
 })
-export class NotificationSettingsTableComponent implements OnInit {
+export class NotificationSettingsTableComponent {
   @Input() userId:string;
 
   @Input() settings:UntypedFormArray;
 
-  public eeAvailable = false;
+  public eeAvailable = true;
 
   public availableTimes = [
     {
@@ -77,13 +76,8 @@ export class NotificationSettingsTableComponent implements OnInit {
   constructor(
     private I18n:I18nService,
     private pathHelper:PathHelperService,
-    readonly bannersService:BannersService,
     readonly configurationService:ConfigurationService,
   ) {}
-
-  ngOnInit():void {
-    this.eeAvailable = this.bannersService.allowsTo('date_alerts');
-  }
 
   projectLink(href:string) {
     return this.pathHelper.projectPath(idFromLink(href));

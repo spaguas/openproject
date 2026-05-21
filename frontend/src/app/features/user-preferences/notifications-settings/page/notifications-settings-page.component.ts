@@ -6,8 +6,6 @@ import { CurrentUserService } from 'core-app/core/current-user/current-user.serv
 import { UntilDestroyedMixin } from 'core-app/shared/helpers/angular/until-destroyed.mixin';
 import { UserPreferencesService } from 'core-app/features/user-preferences/state/user-preferences.service';
 import { INotificationSetting } from 'core-app/features/user-preferences/state/notification-setting.model';
-import { BannersService } from 'core-app/core/enterprise/banners.service';
-import { enterpriseDocsUrl } from 'core-app/core/setup/globals/constants.const';
 import { overDueReminderTimes, reminderAvailableTimeframes } from '../overdue-reminder-available-times';
 import { ConfigurationService } from 'core-app/core/config/configuration.service';
 import { populateInputsFromDataset } from 'core-app/shared/components/dataset-inputs';
@@ -55,7 +53,7 @@ export class NotificationsSettingsPageComponent extends UntilDestroyedMixin impl
 
   public availableTimesOverdue = overDueReminderTimes();
 
-  public eeAvailable = false;
+  public eeAvailable = true;
 
   public form = new UntypedFormGroup({
     assignee: new UntypedFormControl(false),
@@ -129,7 +127,6 @@ export class NotificationsSettingsPageComponent extends UntilDestroyedMixin impl
     readonly I18n:I18nService,
     readonly storeService:UserPreferencesService,
     readonly currentUserService:CurrentUserService,
-    readonly bannersService:BannersService,
     readonly configurationService:ConfigurationService,
   ) {
     super();
@@ -138,7 +135,6 @@ export class NotificationsSettingsPageComponent extends UntilDestroyedMixin impl
 
   ngOnInit():void {
     this.form.disable();
-    this.eeAvailable = this.bannersService.allowsTo('date_alerts');
 
     this
       .currentUserService

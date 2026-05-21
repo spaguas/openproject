@@ -101,12 +101,15 @@ RSpec.describe CustomStylesController do
       end
 
       before do
+        allow(CustomStyle).to receive(:create).and_return(custom_style)
+        allow(custom_style).to receive(:valid?).and_return(true)
+
         post :create, params:
       end
 
-      it "renders a 403" do
-        expect(response).to have_http_status(:forbidden)
-        expect(flash[:error][:message]).to match /You need the basic enterprise plan to perform this action/
+      it "redirects to show" do
+        expect(response).to redirect_to action: :show
+        expect(response).to have_http_status(:found)
       end
     end
 

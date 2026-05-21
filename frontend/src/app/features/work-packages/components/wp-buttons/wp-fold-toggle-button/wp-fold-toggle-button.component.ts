@@ -27,6 +27,7 @@
 //++
 
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { I18nService } from 'core-app/core/i18n/i18n.service';
 
 @Component({
   template: `
@@ -34,7 +35,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
             id="wp-fold-toggle-button"
             wpGroupToggleDropdown>
       <op-icon icon-classes="button--icon icon-outline" />
-      <span class="button--text"></span>
+      <span class="button--text">{{ text }}</span>
       <op-icon icon-classes="button--icon icon-small icon-pulldown" />
     </button>
   `,
@@ -43,4 +44,8 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   standalone: false,
 })
 export class WorkPackageFoldToggleButtonComponent {
+  text = this.I18n.t('js.work_packages.hierarchy.expand_collapse');
+
+  constructor(readonly I18n:I18nService) {
+  }
 }

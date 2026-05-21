@@ -83,7 +83,7 @@ export class WorkPackageViewPageComponent extends PartitionedQuerySpacePageCompo
     },
     {
       component: WorkPackageFoldToggleButtonComponent,
-      show: () => !!(this.currentQuery && this.currentQuery.groupBy),
+      show: () => !!(this.currentQuery && (this.currentQuery.groupBy || this.wpTableHierarchies.isEnabled)),
     },
     {
       component: WorkPackageDetailsViewButtonComponent,
