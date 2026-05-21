@@ -1,0 +1,101 @@
+<% html_title t(:label_kpi_plural) %>
+
+<% can_manage = User.current.allowed_in_project?(:manage_kpis, @project) %>
+
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { t(:label_kpi_plural) }
+    header.with_breadcrumbs(
+      [
+        { href: project_overview_path(@project.id), text: @project.name },
+        t(:label_kpi_plural)
+      ]
+    )
+  end
+%>
+
+<% if can_manage %>
+  <%=
+    render(Primer::OpenProject::SubHeader.new) do |subheader|
+      subheader.with_action_button(
+        scheme: :primary,
+        leading_icon: :plus,
+        label: t(:label_kpi_new),
+        tag: :a,
+        href: new_project_kpi_path(@project)
+      ) do
+        t(:label_kpi)
+      end
+    end
+  %>
+<% end %>
+
+<div class="attributes-group">
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= t("kpis.summary.total") %></div>
+    <div class="attributes-key-value--value-container"><%= @summary[:total] %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= t("kpis.summary.achieved") %></div>
+    <div class="attributes-key-value--value-container"><%= @summary[:achieved] %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= t("kpis.summary.overdue") %></div>
+    <div class="attributes-key-value--value-container"><%= @summary[:overdue] %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= t("kpis.summary.average_progress") %></div>
+    <div class="attributes-key-value--value-container"><%= @summary[:average_progress] %>%</div>
+  </div>
+</div>
+
+<% if @kpis.any? %>
+  <table class="generic-table kpis-table">
+    <thead>
+      <tr>
+        <th><%= Kpi.human_attribute_name(:name) %></th>
+        <th><%= Kpi.human_attribute_name(:category) %></th>
+        <th><%= Kpi.human_attribute_name(:current_value) %></th>
+        <th><%= Kpi.human_attribute_name(:target_value) %></th>
+        <th><%= t("kpis.progress") %></th>
+        <th><%= Kpi.human_attribute_name(:status) %></th>
+        <th><%= Kpi.human_attribute_name(:due_date) %></th>
+        <th><%= Kpi.human_attribute_name(:owner) %></th>
+        <th><%= Kpi.human_attribute_name(:projects) %></th>
+        <th><%= Kpi.human_attribute_name(:groups) %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @kpis.each do |kpi| %>
+        <tr>
+          <td><%= link_to kpi.name, project_kpi_path(@project, kpi) %></td>
+          <td><%= kpi.category_name.presence || "-" %></td>
+          <td><%= kpi.display_value(kpi.current_value) %></td>
+          <td><%= kpi.display_value(kpi.target_value) %></td>
+          <td>
+            <progress max="100" value="<%= kpi.progress_percentage %>"></progress>
+            <span><%= kpi.progress_percentage %>%</span>
+          </td>
+          <td><%= t("kpis.statuses.#{kpi.status}") %></td>
+          <td>
+            <%= format_date(kpi.due_date) if kpi.due_date %>
+            <% if kpi.overdue? %>
+              <span class="danger"><%= t("kpis.overdue") %></span>
+            <% end %>
+          </td>
+          <td><%= kpi.owner&.name || "-" %></td>
+          <td><%= kpi.associated_projects.map(&:name).join(", ") %></td>
+          <td><%= kpi.groups.map(&:name).join(", ").presence || "-" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <%= pagination_links_full @kpis %>
+<% else %>
+  <% if can_manage %>
+    <%= no_results_box(action_url: new_project_kpi_path(@project), display_action: true) %>
+  <% else %>
+    <%= no_results_box %>
+  <% end %>
+<% end %>

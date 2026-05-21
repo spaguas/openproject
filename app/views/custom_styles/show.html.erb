@@ -27,14 +27,9 @@ See COPYRIGHT and LICENSE files for more details.
 
 ++#%>
 
-<%= with_enterprise_banner_guard(
-  :define_custom_style,
-  variant: :large,
-  video: "enterprise/custom-design.mp4"
-) do %>
-  <%= render(Admin::DesignHeaderComponent.new(tabs: design_tabs)) %>
-  <%= error_messages_for "custom_style" %>
-  <% unless pdf_tab? %>
+<%= render(Admin::DesignHeaderComponent.new(tabs: design_tabs)) %>
+<%= error_messages_for "custom_style" %>
+<% unless pdf_tab? %>
   <%= form_tag update_design_themes_path, method: :post, class: "form" do %>
     <section class="form--section">
       <fieldset class="form--fieldset">
@@ -55,7 +50,6 @@ See COPYRIGHT and LICENSE files for more details.
       </fieldset>
     </section>
   <% end %>
-  <% end %>
-
-  <%= render_tabs design_tabs %>
 <% end %>
+
+<%= render_tabs design_tabs %>

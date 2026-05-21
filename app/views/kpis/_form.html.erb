@@ -1,0 +1,128 @@
+<%= error_messages_for "kpi" %>
+
+<%= form_with model: [@project, @kpi], local: true, html: { class: "form" } do |f| %>
+  <section class="form--section">
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend"><%= t(:label_kpi) %></legend>
+
+      <div class="form--field -required">
+        <%= f.label :name, class: "form--label" %>
+        <span class="form--field-container"><%= f.text_field :name, required: true, class: "form--text-field" %></span>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :description, class: "form--label" %>
+        <span class="form--field-container"><%= f.text_area :description, rows: 5, class: "wiki-edit" %></span>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :kpi_category_id, Kpi.human_attribute_name(:category), class: "form--label" %>
+        <span class="form--field-container">
+          <%= f.select :kpi_category_id,
+                       options_from_collection_for_select(@kpi_category_options, :id, :name, @kpi.kpi_category_id),
+                       { include_blank: true },
+                       class: "form--select" %>
+        </span>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :owner_id, Kpi.human_attribute_name(:owner), class: "form--label" %>
+        <span class="form--field-container">
+          <%= f.select :owner_id,
+                       options_from_collection_for_select(@owner_options, :id, :name, @kpi.owner_id),
+                       { include_blank: true },
+                       class: "form--select" %>
+        </span>
+      </div>
+
+      <div class="form--field -required">
+        <%= f.label :project_ids, Kpi.human_attribute_name(:projects), class: "form--label" %>
+        <span class="form--field-container">
+          <%= f.select :project_ids,
+                       options_from_collection_for_select(
+                         @project_options,
+                         :id,
+                         :name,
+                         (@kpi.project_ids + [@project.id]).uniq
+                       ),
+                       {},
+                       multiple: true,
+                       class: "form--select" %>
+        </span>
+        <div class="form--field-instructions"><%= t("kpis.instructions.projects") %></div>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :group_ids, Kpi.human_attribute_name(:groups), class: "form--label" %>
+        <span class="form--field-container">
+          <%= f.select :group_ids,
+                       options_from_collection_for_select(@group_options, :id, :name, @kpi.group_ids),
+                       {},
+                       multiple: true,
+                       class: "form--select" %>
+        </span>
+        <div class="form--field-instructions"><%= t("kpis.instructions.groups") %></div>
+      </div>
+    </fieldset>
+  </section>
+
+  <section class="form--section">
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend"><%= t("kpis.measurement") %></legend>
+
+      <div class="form--field -required">
+        <%= f.label :current_value, class: "form--label" %>
+        <span class="form--field-container"><%= f.number_field :current_value, step: "0.0001", required: true, class: "form--text-field" %></span>
+      </div>
+
+      <div class="form--field -required">
+        <%= f.label :target_value, class: "form--label" %>
+        <span class="form--field-container"><%= f.number_field :target_value, step: "0.0001", required: true, class: "form--text-field" %></span>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :unit, class: "form--label" %>
+        <span class="form--field-container"><%= f.text_field :unit, class: "form--text-field" %></span>
+      </div>
+
+      <div class="form--field -required">
+        <%= f.label :direction, class: "form--label" %>
+        <span class="form--field-container">
+          <%= f.select :direction,
+                       Kpi::DIRECTIONS.map { |direction| [t("kpis.directions.#{direction}"), direction] },
+                       {},
+                       class: "form--select" %>
+        </span>
+      </div>
+
+      <div class="form--field -required">
+        <%= f.label :status, class: "form--label" %>
+        <span class="form--field-container">
+          <%= f.select :status,
+                       Kpi::STATUSES.map { |status| [t("kpis.statuses.#{status}"), status] },
+                       {},
+                       class: "form--select" %>
+        </span>
+      </div>
+    </fieldset>
+  </section>
+
+  <section class="form--section">
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend"><%= t("kpis.timeline") %></legend>
+
+      <div class="form--field">
+        <%= f.label :start_date, class: "form--label" %>
+        <span class="form--field-container"><%= f.date_field :start_date, class: "form--text-field" %></span>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :due_date, class: "form--label" %>
+        <span class="form--field-container"><%= f.date_field :due_date, class: "form--text-field" %></span>
+      </div>
+    </fieldset>
+  </section>
+
+  <%= styled_button_tag t(:button_save), class: "-primary" %>
+  <%= link_to t(:button_cancel), project_kpis_path(@project), class: "button" %>
+<% end %>

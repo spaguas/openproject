@@ -61,6 +61,19 @@ See COPYRIGHT and LICENSE files for more details.
         --accent-color--minor2: <%= design_color.lighten 0.6 %>;
         --accent-color--dark-mode: <%= design_color.lighten 0.4 %>;
     <% end %>
+    <% if design_color.variable == "link-font-color" %>
+        --fgColor-accent: <%= design_color.hexcode %> !important;
+        --fgColor-link: <%= design_color.hexcode %> !important;
+        --content-link-color: <%= design_color.hexcode %>;
+    <% end %>
+    <% if design_color.variable == "main-menu-hover-background" %>
+        --main-menu-hover-background: <%= design_color.hexcode %>;
+    <% end %>
+    <% if design_color.variable == "global-hover-background" %>
+        --control-transparent-bgColor-hover: <%= design_color.hexcode %>;
+        --button-default-bgColor-hover: <%= design_color.hexcode %>;
+        --overlay-row-bgColor-hover: <%= design_color.hexcode %>;
+    <% end %>
     <% end %>
     }
 

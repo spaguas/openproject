@@ -53,8 +53,8 @@ RSpec.describe CustomStylesHelper do
 
       context "without EE", with_ee: false do
         context "no BIM edition" do
-          it "is falsey" do
-            expect(subject).to be_falsey
+          it "is truthy" do
+            expect(subject).to be_truthy
           end
         end
 
@@ -85,7 +85,7 @@ RSpec.describe CustomStylesHelper do
     end
   end
 
-  shared_examples("apply when ee present") do
+  shared_examples("apply when custom style present") do
     context "no CustomStyle present" do
       it "is falsey" do
         expect(subject).to be_falsey
@@ -101,8 +101,8 @@ RSpec.describe CustomStylesHelper do
       end
 
       context "without EE", with_ee: false do
-        it "is falsey" do
-          expect(subject).to be_falsey
+        it "is truthy" do
+          expect(subject).to be_truthy
         end
       end
 
@@ -117,13 +117,13 @@ RSpec.describe CustomStylesHelper do
   describe ".apply_custom_favicon?" do
     subject { helper.apply_custom_favicon? }
 
-    it_behaves_like "apply when ee present"
+    it_behaves_like "apply when custom style present"
   end
 
   describe ".apply_custom_touch_icon?" do
     subject { helper.apply_custom_touch_icon? }
 
-    it_behaves_like "apply when ee present"
+    it_behaves_like "apply when custom style present"
   end
 
   describe ".export_fonts_fields" do

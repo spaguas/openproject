@@ -20,9 +20,12 @@ RUN groupmod -g $DEV_GID $USER || true
 
 WORKDIR /home/$USER
 
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources && \
+  rm -rf /var/lib/apt/lists/*
+
 RUN apt-get update -qq && \
   apt-get install -y wget gnupg lsb-release curl && \
-  echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
+  echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
   wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
   apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -34,11 +37,11 @@ RUN apt-get update -qq && \
 RUN mkdir -p /etc/apt/keyrings
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
 RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
-RUN apt-get update
-RUN apt-get install -y nodejs
+RUN rm -rf /var/lib/apt/lists/* && apt-get update
+RUN apt-get install -y nodejs && rm -rf /var/lib/apt/lists/*
 
 # Setup java. Needed for https://github.com/NUARIG/ladle which is used in specs to test LDAP related behavior.
-RUN apt-get install -y openjdk-17-jdk
+RUN apt-get update && apt-get install -y openjdk-17-jdk && rm -rf /var/lib/apt/lists/*
 
 COPY ./docker/dev/backend/scripts/setup /usr/sbin/setup
 COPY ./docker/dev/backend/scripts/setup-bim /usr/sbin/setup-bim
@@ -66,9 +69,11 @@ FROM develop AS test
 
 USER root
 
-RUN apt-get update -qq && \
+RUN rm -rf /var/lib/apt/lists/* && \
+  apt-get update -qq && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  jq
+  jq && \
+  rm -rf /var/lib/apt/lists/*
 
 COPY ./docker/dev/backend/scripts/run-test /usr/bin/run-test
 COPY ./docker/dev/backend/scripts/setup-tests /usr/bin/setup-tests

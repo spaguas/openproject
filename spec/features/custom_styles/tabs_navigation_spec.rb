@@ -39,8 +39,9 @@ RSpec.describe "Tabs navigation and content switching on the admin/design page" 
       visit custom_style_path(tab: "interface")
     end
 
-    it "redirects to upsell page" do
-      expect(page).to have_enterprise_banner(:basic)
+    it "shows interface tab" do
+      expect(page).to have_current_path custom_style_path(tab: "interface")
+      expect(page).to have_text I18n.t(:label_interface_colors)
     end
   end
 

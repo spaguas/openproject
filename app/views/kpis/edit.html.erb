@@ -1,0 +1,17 @@
+<% html_title t(:label_kpi_edit) %>
+
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { t(:label_kpi_edit) }
+    header.with_breadcrumbs(
+      [
+        { href: project_overview_path(@project.id), text: @project.name },
+        { href: project_kpis_path(@project), text: t(:label_kpi_plural) },
+        { href: project_kpi_path(@project, @kpi), text: @kpi.name },
+        t(:label_kpi_edit)
+      ]
+    )
+  end
+%>
+
+<%= render "form" %>

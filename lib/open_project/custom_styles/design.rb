@@ -70,9 +70,19 @@ module OpenProject::CustomStyles
     def customizable_variables
       %w( primary-button-color
           accent-color
+          link-font-color
           header-bg-color
+          header-item-font-color
+          header-item-font-hover-color
           main-menu-bg-color
-          main-menu-bg-selected-background)
+          main-menu-font-color
+          main-menu-hover-background
+          main-menu-bg-selected-background
+          main-menu-selected-font-color
+          main-menu-hover-border-color
+          body-background
+          body-font-color
+          global-hover-background)
     end
   end
 end

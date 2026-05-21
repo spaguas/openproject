@@ -86,6 +86,10 @@ class Project < ApplicationRecord
   has_many :time_entry_activities_projects, dependent: :delete_all
   has_many :queries, dependent: :destroy
   has_many :news, -> { includes(:author) }, dependent: :destroy
+  has_many :kpis, dependent: :destroy
+  has_and_belongs_to_many :associated_kpis,
+                          class_name: "Kpi",
+                          join_table: "kpis_projects"
   has_many :categories, -> { order("#{Category.table_name}.name") }, dependent: :delete_all
   has_many :forums, -> { order("position ASC") }, dependent: :destroy
   has_one :repository, dependent: :destroy

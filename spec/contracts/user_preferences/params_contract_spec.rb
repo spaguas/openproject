@@ -100,13 +100,7 @@ RSpec.describe UserPreferences::ParamsContract do
           ]
         end
 
-        it_behaves_like "contract is invalid", base: :error_enterprise_only do
-          it "displays the error message containing the feature name" do
-            contract.validate
-            expect(contract.errors.full_messages)
-              .to eq(["Date Alerts is only available in the OpenProject Enterprise edition."])
-          end
-        end
+        it_behaves_like "contract is valid"
       end
 
       context "when project setting with start_date, due_date and overdue set" do
@@ -116,7 +110,7 @@ RSpec.describe UserPreferences::ParamsContract do
           ]
         end
 
-        it_behaves_like "contract is invalid", base: :error_enterprise_only
+        it_behaves_like "contract is valid"
       end
     end
 

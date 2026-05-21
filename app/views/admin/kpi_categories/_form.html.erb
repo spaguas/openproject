@@ -1,0 +1,28 @@
+<%= error_messages_for "category" %>
+
+<%= labelled_tabular_form_for [:admin, @category], as: :kpi_category, html: { class: "form" } do |f| %>
+  <section class="form--section">
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend"><%= t(:label_kpi_category) %></legend>
+
+      <div class="form--field -required">
+        <%= f.text_field :name, required: true, container_class: "-slim" %>
+      </div>
+
+      <div class="form--field">
+        <%= f.text_area :description, rows: 5, container_class: "-wide" %>
+      </div>
+
+      <div class="form--field">
+        <%= f.number_field :position, min: 0, container_class: "-xslim" %>
+      </div>
+
+      <div class="form--field">
+        <%= f.check_box :active %>
+      </div>
+    </fieldset>
+  </section>
+
+  <%= styled_button_tag t(:button_save), class: "-primary" %>
+  <%= link_to t(:button_cancel), admin_kpis_path, class: "button" %>
+<% end %>

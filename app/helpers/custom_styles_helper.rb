@@ -67,10 +67,8 @@ module CustomStylesHelper
     ]
   end
 
-  def apply_custom_styles?(skip_ee_check: OpenProject::Configuration.bim?)
-    # Apply custom styles either if EE allows OR we are on a BIM edition with the BIM theme active.
-    CustomStyle.current.present? &&
-      (EnterpriseToken.allows_to?(:define_custom_style) || skip_ee_check)
+  def apply_custom_styles?
+    CustomStyle.current.present?
   end
 
   def custom_logo?
@@ -80,12 +78,12 @@ module CustomStylesHelper
 
   # The default favicon and touch icons are both the same for normal OP and BIM.
   def apply_custom_favicon?
-    apply_custom_styles?(skip_ee_check: false) && CustomStyle.current.favicon.present?
+    apply_custom_styles? && CustomStyle.current.favicon.present?
   end
 
   # The default favicon and touch icons are both the same for normal OP and BIM.
   def apply_custom_touch_icon?
-    apply_custom_styles?(skip_ee_check: false) && CustomStyle.current.touch_icon.present?
+    apply_custom_styles? && CustomStyle.current.touch_icon.present?
   end
 
   def export_fonts_fields(custom_style)
@@ -101,5 +99,47 @@ module CustomStylesHelper
         instructions: I18n.t("text_custom_export_font_#{variant}_instructions")
       }
     end
+  end
+
+  def interface_design_color_groups
+    setable_colors = DesignColor.setables.index_by(&:variable)
+
+    interface_design_color_group_variables.filter_map do |translation_key, variables|
+      colors = variables.filter_map { |variable| setable_colors[variable] }
+      next if colors.empty?
+
+      {
+        title: I18n.t(translation_key),
+        colors:
+      }
+    end
+  end
+
+  def interface_design_color_group_variables
+    {
+      "admin.custom_styles.groups.actions" => %w[
+        primary-button-color
+        accent-color
+        link-font-color
+      ],
+      "admin.custom_styles.groups.header" => %w[
+        header-bg-color
+        header-item-font-color
+        header-item-font-hover-color
+      ],
+      "admin.custom_styles.groups.navigation" => %w[
+        main-menu-bg-color
+        main-menu-font-color
+        main-menu-hover-background
+        main-menu-bg-selected-background
+        main-menu-selected-font-color
+        main-menu-hover-border-color
+      ],
+      "admin.custom_styles.groups.content" => %w[
+        body-background
+        body-font-color
+        global-hover-background
+      ]
+    }
   end
 end

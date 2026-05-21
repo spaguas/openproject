@@ -345,7 +345,7 @@ module Settings
         allowed: -> { Redmine::I18n.all_languages }
       },
       default_projects_modules: {
-        default: %w[calendar board_view work_package_tracking gantt news costs wiki],
+        default: %w[calendar board_view work_package_tracking gantt news kpis costs wiki],
         allowed: -> { OpenProject::AccessControl.available_project_modules.map(&:to_s) }
       },
       default_projects_public: {
@@ -1030,6 +1030,14 @@ module Settings
         format: :string,
         default: nil,
         description: "Appsignal API key for JavaScript error reporting"
+      },
+      kpis_default_direction: {
+        default: "increase",
+        allowed: -> { Kpi::DIRECTIONS }
+      },
+      kpis_default_status: {
+        default: "not_started",
+        allowed: -> { Kpi::STATUSES }
       },
       session_cookie_name: {
         description: "Set session cookie name",

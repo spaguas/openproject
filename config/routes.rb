@@ -349,6 +349,7 @@ Rails.application.routes.draw do
     get "/roadmap" => "versions#index"
 
     resources :news, only: %i[index new create]
+    resources :kpis
 
     # Match everything to be the ID of the wiki page except the part that
     # is reserved for the format. This assumes that we have only two formats:
@@ -587,6 +588,9 @@ Rails.application.routes.draw do
   end
 
   namespace :admin do
+    resource :kpis, controller: "/admin/kpis", only: %i[show update]
+    resources :kpi_categories, controller: "/admin/kpi_categories", except: :show
+
     namespace :settings do
       resource :general, controller: "/admin/settings/general_settings", only: %i[show update]
       resource :languages, controller: "/admin/settings/languages_settings", only: %i[show update]

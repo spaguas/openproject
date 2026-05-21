@@ -1,0 +1,86 @@
+<% html_title t(:label_administration), t(:label_kpi_settings) %>
+
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { t(:label_kpi_settings) }
+    header.with_breadcrumbs(
+      [{ href: admin_index_path, text: t(:label_administration) },
+       t(:label_kpi_settings)]
+    )
+  end
+%>
+
+<%= styled_form_tag(admin_kpis_path, method: :patch) do %>
+  <section class="form--section">
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend"><%= t("kpis.admin.general_settings") %></legend>
+
+      <div class="form--field">
+        <%= setting_select :kpis_default_direction,
+                           Kpi::DIRECTIONS.map { |direction| [t("kpis.directions.#{direction}"), direction] },
+                           container_class: "-slim" %>
+      </div>
+
+      <div class="form--field">
+        <%= setting_select :kpis_default_status,
+                           Kpi::STATUSES.map { |status| [t("kpis.statuses.#{status}"), status] },
+                           container_class: "-slim" %>
+      </div>
+    </fieldset>
+  </section>
+
+  <%= styled_button_tag t(:button_save), class: "-primary" %>
+<% end %>
+
+<section class="form--section">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend"><%= t(:label_kpi_category_plural) %></legend>
+
+    <%=
+      render(Primer::OpenProject::SubHeader.new) do |subheader|
+        subheader.with_action_button(
+          scheme: :primary,
+          leading_icon: :plus,
+          label: t(:label_kpi_category_new),
+          tag: :a,
+          href: new_admin_kpi_category_path
+        ) do
+          t(:label_kpi_category)
+        end
+      end
+    %>
+
+    <% if @categories.any? %>
+      <table class="generic-table">
+        <thead>
+          <tr>
+            <th><%= KpiCategory.human_attribute_name(:name) %></th>
+            <th><%= KpiCategory.human_attribute_name(:description) %></th>
+            <th><%= KpiCategory.human_attribute_name(:position) %></th>
+            <th><%= KpiCategory.human_attribute_name(:active) %></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @categories.each do |category| %>
+            <tr>
+              <td><%= link_to category.name, edit_admin_kpi_category_path(category) %></td>
+              <td><%= category.description.presence || "-" %></td>
+              <td><%= category.position %></td>
+              <td><%= checked_image category.active? %></td>
+              <td class="buttons">
+                <%= link_to t(:button_edit), edit_admin_kpi_category_path(category), class: "button" %>
+                <%= link_to t(:button_delete),
+                            admin_kpi_category_path(category),
+                            data: { turbo_method: :delete, turbo_confirm: t(:text_are_you_sure) },
+                            class: "button -danger" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <%= no_results_box(action_url: new_admin_kpi_category_path, display_action: true) %>
+    <% end %>
+  </fieldset>
+</section>

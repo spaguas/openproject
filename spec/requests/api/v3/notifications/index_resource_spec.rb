@@ -157,7 +157,7 @@ RSpec.describe API::V3::Notifications::NotificationsAPI,
       end
     end
 
-    context "with a reason filter", with_ee: %i[date_alerts] do
+    context "with a reason filter" do
       shared_let(:assigned_notification) do
         create(:notification,
                reason: :assigned,
@@ -200,13 +200,8 @@ RSpec.describe API::V3::Notifications::NotificationsAPI,
           ]
         end
 
-        it "returns an error" do
-          expect(last_response.status)
-            .to be 400
-
-          expect(last_response.body)
-            .to be_json_eql("Filters Reason filter has invalid values.".to_json)
-                  .at_path("message")
+        it_behaves_like "API V3 collection response", 1, 1, "Notification" do
+          let(:elements) { [date_alert_notification] }
         end
       end
 

@@ -51,6 +51,9 @@ class Group < Principal
   has_many :users,
            through: :group_users,
            before_add: :fail_add
+  has_and_belongs_to_many :kpis,
+                          join_table: "groups_kpis",
+                          foreign_key: "group_id"
 
   acts_as_customizable
 

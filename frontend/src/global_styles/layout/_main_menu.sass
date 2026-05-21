@@ -29,7 +29,7 @@
 $arrow-left-width: 36px
 
 @mixin main-menu-hover($main-item: true)
-  background: var(--control-transparent-bgColor-hover)
+  background: var(--main-menu-hover-background, var(--control-transparent-bgColor-hover))
   color: var(--main-menu-font-color)
   border-style: solid
   border-color: var(--main-menu-hover-border-color)

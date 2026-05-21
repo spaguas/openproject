@@ -143,21 +143,15 @@ RSpec.shared_examples "notification settings workflow" do
     end
 
     context "without enterprise", with_ee: false do
-      it "does not render the date alerts" do
+      it "renders the date alerts" do
         # Expect default settings
         settings_page.expect_represented
 
         # Add projects columns
         settings_page.add_project project
 
-        # Expect no date alert fields
-        settings_page.expect_no_date_alert_setting("start-date")
-        settings_page.expect_no_date_alert_setting("due-date")
-        settings_page.expect_no_date_alert_setting("overdue")
-
-        settings_page.expect_no_project_date_alert_setting("start-date", project)
-        settings_page.expect_no_project_date_alert_setting("due-date", project)
-        settings_page.expect_no_project_date_alert_setting("overdue", project)
+        settings_page.set_reminder("due-date", "3 days before")
+        settings_page.set_project_reminder("due-date", "3 days before", project)
       end
     end
   end

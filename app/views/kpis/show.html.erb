@@ -1,0 +1,102 @@
+<% html_title @kpi.name %>
+
+<% can_manage = User.current.allowed_in_project?(:manage_kpis, @project) %>
+
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { @kpi.name }
+    header.with_breadcrumbs(
+      [
+        { href: project_overview_path(@project.id), text: @project.name },
+        { href: project_kpis_path(@project), text: t(:label_kpi_plural) },
+        @kpi.name
+      ]
+    )
+  end
+%>
+
+<% if can_manage %>
+  <%=
+    render(Primer::OpenProject::SubHeader.new) do |subheader|
+      subheader.with_action_button(
+        leading_icon: :pencil,
+        label: t(:button_edit),
+        tag: :a,
+        href: edit_project_kpi_path(@project, @kpi)
+      ) do
+        t(:button_edit)
+      end
+    end
+  %>
+<% end %>
+
+<div class="attributes-group">
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:status) %></div>
+    <div class="attributes-key-value--value-container"><%= t("kpis.statuses.#{@kpi.status}") %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= t("kpis.progress") %></div>
+    <div class="attributes-key-value--value-container">
+      <progress max="100" value="<%= @kpi.progress_percentage %>"></progress>
+      <%= @kpi.progress_percentage %>%
+    </div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:current_value) %></div>
+    <div class="attributes-key-value--value-container"><%= @kpi.display_value(@kpi.current_value) %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:target_value) %></div>
+    <div class="attributes-key-value--value-container"><%= @kpi.display_value(@kpi.target_value) %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:direction) %></div>
+    <div class="attributes-key-value--value-container"><%= t("kpis.directions.#{@kpi.direction}") %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:category) %></div>
+    <div class="attributes-key-value--value-container"><%= @kpi.category_name.presence || "-" %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:owner) %></div>
+    <div class="attributes-key-value--value-container"><%= @kpi.owner&.name || "-" %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:projects) %></div>
+    <div class="attributes-key-value--value-container"><%= @kpi.associated_projects.map(&:name).join(", ") %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:groups) %></div>
+    <div class="attributes-key-value--value-container"><%= @kpi.groups.map(&:name).join(", ").presence || "-" %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:start_date) %></div>
+    <div class="attributes-key-value--value-container"><%= @kpi.start_date ? format_date(@kpi.start_date) : "-" %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:due_date) %></div>
+    <div class="attributes-key-value--value-container">
+      <%= @kpi.due_date ? format_date(@kpi.due_date) : "-" %>
+      <% if @kpi.overdue? %>
+        <span class="danger"><%= t("kpis.overdue") %></span>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<% if @kpi.description.present? %>
+  <h3><%= Kpi.human_attribute_name(:description) %></h3>
+  <div class="wiki op-uc-container">
+    <%= format_text(@kpi.description, object: @kpi) %>
+  </div>
+<% end %>
+
+<% if can_manage %>
+  <p>
+    <%= link_to t(:button_delete),
+                project_kpi_path(@project, @kpi),
+                data: { turbo_method: :delete, turbo_confirm: t(:text_are_you_sure) },
+                class: "button -danger" %>
+  </p>
+<% end %>
