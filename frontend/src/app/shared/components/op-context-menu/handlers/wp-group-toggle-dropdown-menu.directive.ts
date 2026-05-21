@@ -31,6 +31,9 @@ import { Directive, ElementRef } from '@angular/core';
 import { OpContextMenuTrigger } from 'core-app/shared/components/op-context-menu/handlers/op-context-menu-trigger.directive';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { WorkPackageViewCollapsedGroupsService } from 'core-app/features/work-packages/routing/wp-view-base/view-services/wp-view-collapsed-groups.service';
+import { IsolatedQuerySpace } from 'core-app/features/work-packages/directives/query-space/isolated-query-space';
+import { States } from 'core-app/core/states/states.service';
+import { WorkPackageViewHierarchiesService } from 'core-app/features/work-packages/routing/wp-view-base/view-services/wp-view-hierarchy.service';
 
 @Directive({
   selector: '[wpGroupToggleDropdown]',
@@ -40,7 +43,10 @@ export class WorkPackageGroupToggleDropdownMenuDirective extends OpContextMenuTr
   constructor(readonly elementRef:ElementRef,
     readonly opContextMenu:OPContextMenuService,
     readonly I18n:I18nService,
-    readonly wpViewCollapsedGroups:WorkPackageViewCollapsedGroupsService) {
+    readonly wpViewCollapsedGroups:WorkPackageViewCollapsedGroupsService,
+    readonly querySpace:IsolatedQuerySpace,
+    readonly states:States,
+    readonly wpTableHierarchies:WorkPackageViewHierarchiesService) {
     super(elementRef, opContextMenu);
   }
 
@@ -57,8 +63,12 @@ export class WorkPackageGroupToggleDropdownMenuDirective extends OpContextMenuTr
   }
 
   private buildItems() {
-    this.items = [
-      {
+    const hierarchyParentIds = this.visibleHierarchyParentIds();
+
+    this.items = [];
+
+    if (this.wpViewCollapsedGroups.currentGroupedBy) {
+      this.items.push({
         disabled: this.wpViewCollapsedGroups.allGroupsAreCollapsed,
         linkText: this.I18n.t('js.button_collapse_all'),
         icon: 'icon-minus2',
@@ -67,8 +77,9 @@ export class WorkPackageGroupToggleDropdownMenuDirective extends OpContextMenuTr
 
           return true;
         },
-      },
-      {
+      });
+
+      this.items.push({
         disabled: this.wpViewCollapsedGroups.allGroupsAreExpanded,
         linkText: this.I18n.t('js.button_expand_all'),
         icon: 'icon-plus',
@@ -77,7 +88,46 @@ export class WorkPackageGroupToggleDropdownMenuDirective extends OpContextMenuTr
 
           return true;
         },
-      },
-    ];
+      });
+    }
+
+    if (this.wpTableHierarchies.isEnabled && hierarchyParentIds.length > 0) {
+      this.items.push({
+        disabled: hierarchyParentIds.every((id) => this.wpTableHierarchies.collapsed(id)),
+        linkText: this.I18n.t('js.work_packages.hierarchy.collapse_all'),
+        icon: 'icon-minus2',
+        onClick: (evt:JQuery.TriggeredEvent) => {
+          this.wpTableHierarchies.setAll(hierarchyParentIds, true);
+
+          return true;
+        },
+      });
+
+      this.items.push({
+        disabled: hierarchyParentIds.every((id) => !this.wpTableHierarchies.collapsed(id)),
+        linkText: this.I18n.t('js.work_packages.hierarchy.expand_all'),
+        icon: 'icon-plus',
+        onClick: (evt:JQuery.TriggeredEvent) => {
+          this.wpTableHierarchies.setAll(hierarchyParentIds, false);
+
+          return true;
+        },
+      });
+    }
+  }
+
+  private visibleHierarchyParentIds():string[] {
+    const parentIds = new Set<string>();
+    const renderedIds = this.querySpace.renderedWorkPackageIds.value || [];
+
+    renderedIds.forEach((id) => {
+      const workPackage = this.states.workPackages.get(id).value;
+
+      workPackage?.getAncestors().forEach((ancestor) => {
+        parentIds.add(ancestor.id!);
+      });
+    });
+
+    return Array.from(parentIds);
   }
 }
