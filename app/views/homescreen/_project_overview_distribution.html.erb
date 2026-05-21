@@ -1,0 +1,23 @@
+<div class="homescreen-project-overview--panel">
+  <h3><%= title %></h3>
+
+  <% if entries.any? %>
+    <% entries.each do |entry| %>
+      <div class="homescreen-project-overview--bar-row">
+        <span>
+          <% if entry[:project_path_id].present? %>
+            <%= link_to entry[:label], project_path(entry[:project_path_id]) %>
+          <% else %>
+            <%= entry[:label] %>
+          <% end %>
+        </span>
+        <span class="homescreen-project-overview--bar" aria-hidden="true">
+          <span class="homescreen-project-overview--bar-fill" style="width: <%= entry[:percentage] %>%"></span>
+        </span>
+        <strong><%= entry[:count] %></strong>
+      </div>
+    <% end %>
+  <% else %>
+    <p class="widget-box--additional-info"><%= t("homescreen.project_overview.no_work_packages") %></p>
+  <% end %>
+</div>

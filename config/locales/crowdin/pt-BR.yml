@@ -2613,6 +2613,22 @@ pt-BR:
   gui_validation_error: "1 erro"
   gui_validation_error_plural: "%{count} erros"
   homescreen:
+    project_overview:
+      title: "Visão geral do portfólio de projetos"
+      description: "Uma visão consolidada dos projetos visíveis, saúde dos pacotes de trabalho, áreas, progresso e atividade recente."
+      area: "Área"
+      areas: "Áreas"
+      by_area: "Pacotes de trabalho por área"
+      by_status: "Pacotes de trabalho por situação"
+      by_type: "Pacotes de trabalho por tipo"
+      closed: "Fechados"
+      completion: "Conclusão"
+      due_soon: "Vencem em breve"
+      no_work_packages: "Não há pacotes de trabalho visíveis para resumir."
+      open: "Abertos"
+      overdue: "Atrasados"
+      project_table: "Saúde dos projetos"
+      recent_activity: "Atualizados recentemente"
     additional:
       projects: "Projetos mais recentes visíveis nesta instância."
       no_visible_projects: "Não há nenhum projeto visível nesta instância."

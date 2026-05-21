@@ -1,0 +1,208 @@
+<section class="homescreen-project-overview">
+  <style>
+    .homescreen-project-overview {
+      margin: 1rem 0 1.5rem;
+    }
+
+    .homescreen-project-overview--header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .homescreen-project-overview--header h2 {
+      margin: 0 0 0.25rem;
+    }
+
+    .homescreen-project-overview--header p {
+      color: var(--fgColor-muted);
+      margin: 0;
+      max-width: 70ch;
+    }
+
+    .homescreen-project-overview--metrics,
+    .homescreen-project-overview--charts {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      margin-bottom: 1rem;
+    }
+
+    .homescreen-project-overview--metric,
+    .homescreen-project-overview--panel {
+      background: var(--body-background);
+      border: 1px solid var(--borderColor-default);
+      border-radius: 6px;
+      padding: 1rem;
+    }
+
+    .homescreen-project-overview--metric-value {
+      display: block;
+      font-size: 1.75rem;
+      font-weight: 600;
+      line-height: 1.1;
+    }
+
+    .homescreen-project-overview--metric-label {
+      color: var(--fgColor-muted);
+      display: block;
+      margin-top: 0.25rem;
+    }
+
+    .homescreen-project-overview--panel h3 {
+      font-size: 1rem;
+      margin: 0 0 0.75rem;
+    }
+
+    .homescreen-project-overview--bar-row {
+      display: grid;
+      gap: 0.5rem;
+      grid-template-columns: minmax(8rem, 1fr) minmax(7rem, 2fr) 3rem;
+      align-items: center;
+      margin: 0.55rem 0;
+    }
+
+    .homescreen-project-overview--bar {
+      background: var(--bgColor-muted);
+      border-radius: 999px;
+      height: 0.65rem;
+      overflow: hidden;
+    }
+
+    .homescreen-project-overview--bar-fill {
+      background: var(--accent-color);
+      display: block;
+      height: 100%;
+    }
+
+    .homescreen-project-overview--tables {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    }
+
+    @media screen and (max-width: 900px) {
+      .homescreen-project-overview--header,
+      .homescreen-project-overview--tables {
+        display: block;
+      }
+
+      .homescreen-project-overview--header .button {
+        margin-top: 0.75rem;
+      }
+    }
+  </style>
+
+  <div class="homescreen-project-overview--header">
+    <div>
+      <h2><%= t("homescreen.project_overview.title") %></h2>
+      <p><%= t("homescreen.project_overview.description") %></p>
+    </div>
+
+    <%= link_to projects_path, class: "button -highlight" do %>
+      <%= op_icon("button--icon icon-projects") %>
+      <span class="button--text"><%= t(:label_project_view_all) %></span>
+    <% end %>
+  </div>
+
+  <div class="homescreen-project-overview--metrics">
+    <div class="homescreen-project-overview--metric">
+      <span class="homescreen-project-overview--metric-value"><%= summary[:projects] %></span>
+      <span class="homescreen-project-overview--metric-label"><%= t(:label_project_plural) %></span>
+    </div>
+    <div class="homescreen-project-overview--metric">
+      <span class="homescreen-project-overview--metric-value"><%= summary[:areas] %></span>
+      <span class="homescreen-project-overview--metric-label"><%= t("homescreen.project_overview.areas") %></span>
+    </div>
+    <div class="homescreen-project-overview--metric">
+      <span class="homescreen-project-overview--metric-value"><%= summary[:work_packages] %></span>
+      <span class="homescreen-project-overview--metric-label"><%= t(:label_work_package_plural) %></span>
+    </div>
+    <div class="homescreen-project-overview--metric">
+      <span class="homescreen-project-overview--metric-value"><%= summary[:completion] %>%</span>
+      <span class="homescreen-project-overview--metric-label"><%= t("homescreen.project_overview.completion") %></span>
+    </div>
+    <div class="homescreen-project-overview--metric">
+      <span class="homescreen-project-overview--metric-value"><%= summary[:overdue] %></span>
+      <span class="homescreen-project-overview--metric-label"><%= t("homescreen.project_overview.overdue") %></span>
+    </div>
+    <div class="homescreen-project-overview--metric">
+      <span class="homescreen-project-overview--metric-value"><%= summary[:due_soon] %></span>
+      <span class="homescreen-project-overview--metric-label"><%= t("homescreen.project_overview.due_soon") %></span>
+    </div>
+  </div>
+
+  <div class="homescreen-project-overview--charts">
+    <%= render partial: "homescreen/project_overview_distribution",
+               locals: {
+                 title: t("homescreen.project_overview.by_status"),
+                 entries: overview.status_distribution
+               } %>
+
+    <%= render partial: "homescreen/project_overview_distribution",
+               locals: {
+                 title: t("homescreen.project_overview.by_type"),
+                 entries: overview.type_distribution
+               } %>
+
+    <%= render partial: "homescreen/project_overview_distribution",
+               locals: {
+                 title: t("homescreen.project_overview.by_area"),
+                 entries: overview.area_distribution
+               } %>
+  </div>
+
+  <div class="homescreen-project-overview--tables">
+    <div class="homescreen-project-overview--panel">
+      <h3><%= t("homescreen.project_overview.project_table") %></h3>
+
+      <table class="generic-table">
+        <thead>
+          <tr>
+            <th><%= Project.model_name.human %></th>
+            <th><%= t("homescreen.project_overview.area") %></th>
+            <th><%= t("homescreen.project_overview.open") %></th>
+            <th><%= t("homescreen.project_overview.closed") %></th>
+            <th><%= t("homescreen.project_overview.overdue") %></th>
+            <th><%= t("homescreen.project_overview.completion") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% overview.project_rows.each do |row| %>
+            <tr>
+              <td><%= link_to row[:project].name, project_path(row[:project]) %></td>
+              <td><%= link_to row[:area].name, project_path(row[:area]) %></td>
+              <td><%= row[:open] %></td>
+              <td><%= row[:closed] %></td>
+              <td><%= row[:overdue] %></td>
+              <td><%= row[:completion] %>%</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="homescreen-project-overview--panel">
+      <h3><%= t("homescreen.project_overview.recent_activity") %></h3>
+
+      <% if overview.recent_work_packages.any? %>
+        <ul class="widget-box--arrow-links">
+          <% overview.recent_work_packages.each do |work_package| %>
+            <li>
+              <%= link_to "##{work_package.id} #{work_package.subject}", work_package_path(work_package) %>
+              <small>
+                <%= work_package.project.name %> ·
+                <%= work_package.status.name %> ·
+                <%= format_time(work_package.updated_at) %>
+              </small>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="widget-box--additional-info"><%= t("homescreen.project_overview.no_work_packages") %></p>
+      <% end %>
+    </div>
+  </div>
+</section>

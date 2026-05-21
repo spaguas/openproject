@@ -2737,6 +2737,22 @@ en:
   gui_validation_error_plural: "%{count} errors"
 
   homescreen:
+    project_overview:
+      title: "Project portfolio overview"
+      description: "A consolidated view of visible projects, work package health, areas, progress, and recent activity."
+      area: "Area"
+      areas: "Areas"
+      by_area: "Work packages by area"
+      by_status: "Work packages by status"
+      by_type: "Work packages by type"
+      closed: "Closed"
+      completion: "Completion"
+      due_soon: "Due soon"
+      no_work_packages: "No visible work packages to summarize."
+      open: "Open"
+      overdue: "Overdue"
+      project_table: "Project health"
+      recent_activity: "Recently updated"
     additional:
       projects: "Newest visible projects in this instance."
       no_visible_projects: "There are no visible projects in this instance."
