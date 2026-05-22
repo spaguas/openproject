@@ -3,15 +3,26 @@ import { TabComponent } from 'core-app/features/work-packages/components/wp-tabl
 import { WorkPackageViewGroupByService } from 'core-app/features/work-packages/routing/wp-view-base/view-services/wp-view-group-by.service';
 import { WorkPackageViewHierarchiesService } from 'core-app/features/work-packages/routing/wp-view-base/view-services/wp-view-hierarchy.service';
 import { WorkPackageViewSumService } from 'core-app/features/work-packages/routing/wp-view-base/view-services/wp-view-sum.service';
-import { Component, Injector } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Injector, OnInit, inject } from '@angular/core';
 import { QueryGroupByResource } from 'core-app/features/hal/resources/query-group-by-resource';
 
 @Component({
   selector: 'op-wp-table-configuration-settings-tab',
   templateUrl: './display-settings-tab.component.html',
   standalone: false,
+  // TODO: This component has been partially migrated to be zoneless-compatible.
+  // After testing, this should be updated to ChangeDetectionStrategy.OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.Default,
 })
-export class WpTableConfigurationDisplaySettingsTabComponent implements TabComponent {
+export class WpTableConfigurationDisplaySettingsTabComponent implements TabComponent, OnInit {
+  readonly injector = inject(Injector);
+  readonly I18n = inject(I18nService);
+  readonly wpTableGroupBy = inject(WorkPackageViewGroupByService);
+  readonly wpTableHierarchies = inject(WorkPackageViewHierarchiesService);
+  readonly wpTableSums = inject(WorkPackageViewSumService);
+  readonly cdRef = inject(ChangeDetectorRef);
+
   // Display mode
   public displayMode:'hierarchy'|'grouped'|'default' = 'default';
 
@@ -39,14 +50,6 @@ export class WpTableConfigurationDisplaySettingsTabComponent implements TabCompo
       hierarchy_hint: `— ${this.I18n.t('js.work_packages.table_configuration.hierarchy_hint')}`,
     },
   };
-
-  constructor(
-    readonly injector:Injector,
-    readonly I18n:I18nService,
-    readonly wpTableGroupBy:WorkPackageViewGroupByService,
-    readonly wpTableHierarchies:WorkPackageViewHierarchiesService,
-    readonly wpTableSums:WorkPackageViewSumService,
-  ) { }
 
   public onSave() {
     // Update hierarchy state
@@ -79,6 +82,7 @@ export class WpTableConfigurationDisplaySettingsTabComponent implements TabCompo
       .then(() => {
         this.availableGroups = _.sortBy(this.wpTableGroupBy.available, 'name');
         this.currentGroup = this.wpTableGroupBy.current || this.availableGroups[0];
+        this.cdRef.markForCheck();
       });
   }
 }

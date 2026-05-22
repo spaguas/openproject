@@ -33,8 +33,6 @@ module Projects::CustomFields
 
   include ActsAsCustomizable::CalculatedValue
 
-  attr_accessor :_limit_custom_fields_validation_to_section_id
-
   included do
     has_many :project_custom_field_project_mappings, class_name: "ProjectCustomFieldProjectMapping",
                                                      foreign_key: :project_id, dependent: :destroy,
@@ -42,7 +40,9 @@ module Projects::CustomFields
     has_many :project_custom_fields, through: :project_custom_field_project_mappings,
                                      class_name: "ProjectCustomField"
 
-    def enabled_custom_field_ids = project_custom_field_ids
+    def enabled_custom_field_ids
+      project_custom_field_project_mappings.map(&:custom_field_id)
+    end
 
     def available_custom_fields
       return all_visible_custom_fields if new_record?
@@ -60,24 +60,13 @@ module Projects::CustomFields
     # modification happens via the api, then set the available_custom_fields accordingly. This allows
     # the extension to be completely removed from the acts_as_customizable plugin.
     def all_available_custom_fields
-      @all_available_custom_fields ||= ProjectCustomField
+      ProjectCustomField
         .includes(:project_custom_field_section)
         .order("custom_field_sections.position", :position_in_custom_field_section)
     end
 
     def all_visible_custom_fields
       all_available_custom_fields.visible(project: self)
-    end
-
-    def custom_field_values_to_validate
-      # Limit the set of available custom fields when the validation is limited to a section
-      if _limit_custom_fields_validation_to_section_id
-        custom_field_values.select do |cfv|
-          cfv.custom_field.custom_field_section_id == _limit_custom_fields_validation_to_section_id
-        end
-      else
-        custom_field_values
-      end
     end
   end
 end

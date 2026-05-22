@@ -73,16 +73,23 @@ module Roles
                                 []
                               end
 
+      # For now, we also remove all permissions related to resource management as this module is still behind FF
+      unless Rails.env.local?
+        permissions_to_remove += OpenProject::AccessControl.module_permissions(:resource_management)
+      end
+
       OpenProject::AccessControl.project_permissions - permissions_to_remove
     end
 
     def check_permission_prerequisites
+      hidden_permissions = OpenProject::AccessControl.permissions.select(&:hidden?).map(&:name)
+
       model.permissions.each do |name|
         permission = OpenProject::AccessControl.permission(name)
 
         next unless permission
 
-        unmet_dependencies = permission.dependencies - model.permissions
+        unmet_dependencies = permission.dependencies - model.permissions - hidden_permissions
 
         unmet_dependencies.each do |unmet_dependency|
           add_unmet_dependency_error(name, unmet_dependency)

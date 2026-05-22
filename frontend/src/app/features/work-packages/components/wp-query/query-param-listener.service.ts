@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { Injectable, Injector } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { WorkPackagesListChecksumService } from 'core-app/features/work-packages/components/wp-list/wp-list-checksum.service';
 import { WorkPackagesListService } from 'core-app/features/work-packages/components/wp-list/wp-list.service';
 import { TransitionService } from '@uirouter/core';
@@ -34,6 +34,8 @@ import { Subject } from 'rxjs';
 
 @Injectable()
 export class QueryParamListenerService {
+  readonly injector = inject(Injector);
+
   readonly wpListChecksumService:WorkPackagesListChecksumService = this.injector.get(WorkPackagesListChecksumService);
 
   readonly wpListService:WorkPackagesListService = this.injector.get(WorkPackagesListService);
@@ -44,7 +46,7 @@ export class QueryParamListenerService {
 
   public queryChangeListener:Function;
 
-  constructor(readonly injector:Injector) {
+  constructor() {
     this.listenForQueryParamsChanged();
   }
 
@@ -58,7 +60,7 @@ export class QueryParamListenerService {
       const newId:string = params.query_id ? params.query_id.toString() : null;
 
       // Avoid performing any changes when we're going to reload
-      if (options.reload || (options.custom && options.custom.notify === false)) {
+      if (options.reload || (options.custom?.notify === false)) {
         return true;
       }
 

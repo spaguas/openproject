@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #-- copyright
 # OpenProject is an open source project management software.
 # Copyright (C) the OpenProject GmbH
@@ -29,25 +31,26 @@
 class Projects::Settings::BacklogsController < Projects::SettingsController
   menu_item :settings_backlogs
 
-  def show
-    @statuses_done_for_project = @project.done_statuses.select(:id).map(&:id)
-  end
+  def show; end
 
   def update
-    selected_statuses = (params[:statuses] || []).filter_map do |work_package_status|
-      Status.find(work_package_status[:status_id].to_i)
+    call = Projects::UpdateService
+      .new(model: @project,
+           user: current_user,
+           contract_class: Projects::BacklogsTypesAndStatusesContract)
+      .call(backlogs_settings_params)
+
+    if call.success?
+      flash[:notice] = I18n.t(:notice_successful_update)
+      redirect_to_backlogs_settings
+    else
+      flash.now[:error] = I18n.t(:notice_unsuccessful_update_with_reason, reason: call.message)
+      render action: :show, status: :unprocessable_entity
     end
-
-    @project.done_statuses = selected_statuses
-    @project.save!
-
-    flash[:notice] = I18n.t(:notice_successful_update)
-
-    redirect_to_backlogs_settings
   end
 
   def rebuild_positions
-    @project.rebuild_positions
+    WorkPackages::RebuildPositionsService.new(project: @project).call
     flash[:notice] = I18n.t("backlogs.positions_rebuilt_successfully")
 
     redirect_to_backlogs_settings
@@ -60,6 +63,17 @@ class Projects::Settings::BacklogsController < Projects::SettingsController
   end
 
   private
+
+  def backlogs_settings_params
+    permitted = params.expect(project: { done_status_ids: [], backlog_excluded_type_ids: [] })
+
+    %i[done_status_ids backlog_excluded_type_ids].each do |key|
+      # De-duplicate submitted values:
+      permitted[key] = permitted[key]&.uniq
+    end
+
+    permitted
+  end
 
   def redirect_to_backlogs_settings
     redirect_to project_settings_backlogs_path(@project)

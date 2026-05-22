@@ -33,7 +33,6 @@ require "digest/sha1"
 module ::Widget
   class Base < Widget::ReportingWidget
     attr_reader :engine, :output
-    attr_accessor :request
 
     ##
     # Deactivate caching for certain widgets. If called on Widget::Base,
@@ -65,7 +64,7 @@ module ::Widget
     ##
     # Render this widget. Abstract method. Needs to call #write at least once
     def render
-      raise NotImplementedError, "#render is missing in my subclass #{self.class}"
+      raise SubclassResponsibilityError, "#render is missing in subclass #{self.class}"
     end
 
     ##
@@ -91,6 +90,12 @@ module ::Widget
 
     def cached?
       cache? && Rails.cache.exist?(cache_key)
+    end
+
+    protected
+
+    def render_view_component(component, &)
+      component.render_in(controller.view_context, &)
     end
 
     private

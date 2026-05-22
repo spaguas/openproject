@@ -51,6 +51,7 @@ RSpec.describe "MeetingParticipants requests",
     let(:base_params) do
       {
         meeting_id: meeting.id,
+        project_id: project.id,
         meeting_participant: {
           user_id: []
         }
@@ -62,7 +63,7 @@ RSpec.describe "MeetingParticipants requests",
 
       it "creates a single participant" do
         expect do
-          post meeting_participants_path(meeting), params: params, as: :turbo_stream
+          post project_meeting_participants_path(project, meeting), params: params, as: :turbo_stream
         end.to change { meeting.participants.count }.by(1)
 
         expect(response).to have_http_status(:ok)
@@ -75,8 +76,9 @@ RSpec.describe "MeetingParticipants requests",
 
       it "sends notification email" do
         expect do
-          post meeting_participants_path(meeting), params: params, as: :turbo_stream
-          perform_enqueued_jobs
+          perform_enqueued_jobs do
+            post project_meeting_participants_path(project, meeting), params: params, as: :turbo_stream
+          end
         end.to change { ActionMailer::Base.deliveries.size }.by(1)
       end
     end
@@ -92,7 +94,7 @@ RSpec.describe "MeetingParticipants requests",
 
       it "creates multiple participants" do
         expect do
-          post meeting_participants_path(meeting), params: params, as: :turbo_stream
+          post project_meeting_participants_path(project, meeting), params: params, as: :turbo_stream
         end.to change { meeting.participants.count }.by(2)
 
         expect(response).to have_http_status(:ok)
@@ -114,7 +116,7 @@ RSpec.describe "MeetingParticipants requests",
 
       it "creates participants for users with meeting permissions" do
         expect do
-          post meeting_participants_path(meeting), params: params, as: :turbo_stream
+          post project_meeting_participants_path(project, meeting), params: params, as: :turbo_stream
         end.to change { meeting.participants.count }.by(1)
 
         expect(response).to have_http_status(:ok)
@@ -124,10 +126,10 @@ RSpec.describe "MeetingParticipants requests",
       end
 
       it "adds errors for users without meeting permissions" do
-        post meeting_participants_path(meeting), params: params, as: :turbo_stream
+        post project_meeting_participants_path(project, meeting), params: params, as: :turbo_stream
 
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include "User #{user_without_meeting_permissions.name} is not a valid participant."
+        expect(response.body).to include "User is not a valid participant."
 
         meeting.participants.reload
         expect(meeting.participants.count).to eq(1)
@@ -146,16 +148,16 @@ RSpec.describe "MeetingParticipants requests",
 
       it "does not create participants for users not in project" do
         expect do
-          post meeting_participants_path(meeting), params: params, as: :turbo_stream
+          post project_meeting_participants_path(project, meeting), params: params, as: :turbo_stream
         end.not_to change { meeting.participants.count }
 
         expect(response).to have_http_status(:ok)
       end
 
       it "adds appropriate errors" do
-        post meeting_participants_path(meeting), params: params, as: :turbo_stream
+        post project_meeting_participants_path(project, meeting), params: params, as: :turbo_stream
 
-        expect(response.body).to include "User #{user_not_in_project.name} is not a valid participant."
+        expect(response.body).to include "User is not a valid participant."
 
         meeting.participants.reload
         expect(meeting.participants.count).to eq(0)
@@ -167,7 +169,7 @@ RSpec.describe "MeetingParticipants requests",
 
       it "does not create any participants" do
         expect do
-          post meeting_participants_path(meeting), params: params, as: :turbo_stream
+          post project_meeting_participants_path(project, meeting), params: params, as: :turbo_stream
         end.not_to change { meeting.participants.count }
 
         expect(response).to have_http_status(:ok)
@@ -179,7 +181,7 @@ RSpec.describe "MeetingParticipants requests",
 
       it "handles nil gracefully" do
         expect do
-          post meeting_participants_path(meeting), params: params, as: :turbo_stream
+          post project_meeting_participants_path(project, meeting), params: params, as: :turbo_stream
         end.not_to change { meeting.participants.count }
 
         expect(response).to have_http_status(:ok)
@@ -197,7 +199,7 @@ RSpec.describe "MeetingParticipants requests",
 
       it "creates participants for valid users only" do
         expect do
-          post meeting_participants_path(meeting), params: params, as: :turbo_stream
+          post project_meeting_participants_path(project, meeting), params: params, as: :turbo_stream
         end.to change { meeting.participants.count }.by(1)
 
         expect(response).to have_http_status(:ok)
@@ -214,7 +216,7 @@ RSpec.describe "MeetingParticipants requests",
     let!(:participant2) { create(:meeting_participant, meeting:, user: user_with_meeting_permissions2, attended: false) }
 
     it "marks all participants as attended" do
-      post mark_all_attended_meeting_participants_path(meeting), as: :turbo_stream
+      post mark_all_attended_project_meeting_participants_path(project, meeting), as: :turbo_stream
 
       expect(response).to have_http_status(:ok)
       expect(participant1.reload.attended).to be true
@@ -227,7 +229,7 @@ RSpec.describe "MeetingParticipants requests",
 
     it "toggles attendance status" do
       expect do
-        post toggle_attendance_meeting_participant_path(meeting, participant), as: :turbo_stream
+        post toggle_attendance_project_meeting_participant_path(project, meeting, participant), as: :turbo_stream
       end.to change { participant.reload.attended }.from(false).to(true)
 
       expect(response).to have_http_status(:ok)
@@ -239,7 +241,7 @@ RSpec.describe "MeetingParticipants requests",
 
     it "removes the participant" do
       expect do
-        delete meeting_participant_path(meeting, participant), as: :turbo_stream
+        delete project_meeting_participant_path(project, meeting, participant), as: :turbo_stream
       end.to change { meeting.participants.count }.by(-1)
 
       expect(response).to have_http_status(:ok)
@@ -247,10 +249,229 @@ RSpec.describe "MeetingParticipants requests",
   end
 
   describe "GET /meetings/:meeting_id/participants/manage_participants_dialog" do
+    let(:apply_to_upcoming_checkbox) { "meeting_participant[apply_to_upcoming]" }
+
     it "responds with the manage participants dialog" do
-      get manage_participants_dialog_meeting_participants_path(meeting), as: :turbo_stream
+      get manage_participants_dialog_project_meeting_participants_path(project, meeting), as: :turbo_stream
 
       expect(response).to have_http_status(:ok)
+    end
+
+    context "for a one-time meeting" do
+      it "does not show the apply to upcoming checkbox" do
+        get manage_participants_dialog_project_meeting_participants_path(project, meeting), as: :turbo_stream
+
+        expect(response.body).not_to include(apply_to_upcoming_checkbox)
+      end
+    end
+
+    context "for a one-time template" do
+      let(:onetime_template) { create(:onetime_template, project:, author: user) }
+
+      it "does not show the apply to upcoming checkbox" do
+        get manage_participants_dialog_project_meeting_participants_path(project, onetime_template), as: :turbo_stream
+
+        expect(response.body).not_to include(apply_to_upcoming_checkbox)
+      end
+    end
+
+    context "for a series template" do
+      let(:recurring_meeting) { create(:recurring_meeting, project:, author: user) }
+
+      it "shows the apply to upcoming checkbox" do
+        get manage_participants_dialog_project_meeting_participants_path(project, recurring_meeting.template), as: :turbo_stream
+
+        expect(response.body).to include(apply_to_upcoming_checkbox)
+      end
+    end
+
+    context "for a series occurrence" do
+      let(:recurring_meeting) { create(:recurring_meeting, project:, author: user) }
+      let(:occurrence) { create(:recurring_meeting_occurrence, project:, author: user, recurring_meeting:) }
+
+      it "does not show the apply to upcoming checkbox" do
+        get manage_participants_dialog_project_meeting_participants_path(project, occurrence), as: :turbo_stream
+
+        expect(response.body).not_to include(apply_to_upcoming_checkbox)
+      end
+    end
+  end
+
+  describe "series template participant management" do
+    let!(:recurring_meeting) { create(:recurring_meeting, project:, author: user) }
+    let!(:template) { recurring_meeting.template }
+
+    let!(:open_occurrence) { create(:recurring_meeting_occurrence, recurring_meeting:, start_time: 1.day.from_now) }
+
+    let!(:closed_occurrence) do
+      create(:recurring_meeting_occurrence, state: :closed, recurring_meeting:, start_time: 2.days.from_now)
+    end
+
+    before { ActionMailer::Base.deliveries.clear }
+
+    describe "POST - adding participants" do
+      let(:add_params) do
+        {
+          meeting_id: template.id,
+          project_id: project.id,
+          meeting_participant: { user_id: [user_with_meeting_permissions.id] }
+        }
+      end
+
+      context "without apply_to_upcoming" do
+        it "only adds participant to the series template" do
+          post project_meeting_participants_path(project, template), params: add_params, as: :turbo_stream
+
+          expect(template.participants.reload.pluck(:user_id)).to include(user_with_meeting_permissions.id)
+          expect(open_occurrence.participants.reload.pluck(:user_id)).not_to include(user_with_meeting_permissions.id)
+          expect(closed_occurrence.participants.reload.pluck(:user_id)).not_to include(user_with_meeting_permissions.id)
+        end
+
+        it "only sends series invitation emails" do
+          perform_enqueued_jobs do
+            post project_meeting_participants_path(project, template), params: add_params, as: :turbo_stream
+          end
+
+          # 1 series invite to new participant + 1 participant added email to existing participant
+          expect(ActionMailer::Base.deliveries.size).to eq(2)
+          expect(ActionMailer::Base.deliveries.map(&:to).flatten).to include(user_with_meeting_permissions.mail)
+        end
+      end
+
+      context "with apply_to_upcoming" do
+        let(:params) { add_params.deep_merge(meeting_participant: { apply_to_upcoming: "1" }) }
+
+        it "adds participant to template and all instantiated occurrences" do
+          post project_meeting_participants_path(project, template), params:, as: :turbo_stream
+
+          expect(template.participants.reload.pluck(:user_id)).to include(user_with_meeting_permissions.id)
+          expect(open_occurrence.participants.reload.pluck(:user_id)).to include(user_with_meeting_permissions.id)
+          expect(closed_occurrence.participants.reload.pluck(:user_id)).to include(user_with_meeting_permissions.id)
+        end
+
+        it "does not add participant to past instantiated occurrences" do
+          past_scheduled = create(:recurring_meeting_occurrence, recurring_meeting:, start_time: 1.week.ago)
+
+          post project_meeting_participants_path(project, template), params:, as: :turbo_stream
+
+          expect(past_scheduled.participants.reload.pluck(:user_id))
+            .not_to include(user_with_meeting_permissions.id)
+        end
+
+        it "does not automatically instantiate future unscheduled occurrences" do
+          future_occurrence_time = recurring_meeting.scheduled_occurrences(limit: 10).detect do |time|
+            recurring_meeting.meetings.not_templated.find_by(recurrence_start_time: time).nil?
+          end
+
+          expect(future_occurrence_time).to be_present
+          expect(recurring_meeting.meetings.not_templated.find_by(recurrence_start_time: future_occurrence_time)).to be_nil
+
+          post project_meeting_participants_path(project, template), params:, as: :turbo_stream
+
+          expect(recurring_meeting.meetings.not_templated.find_by(recurrence_start_time: future_occurrence_time)).to be_nil
+        end
+
+        it "sends emails only for the template change, not for propagated occurrences" do
+          perform_enqueued_jobs do
+            post project_meeting_participants_path(project, template), params:, as: :turbo_stream
+          end
+
+          # Applying to upcoming propagates participant records to occurrence meetings,
+          # but those CreateService calls run with notify: false.
+          # So only the template action sends:
+          # - 1 invite to the added participant
+          # - 1 update to the existing template participant
+          expect(ActionMailer::Base.deliveries.size).to eq(2)
+          expect(ActionMailer::Base.deliveries.map(&:to).flatten)
+            .to contain_exactly(user_with_meeting_permissions.mail, user.mail)
+        end
+      end
+    end
+
+    describe "DELETE - removing participants" do
+      let!(:template_participant) do
+        create(:meeting_participant, meeting: template, user: user_with_meeting_permissions, invited: true)
+      end
+      let!(:open_occurrence_participant) do
+        create(:meeting_participant, meeting: open_occurrence, user: user_with_meeting_permissions, invited: true)
+      end
+      let!(:closed_occurrence_participant) do
+        create(:meeting_participant, meeting: closed_occurrence, user: user_with_meeting_permissions, invited: true)
+      end
+
+      context "without apply_to_upcoming" do
+        it "only removes participant from the series template" do
+          delete project_meeting_participant_path(project, template, template_participant), as: :turbo_stream
+
+          expect(template.participants.reload.pluck(:user_id)).not_to include(user_with_meeting_permissions.id)
+          expect(open_occurrence.participants.reload.pluck(:user_id)).to include(user_with_meeting_permissions.id)
+          expect(closed_occurrence.participants.reload.pluck(:user_id)).to include(user_with_meeting_permissions.id)
+        end
+
+        it "only sends template cancellation emails" do
+          perform_enqueued_jobs do
+            delete project_meeting_participant_path(project, template, template_participant), as: :turbo_stream
+          end
+
+          # 1 cancelled series to removed participant + 1 participant removed to remaining template participant
+          expect(ActionMailer::Base.deliveries.size).to eq(2)
+          expect(ActionMailer::Base.deliveries.map(&:to).flatten).to include(user_with_meeting_permissions.mail)
+        end
+      end
+
+      context "with apply_to_upcoming" do
+        let(:delete_params) { { apply_to_upcoming: "1" } }
+
+        it "removes participant from template and upcoming instantiated occurrences" do
+          delete project_meeting_participant_path(project, template, template_participant),
+                 params: delete_params, as: :turbo_stream
+
+          expect(template.participants.reload.pluck(:user_id)).not_to include(user_with_meeting_permissions.id)
+          expect(open_occurrence.participants.reload.pluck(:user_id)).not_to include(user_with_meeting_permissions.id)
+          expect(closed_occurrence.participants.reload.pluck(:user_id)).not_to include(user_with_meeting_permissions.id)
+        end
+
+        it "does not remove participant from past instantiated occurrences" do
+          past_scheduled = create(:recurring_meeting_occurrence, recurring_meeting:, start_time: 1.week.ago)
+          create(:meeting_participant, meeting: past_scheduled, user: user_with_meeting_permissions, invited: true)
+
+          delete project_meeting_participant_path(project, template, template_participant),
+                 params: delete_params, as: :turbo_stream
+
+          expect(past_scheduled.participants.reload.pluck(:user_id))
+            .to include(user_with_meeting_permissions.id)
+        end
+
+        it "does not automatically instantiate future unscheduled occurrences" do
+          future_occurrence_time = recurring_meeting.scheduled_occurrences(limit: 10).detect do |time|
+            recurring_meeting.meetings.not_templated.find_by(recurrence_start_time: time).nil?
+          end
+
+          expect(future_occurrence_time).to be_present
+          expect(recurring_meeting.meetings.not_templated.find_by(recurrence_start_time: future_occurrence_time)).to be_nil
+
+          delete project_meeting_participant_path(project, template, template_participant),
+                 params: delete_params, as: :turbo_stream
+
+          expect(recurring_meeting.meetings.not_templated.find_by(recurrence_start_time: future_occurrence_time)).to be_nil
+        end
+
+        it "sends cancellation emails only for the template change, not for propagated occurrences" do
+          perform_enqueued_jobs do
+            delete project_meeting_participant_path(project, template, template_participant),
+                   params: delete_params, as: :turbo_stream
+          end
+
+          # Applying to upcoming propagates removals to occurrence meetings,
+          # but those DeleteService calls run with notify: false.
+          # So only the template action sends:
+          # - 1 cancellation to removed participant
+          # - 1 update to the remaining template participant
+          expect(ActionMailer::Base.deliveries.size).to eq(2)
+          expect(ActionMailer::Base.deliveries.map(&:to).flatten)
+            .to contain_exactly(user_with_meeting_permissions.mail, user.mail)
+        end
+      end
     end
   end
 end

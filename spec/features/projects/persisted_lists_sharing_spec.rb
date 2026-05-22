@@ -127,7 +127,7 @@ RSpec.describe "Project list sharing",
 
           wait_for_reload
 
-          projects_index_page.expect_can_only_save_as_label
+          projects_index_page.expect_save_as_label
           projects_index_page.save_query_as("Member-of and active list")
 
           wait_for_network_idle
@@ -290,7 +290,7 @@ RSpec.describe "Project list sharing",
 
             projects_index_page.open_filters
             projects_index_page.filter_by_active("yes")
-            projects_index_page.expect_can_only_save_as_label
+            projects_index_page.expect_save_as_label
             projects_index_page.save_query_as("Member-of and active list")
 
             wait_for_network_idle
@@ -366,8 +366,9 @@ RSpec.describe "Project list sharing",
           # Toggle the switch to make the project list query public
           share_dialog.expect_toggle_public_off
 
-          share_dialog.toggle_public
-          wait_for_network_idle
+          wait_for_turbo_stream do
+            share_dialog.toggle_public
+          end
 
           share_dialog.expect_toggle_public_on
           share_dialog.close

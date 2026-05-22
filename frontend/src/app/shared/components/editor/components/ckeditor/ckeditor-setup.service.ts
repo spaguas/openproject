@@ -1,5 +1,5 @@
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   ICKEditorContext,
   ICKEditorStatic,
@@ -21,17 +21,14 @@ declare global {
 
 @Injectable()
 export class CKEditorSetupService {
+  readonly PathHelper = inject(PathHelperService);
+  readonly configurationService = inject(ConfigurationService);
+
   /** The language CKEditor was able to load, falls back to 'en' */
   private loadedLocale = 'en';
 
   /** Prefetch ckeditor when browser is idle */
   private prefetch:Promise<unknown>;
-
-  constructor(
-    readonly PathHelper:PathHelperService,
-    readonly configurationService:ConfigurationService,
-    ) {
-  }
 
   public initialize() {
     this.prefetch = this.load();
@@ -61,7 +58,7 @@ export class CKEditorSetupService {
     const editorClass = type === 'constrained' ? window.OPConstrainedEditor : window.OPClassicEditor;
     wrapper.classList.add(`ckeditor-type-${type}`);
 
-    const toolbarWrapper = wrapper.querySelector('.document-editor__toolbar') as HTMLElement;
+    const toolbarWrapper = wrapper.querySelector('.document-editor__toolbar')!;
     const contentWrapper = wrapper.querySelector('.document-editor__editable') as HTMLElement;
     const config = this.createConfig(context, initialData);
 
@@ -69,16 +66,32 @@ export class CKEditorSetupService {
       .createWatchdog(editorClass, contentWrapper, config)
       .then((watchdog:ICKEditorWatchdog) => {
         const { editor } = watchdog;
+        const updateLastUpdated = () => {
+          const editable = wrapper.querySelector<HTMLElement>('.ck-editor__editable_inline');
+          if (!editable) {
+            return;
+          }
+
+          editable.dataset.lastUpdated = String(new Date().getTime());
+        };
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         toolbarWrapper.appendChild(editor.ui.view.toolbar.element);
 
         // Allow custom events on wrapper to set/get data for debugging
-        jQuery(wrapper)
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return
-          .on('op:ckeditor:autosave', () => editor.config.get('autosave').save(editor))
-          .on('op:ckeditor:setData', (_, data:string) => editor.setData(data))
-          .on('op:ckeditor:clear', () => editor.setData(' '))
-          .on('op:ckeditor:getData', (_, cb:(data:string) => void) => cb(editor.getData({ trim: false })));
+        wrapper.addEventListener('op:ckeditor:autosave', () => {
+          editor.config.get('autosave').save(editor);
+        });
+        wrapper.addEventListener('op:ckeditor:setData', (event:CustomEvent<string>) => {
+          editor.setData(event.detail);
+          updateLastUpdated();
+        });
+        wrapper.addEventListener('op:ckeditor:clear', () => {
+          editor.setData(' ');
+          updateLastUpdated();
+        });
+        wrapper.addEventListener('op:ckeditor:getData', (event:CustomEvent<(data:string) => void>) => {
+          event.detail(editor.getData({ trim: false }));
+        });
 
         return watchdog;
       });
@@ -86,7 +99,7 @@ export class CKEditorSetupService {
 
   private createConfig(context:ICKEditorContext, initialData:string|null) {
     const uiLocale = this.loadedLocale;
-    const contentLanguage = context.options && context.options.rtl ? 'ar' : 'en';
+    const contentLanguage = context.options?.rtl ? 'ar' : 'en';
 
     const config = {
       openProject: this.createContext(context),
@@ -140,14 +153,18 @@ export class CKEditorSetupService {
    * Load the ckeditor asset
    */
   private async load():Promise<void> {
-    // untyped module cannot be dynamically imported
+    // untyped modules cannot be dynamically imported
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    await import(/* webpackChunkName: "ckeditor" */ 'core-vendor/ckeditor/ckeditor');
+    const loadEditorScript = import(/* webpackChunkName: "ckeditor" */ 'core-vendor/ckeditor/ckeditor');
+
+    const promises = [loadEditorScript];
 
     if (I18n.locale !== 'en') {
-      await this.loadLocale();
+      promises.push(this.loadLocale());
     }
+
+    await Promise.all(promises);
   }
 
   private async loadLocale():Promise<void> {
@@ -169,6 +186,7 @@ export class CKEditorSetupService {
         'OPMacroToc',
         'OPMacroEmbeddedTable',
         'OPMacroWpButton',
+        'OPMacroWpQuickinfo',
       ];
     }
 

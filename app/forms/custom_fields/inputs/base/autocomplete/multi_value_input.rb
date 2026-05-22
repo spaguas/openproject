@@ -33,7 +33,8 @@ class CustomFields::Inputs::Base::Autocomplete::MultiValueInput < CustomFields::
     base_input_attributes.merge(
       autocomplete_options:,
       wrapper_data_attributes: {
-        "qa-field-name": qa_field_name
+        "custom-field-id": @custom_field.id,
+        "test-selector": test_selector
       }
     )
   end
@@ -48,11 +49,11 @@ class CustomFields::Inputs::Base::Autocomplete::MultiValueInput < CustomFields::
   end
 
   def decorated?
-    raise NotImplementedError
+    raise SubclassResponsibilityError
   end
 
   def custom_values
-    @custom_values ||= @object.custom_values_for_custom_field(id: @custom_field.id)
+    @custom_values ||= @object.custom_values_for_custom_field(@custom_field)
   end
 
   def invalid?

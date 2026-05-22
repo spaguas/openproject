@@ -98,7 +98,7 @@
                 [showStartDate]="!isWpStartDateInCurrentView(wp)"
                 [showEndDate]="!isWpEndDateInCurrentView(wp)"
                 (stateLinkClicked)="openStateLink($event)"
-                (cardClicked)="workPackagesCalendar.onCardClicked($event)"
+                (cardClicked)="onCardClicked($event)"
                 (cardDblClicked)="workPackagesCalendar.onCardDblClicked($event)"
                 (cardContextMenu)="workPackagesCalendar.showEventContextMenu($event)"
                />
@@ -113,7 +113,7 @@
       @if (isEmpty$ | async) {
         <div
           class="op-team-planner--no-data">
-          <img [src]="image.empty_state" class="op-team-planner--empty-state-image" />
+          <img [src]="image.empty_state" class="op-team-planner--empty-state-image" alt=""/>
           <span [textContent]="text.noData"></span>
           <button
             type="button"
@@ -132,6 +132,7 @@
     }
 
     <div class="op-team-planner--footer" data-test-selector="op-team-planner-footer">
+      <!-- eslint-disable-next-line @angular-eslint/template/no-negated-async -->
       @if (!(showAddAssignee$ | async) && !(dropzone$ | async)?.dragging) {
         <div
           class="op-team-planner--add-assignee"

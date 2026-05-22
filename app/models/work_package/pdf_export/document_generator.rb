@@ -59,8 +59,7 @@ class WorkPackage::PDFExport::DocumentGenerator < Exports::Exporter
     render_doc
     success(pdf.render)
   rescue StandardError => e
-    Rails.logger.error "Failed to generate PDF export:  #{e.message}:\n#{e.backtrace.join("\n")}"
-    error(I18n.t(:error_pdf_failed_to_export, error: e.message))
+    error(e)
   ensure
     delete_all_resized_images
   end
@@ -84,7 +83,7 @@ class WorkPackage::PDFExport::DocumentGenerator < Exports::Exporter
   def title
     # <project>_<type>_<ID>_<subject><YYYY-MM-DD>_<HH-MM>.pdf
     build_pdf_filename([work_package.project, work_package.type,
-                        "##{work_package.id}", work_package.subject].join("_"))
+                        work_package.display_id, work_package.subject].join("_"))
   end
 
   def with_images?

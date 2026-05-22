@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { Injectable, Injector } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { from } from 'rxjs';
 import { StateService } from '@uirouter/core';
 import { WorkPackageResource } from 'core-app/features/hal/resources/work-package-resource';
@@ -64,13 +64,13 @@ import {
   providedIn: 'root',
 })
 export class WorkPackageTabsService {
+  private $state = inject(StateService);
+  private I18n = inject(I18nService);
+  private injector = inject(Injector);
+
   private registeredTabs:WpTabDefinition[];
 
-  constructor(
-    private $state:StateService,
-    private I18n:I18nService,
-    private injector:Injector,
-  ) {
+  constructor() {
     this.registeredTabs = this.buildDefaultTabs();
   }
 
@@ -85,6 +85,25 @@ export class WorkPackageTabsService {
     ];
   }
 
+  registerBefore(id:string, tab:WpTabDefinition):void {
+    const index = this.registeredTabs.findIndex((t) => t.id === id);
+    if (index !== -1) {
+      this.registeredTabs.splice(index, 0, tab);
+    } else {
+      throw new Error(`Tab with id "${id}" not found. Appending tab to the end.`);
+    }
+  }
+
+  registerAfter(id:string, tab:WpTabDefinition):void {
+    const index = this.registeredTabs.findIndex((t) => t.id === id);
+    if (index !== -1) {
+      this.registeredTabs.splice(index + 1, 0, tab);
+    } else {
+      throw new Error(`Tab with id "${id}" not found. Appending tab to the end.`);
+    }
+  }
+
+
   patchTabCondition(id:string, displayable:(workPackage:WorkPackageResource, $state:StateService) => boolean):void {
     const tabDefinition = this.registeredTabs.find((tab) => tab.id === id);
     if (tabDefinition) {
@@ -92,17 +111,17 @@ export class WorkPackageTabsService {
     }
   }
 
-  getDisplayableTabs(workPackage:WorkPackageResource):WpTabDefinition[] {
+  getDisplayableTabs(workPackage:WorkPackageResource, routedFromAngular = true):WpTabDefinition[] {
     return this
       .tabs
       .filter(
-        (tab) => !tab.displayable || tab.displayable(workPackage, this.$state),
+        (tab) => !tab.displayable || tab.displayable(workPackage, routedFromAngular ? this.$state : null),
       )
       .map(
         (tab) => ({
           ...tab,
           counter: tab.count
-            ? (injector:Injector) => tab.count!(workPackage, injector || this.injector) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+            ? (injector:Injector) => tab.count!(workPackage, injector || this.injector)
             : (_:Injector) => from([0]),
         }),
       );
@@ -118,7 +137,7 @@ export class WorkPackageTabsService {
         component: WorkPackageOverviewTabComponent,
         name: this.I18n.t('js.work_packages.tabs.overview'),
         id: 'overview',
-        displayable: (_, $state) => $state.includes('**.details.*'),
+        displayable: (_, $state) => $state ? $state.includes('**.details.*') : false,
       },
       {
         id: 'activity',

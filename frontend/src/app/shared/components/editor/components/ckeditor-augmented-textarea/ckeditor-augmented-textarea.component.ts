@@ -26,16 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  EventEmitter,
-  Input,
-  OnInit,
-  Output,
-  ViewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
 import { HalResource } from 'core-app/features/hal/resources/hal-resource';
 import { HalResourceService } from 'core-app/features/hal/services/hal-resource.service';
@@ -58,7 +49,7 @@ import { fromEvent, Subscription } from 'rxjs';
 import { AttachmentCollectionResource } from 'core-app/features/hal/resources/attachment-collection-resource';
 import { populateInputsFromDataset } from 'core-app/shared/components/dataset-inputs';
 import { navigator } from '@hotwired/turbo';
-import { uniqueId } from 'lodash';
+import { attributeTokenList, ensureId } from 'core-app/shared/helpers/dom-helpers';
 
 @Component({
   templateUrl: './ckeditor-augmented-textarea.html',
@@ -66,6 +57,13 @@ import { uniqueId } from 'lodash';
   standalone: false,
 })
 export class CkeditorAugmentedTextareaComponent extends UntilDestroyedMixin implements OnInit {
+  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected pathHelper = inject(PathHelperService);
+  protected halResourceService = inject(HalResourceService);
+  protected Notifications = inject(ToastService);
+  protected I18n = inject(I18nService);
+  protected states = inject(States);
+
   // Track form submission "in-flight" state per form, to prevent multiple
   // submissions from multiple CKEditor instances on the same form.
   private static inFlight = new WeakMap<HTMLFormElement, boolean>();
@@ -85,6 +83,8 @@ export class CkeditorAugmentedTextareaComponent extends UntilDestroyedMixin impl
   @Input() public editorType:ICKEditorType = 'full';
 
   @Input() public showAttachments = true;
+
+  @Input() public primerized = false;
 
   @Input() public storageKey?:string;
 
@@ -133,14 +133,7 @@ export class CkeditorAugmentedTextareaComponent extends UntilDestroyedMixin impl
 
   private labelClickSubscription:Subscription;
 
-  constructor(
-    readonly elementRef:ElementRef<HTMLElement>,
-    protected pathHelper:PathHelperService,
-    protected halResourceService:HalResourceService,
-    protected Notifications:ToastService,
-    protected I18n:I18nService,
-    protected states:States,
-  ) {
+  constructor() {
     super();
     populateInputsFromDataset(this);
   }
@@ -214,17 +207,42 @@ export class CkeditorAugmentedTextareaComponent extends UntilDestroyedMixin impl
         (evt.submitter as HTMLInputElement).disabled = false;
       }
 
-      if (this.turboMode) {
-        // If the form has a stimulus action defined, we ONLY want to submit it via stimulus
-        if (!this.formElement.dataset.action) {
-          navigator.submitForm(this.formElement, evt?.submitter || undefined);
-        }
+      if (this.turboMode && !this.formElement.dataset.action) {
+        navigator.submitForm(this.formElement, evt?.submitter ?? undefined);
       } else {
         this.formElement.requestSubmit(evt?.submitter);
       }
 
       CkeditorAugmentedTextareaComponent.inFlight.delete(this.formElement);
     });
+  }
+
+  private constrainGroupedDropdownToEditorWidth(_editor:ICKEditorInstance) {
+    const host = this.elementRef.nativeElement;
+
+    const editorWidth = () => {
+      const editorEl = host.querySelector<HTMLElement>('.ck-editor') ?? host;
+      return Math.floor(editorEl.getBoundingClientRect().width);
+    };
+
+    const apply = () => {
+      const width = editorWidth();
+
+      const panels = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          '.ck.ck-dropdown__panel'
+        )
+      );
+
+      for (const panel of panels) {
+        panel.style.maxWidth = `${width - 8}px`;
+
+      }
+    };
+
+    fromEvent(host, 'click')
+      .pipe(this.untilDestroyed())
+      .subscribe(() => setTimeout(apply));
   }
 
   public setup(editor:ICKEditorInstance) {
@@ -243,6 +261,7 @@ export class CkeditorAugmentedTextareaComponent extends UntilDestroyedMixin impl
     editor.ui.focusTracker.on('change:isFocused', (_evt:unknown, _name:string, _isFocused:boolean) => {
       this.setLabel();
     });
+    this.constrainGroupedDropdownToEditorWidth(editor);
 
     return editor;
   }
@@ -332,16 +351,8 @@ export class CkeditorAugmentedTextareaComponent extends UntilDestroyedMixin impl
 
     const ckContent = this.element.querySelector<HTMLElement>('.ck-content')!;
 
-    let labelId;
-    if (label.hasAttribute('id')) {
-      labelId = label.getAttribute('id')!;
-    } else {
-      labelId = uniqueId('label-');
-      label.setAttribute('id', labelId);
-    }
-
     ckContent.removeAttribute('aria-label');
-    ckContent.setAttribute('aria-labelledby', labelId);
+    attributeTokenList(ckContent, 'aria-labelledby').add(ensureId(label, 'label'));
 
     if (!this.labelClickSubscription) {
       this.labelClickSubscription = fromEvent(label, 'click')

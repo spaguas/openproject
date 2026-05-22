@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { ChangeDetectorRef, Injector } from '@angular/core';
+import { ChangeDetectorRef, Directive, Injector, Input, inject } from '@angular/core';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
 import {
@@ -62,9 +62,21 @@ import { ProjectsResourceService } from 'core-app/core/state/projects/projects.s
 import { HalResource } from 'core-app/features/hal/resources/hal-resource';
 import { ToastService } from 'core-app/shared/components/toaster/toast.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { StateService } from '@uirouter/angular';
 
-export class WorkPackageSingleViewBase extends UntilDestroyedMixin {
+@Directive()
+export abstract class WorkPackageSingleViewBase extends UntilDestroyedMixin {
+  injector = inject(Injector);
+
+  @Input() routedFromAngular = true;
+
+  @Input() workPackageId:string;
+
+  @Input() activeTab = 'activity';
+
   @InjectField() states:States;
+
+  @InjectField() $state:StateService;
 
   @InjectField() i18n:I18nService;
 
@@ -113,16 +125,23 @@ export class WorkPackageSingleViewBase extends UntilDestroyedMixin {
 
   public displayNotificationsButton$:Observable<boolean>;
 
-  constructor(
-    public injector:Injector,
-    protected workPackageId:string,
-  ) {
+  constructor() {
     super();
+
+    if (this.routedFromAngular && this.workPackageId === undefined) {
+      this.workPackageId = this.$state.params.workPackageId as string;
+    }
   }
 
   /**
    * Observe changes of work package and re-run initialization.
    * Needs to be run explicitly by descendants.
+   *
+   * Note: this.workPackageId may be a semantic identifier (e.g. "PROJ-7")
+   * from the route param. The API resolves it correctly, but the cache key
+   * would be "PROJ-7" while list queries cache the same WP under "42".
+   * After the first load we normalize to the numeric PK to prevent
+   * dual cache entries.
    */
   protected observeWorkPackage():void {
     this
@@ -132,11 +151,23 @@ export class WorkPackageSingleViewBase extends UntilDestroyedMixin {
       .requireAndStream()
       .pipe(this.untilDestroyed())
       .subscribe((wp:WorkPackageResource) => {
+        // Normalize semantic route param (e.g. "PROJ-7") to numeric PK
+        // for cache coherence — downstream code uses this.workPackageId
+        // as a cache key, and the canonical key is always numeric.
+        if (this.workPackageId !== wp.id && wp.id) {
+          this.workPackageId = wp.id;
+        }
+
         if (!this.workPackage) {
           this.workPackage = wp;
           this.init();
         } else {
           this.workPackage = wp;
+        }
+
+        if (this.routedFromAngular) {
+          // Push the current title
+          this.titleService.setFirstPart(this.workPackage.subjectWithType(-1));
         }
 
         this.cdRef.detectChanges();
@@ -163,7 +194,7 @@ export class WorkPackageSingleViewBase extends UntilDestroyedMixin {
     // lazy load the work package's project, needed when initializing
     // the work package resource from split view.
     this.projectsResourceService
-      .requireEntity((this.workPackage.$links.project as HalResource).href as string)
+      .requireEntity((this.workPackage.$links.project as HalResource).href!)
       .subscribe(
         () => {},
         (error:HttpErrorResponse) => {
@@ -172,20 +203,17 @@ export class WorkPackageSingleViewBase extends UntilDestroyedMixin {
       );
 
     this.displayNotificationsButton$ = this.storeService.hasNotifications$;
-    this.storeService.setFilters(this.workPackage.id as string);
+    this.storeService.setFilters(this.workPackage.id!);
 
     // Set authorisation data
     this.authorisationService.initModelAuth('work_package', this.workPackage.$links);
-
-    // Push the current title
-    this.titleService.setFirstPart(this.workPackage.subjectWithType(-1));
 
     // Preselect this work package for future list operations
     this.showStaticPagePath = this.PathHelper.workPackagePath(this.workPackageId);
 
     // Fetch attachments of current work package
     if (this.workPackage.$links.attachments) {
-      this.attachmentsResourceService.fetchCollection(this.workPackage.$links.attachments.href as string).subscribe();
+      this.attachmentsResourceService.fetchCollection(this.workPackage.$links.attachments.href!).subscribe();
     }
 
     // Listen to tab changes to update the tab label

@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import moment from 'moment';
 
 import { ConfigurationResource } from 'core-app/features/hal/resources/configuration-resource';
@@ -35,14 +35,12 @@ import { type DurationFormat } from 'core-app/shared/helpers/chronic_duration';
 
 @Injectable({ providedIn: 'root' })
 export class ConfigurationService {
+  private readonly apiV3Service = inject(ApiV3Service);
+
   // fetches configuration from the ApiV3 endpoint
   // TODO: this currently saves the request between page reloads,
   // but could easily be stored in localStorage
   private configuration:ConfigurationResource;
-
-  public constructor(
-    private readonly apiV3Service:ApiV3Service,
-  ) { }
 
   public initialize():Promise<void> {
     return this.loadConfiguration();
@@ -86,6 +84,10 @@ export class ConfigurationService {
 
   public get maximumAttachmentFileSize():number {
     return this.systemPreference('maximumAttachmentFileSize');
+  }
+
+  public get maximumApiV3PageSize():number {
+    return this.systemPreference('maximumAPIV3PageSize');
   }
 
   public get perPageOptions():number[] {
@@ -141,6 +143,10 @@ export class ConfigurationService {
       return this.systemPreference('startOfWeek');
     }
     return moment.localeData(I18n.locale).firstDayOfWeek();
+  }
+
+  public get wikisAvailable():boolean {
+    return this.systemPreference('wikisAvailable');
   }
 
   public get hostName():string {

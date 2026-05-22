@@ -26,18 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  AfterViewInit,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  EventEmitter,
-  HostListener,
-  Injector,
-  Input,
-  OnInit,
-  Output,
-} from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Injector, Input, OnInit, Output, inject } from '@angular/core';
 import { AuthorisationService } from 'core-app/core/model-auth/model-auth.service';
 import {
   WorkPackageViewFocusService,
@@ -68,13 +57,31 @@ import { onClickOrEnter } from '../wp-fast-table/handlers/click-or-enter-handler
 import {
   HalResourceEditingService,
 } from 'core-app/shared/components/fields/edit/services/hal-resource-editing.service';
+import { delegate, DelegateEvent } from '@knowledgecode/delegate';
 
 @Component({
   selector: '[wpInlineCreate]',
   templateUrl: './wp-inline-create.component.html',
   standalone: false,
+  // TODO: This component has been partially migrated to be zoneless-compatible.
+  // After testing, this should be updated to ChangeDetectionStrategy.OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class WorkPackageInlineCreateComponent extends UntilDestroyedMixin implements OnInit, AfterViewInit {
+  readonly injector = inject(Injector);
+  protected readonly elementRef = inject(ElementRef);
+  protected readonly schemaCache = inject(SchemaCacheService);
+  protected readonly I18n = inject(I18nService);
+  protected readonly querySpace = inject(IsolatedQuerySpace);
+  protected readonly cdRef = inject(ChangeDetectorRef);
+  protected readonly wpCreate = inject(WorkPackageCreateService);
+  protected readonly wpInlineCreate = inject(WorkPackageInlineCreateService);
+  protected readonly wpTableColumns = inject(WorkPackageViewColumnsService);
+  protected readonly wpTableFocus = inject(WorkPackageViewFocusService);
+  protected readonly halEditing = inject(HalResourceEditingService);
+  protected readonly authorisationService = inject(AuthorisationService);
+
   @Input() colspan:number;
 
   @Input() table:WorkPackageTable;
@@ -101,29 +108,14 @@ export class WorkPackageInlineCreateComponent extends UntilDestroyedMixin implem
 
   private editingSubscription:Subscription|undefined;
 
-  private $element:JQuery;
+  private element:HTMLElement;
 
   get isActive():boolean {
     return this.mode !== 'inactive';
   }
 
-  constructor(public readonly injector:Injector,
-    protected readonly elementRef:ElementRef,
-    protected readonly schemaCache:SchemaCacheService,
-    protected readonly I18n:I18nService,
-    protected readonly querySpace:IsolatedQuerySpace,
-    protected readonly cdRef:ChangeDetectorRef,
-    protected readonly wpCreate:WorkPackageCreateService,
-    protected readonly wpInlineCreate:WorkPackageInlineCreateService,
-    protected readonly wpTableColumns:WorkPackageViewColumnsService,
-    protected readonly wpTableFocus:WorkPackageViewFocusService,
-    protected readonly halEditing:HalResourceEditingService,
-    protected readonly authorisationService:AuthorisationService) {
-    super();
-  }
-
   ngOnInit() {
-    this.$element = jQuery(this.elementRef.nativeElement);
+    this.element = this.elementRef.nativeElement;
   }
 
   ngAfterViewInit():void {
@@ -156,14 +148,18 @@ export class WorkPackageInlineCreateComponent extends UntilDestroyedMixin implem
    * which is dynamically inserted into the action row by the inline create renderer.
    */
   private registerCancelHandler() {
-    this.$element.on('click keydown', `.${inlineCreateCancelClassName}`, (evt:JQuery.TriggeredEvent) => {
-      onClickOrEnter(evt, () => {
+    const handler = (evt:DelegateEvent) => {
+      onClickOrEnter(evt.originalEvent, () => {
         this.resetRow();
       });
 
       evt.stopImmediatePropagation();
       return false;
-    });
+    };
+
+    delegate(this.element)
+      .on('click', `.${inlineCreateCancelClassName}`, handler)
+      .on('keydown', `.${inlineCreateCancelClassName}`, handler);
   }
 
   /**
@@ -272,9 +268,9 @@ export class WorkPackageInlineCreateComponent extends UntilDestroyedMixin implem
 
   private refreshRow() {
     const builder = new InlineCreateRowBuilder(this.injector, this.table);
-    const rowElement = this.$element.find(`.${inlineCreateRowClassName}`);
+    const rowElement = this.element.querySelector<HTMLTableRowElement>(`.${inlineCreateRowClassName}`);
 
-    if (rowElement.length && this.currentWorkPackage) {
+    if (rowElement && this.currentWorkPackage) {
       builder.refreshRow(this.currentWorkPackage, rowElement);
     }
   }
@@ -291,7 +287,7 @@ export class WorkPackageInlineCreateComponent extends UntilDestroyedMixin implem
     const form = this.table.editing.startEditing(wp, builder.classIdentifier(wp));
 
     const [row] = builder.buildNew(wp, form);
-    this.$element.append(row);
+    this.element.append(row);
 
     return form;
   }
@@ -313,7 +309,7 @@ export class WorkPackageInlineCreateComponent extends UntilDestroyedMixin implem
   public removeWorkPackageRow() {
     this.wpCreate.cancelCreation();
     this.currentWorkPackage = null;
-    this.$element.find('.wp-row-new').remove();
+    this.element.querySelector('.wp-row-new')?.remove();
     if (this.editingSubscription) {
       this.editingSubscription.unsubscribe();
     }

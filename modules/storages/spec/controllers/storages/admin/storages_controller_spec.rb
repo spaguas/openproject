@@ -37,9 +37,49 @@ RSpec.describe Storages::Admin::StoragesController do
     login_as user
   end
 
-  it "renders the upsell page" do
-    get :upsell
-    expect(response).to be_successful
-    expect(response).to render_template "upsell"
+  describe "GET #upsell" do
+    it "renders the upsell page" do
+      get :upsell
+      expect(response).to be_successful
+      expect(response).to render_template "upsell"
+    end
+
+    context "with one_drive provider" do
+      it "assigns the correct provider type" do
+        get :upsell, params: { provider: "one_drive" }
+        expect(assigns(:provider_type).short_provider_name).to eq(:one_drive)
+      end
+    end
+
+    context "with sharepoint provider" do
+      it "assigns the correct provider type" do
+        get :upsell, params: { provider: "sharepoint" }
+        expect(assigns(:provider_type).short_provider_name).to eq(:sharepoint)
+      end
+    end
+
+    context "with missing provider param" do
+      it "defaults to one_drive provider type" do
+        get :upsell
+        expect(assigns(:provider_type).short_provider_name).to eq(:one_drive)
+      end
+    end
+  end
+
+  describe "DELETE #destroy" do
+    let(:storage) { build_stubbed(:nextcloud_storage) }
+    let(:service_result) { ServiceResult.success }
+    let(:delete_service) { instance_double(Storages::Storages::DeleteService, call: service_result) }
+
+    before do
+      allow(Storages::Storage).to receive(:visible).and_return(instance_double(ActiveRecord::Relation, find: storage))
+      allow(Storages::Storages::DeleteService).to receive(:new).and_return(delete_service)
+    end
+
+    it "redirects to storages index with see_other" do
+      delete :destroy, params: { id: storage.id }
+      expect(response).to redirect_to(admin_settings_storages_path)
+      expect(response).to have_http_status(:see_other)
+    end
   end
 end

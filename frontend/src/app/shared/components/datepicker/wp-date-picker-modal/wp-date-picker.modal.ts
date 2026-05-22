@@ -26,18 +26,9 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  Inject,
-  OnInit,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 
 import { OpModalComponent } from 'core-app/shared/components/modal/modal.component';
-import { OpModalLocalsToken } from 'core-app/shared/components/modal/modal.service';
-import { OpModalLocalsMap } from 'core-app/shared/components/modal/modal.types';
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
 
 @Component({
@@ -46,18 +37,11 @@ import { PathHelperService } from 'core-app/core/path-helper/path-helper.service
   standalone: false,
 })
 export class OpWpDatePickerModalComponent extends OpModalComponent implements OnInit {
+  readonly pathHelper = inject(PathHelperService);
+
   turboFrameSrc:string;
 
   showCloseButton = false;
-
-  constructor(
-    readonly elementRef:ElementRef,
-    @Inject(OpModalLocalsToken) public locals:OpModalLocalsMap,
-    readonly cdRef:ChangeDetectorRef,
-    readonly pathHelper:PathHelperService,
-  ) {
-    super(locals, cdRef, elementRef);
-  }
 
   ngOnInit() {
     super.ngOnInit();
@@ -97,7 +81,7 @@ export class OpWpDatePickerModalComponent extends OpModalComponent implements On
       window.location.origin,
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     url.searchParams.set('field', this.locals.name);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
     url.searchParams.set('work_package[initial][start_date]', this.nullAsEmptyStringFormatter(this.locals.resource.startDate));
@@ -121,7 +105,6 @@ export class OpWpDatePickerModalComponent extends OpModalComponent implements On
       url.searchParams.set('work_package[start_date_touched]', 'true');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     this.turboFrameSrc = url.toString();
   }
 

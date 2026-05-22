@@ -27,10 +27,7 @@
 //++
 
 import { UIRouterGlobals } from '@uirouter/core';
-import {
-  Component,
-  OnInit,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { ApiV3Service } from 'core-app/core/apiv3/api-v3.service';
 import { Observable } from 'rxjs';
@@ -43,8 +40,20 @@ import { WorkPackageResource } from 'core-app/features/hal/resources/work-packag
   templateUrl: './wp-tab-wrapper.html',
   selector: 'op-wp-tab',
   standalone: false,
+  // TODO: This component has been partially migrated to be zoneless-compatible.
+  // After testing, this should be updated to ChangeDetectionStrategy.OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class WpTabWrapperComponent implements OnInit {
+  readonly I18n = inject(I18nService);
+  readonly uiRouterGlobals = inject(UIRouterGlobals);
+  readonly apiV3Service = inject(ApiV3Service);
+  readonly wpTabsService = inject(WorkPackageTabsService);
+
+  @Input() public workPackageId:string;
+  @Input() public tabIdentifier:string;
+
   workPackage:WorkPackageResource;
 
   ndcDynamicInputs$:Observable<{
@@ -52,17 +61,11 @@ export class WpTabWrapperComponent implements OnInit {
     tab:WpTabDefinition | undefined;
   }>;
 
-  get workPackageId():string {
-    const { workPackageId } = this.uiRouterGlobals.params as unknown as { workPackageId:string };
-    return workPackageId;
-  }
-
-  constructor(readonly I18n:I18nService,
-    readonly uiRouterGlobals:UIRouterGlobals,
-    readonly apiV3Service:ApiV3Service,
-    readonly wpTabsService:WorkPackageTabsService) {}
-
   ngOnInit() {
+    if (this.workPackageId === undefined) {
+      this.workPackageId = this.uiRouterGlobals.params.workPackageId;
+    }
+
     this.ndcDynamicInputs$ = this
       .apiV3Service
       .work_packages
@@ -77,8 +80,10 @@ export class WpTabWrapperComponent implements OnInit {
   }
 
   findTab(workPackage:WorkPackageResource):WpTabDefinition | undefined {
-    const { tabIdentifier } = this.uiRouterGlobals.params as unknown as { tabIdentifier:string };
+    if (this.tabIdentifier === undefined) {
+      this.tabIdentifier = this.uiRouterGlobals.params.tabIdentifier;
+    }
 
-    return this.wpTabsService.getTab(tabIdentifier, workPackage);
+    return this.wpTabsService.getTab(this.tabIdentifier, workPackage);
   }
 }

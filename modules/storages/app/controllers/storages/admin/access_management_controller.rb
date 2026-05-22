@@ -37,8 +37,7 @@ class Storages::Admin::AccessManagementController < ApplicationController
 
   before_action :require_admin
 
-  model_object Storages::Storage
-  before_action :find_model_object, only: %i[new create edit update]
+  before_action :find_storage, only: %i[new create edit update]
 
   # menu_item is defined in the Redmine::MenuManager::MenuController
   # module, included from ApplicationController.
@@ -69,6 +68,7 @@ class Storages::Admin::AccessManagementController < ApplicationController
     end
 
     service_result.on_failure do
+      @storage.errors.merge!(service_result.errors)
       update_via_turbo_stream(component: Storages::Admin::Forms::AccessManagementFormComponent.new(@storage, in_wizard: true))
       respond_with_turbo_streams
     end
@@ -82,6 +82,7 @@ class Storages::Admin::AccessManagementController < ApplicationController
     end
 
     service_result.on_failure do
+      @storage.errors.merge!(service_result.errors)
       update_via_turbo_stream(component: Storages::Admin::Forms::AccessManagementFormComponent.new(@storage))
     end
 
@@ -90,9 +91,8 @@ class Storages::Admin::AccessManagementController < ApplicationController
 
   private
 
-  def find_model_object(object_id = :storage_id)
-    super
-    @storage = @object
+  def find_storage
+    @storage = ::Storages::Storage.visible.find(params[:storage_id])
   end
 
   def call_update_service

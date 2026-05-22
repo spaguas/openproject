@@ -29,7 +29,7 @@ Under the *Login* tab you can adjust following settings:
 
 2. Activate the **session expiration option**. 
 
-3. Set the **duration for inactivity time**, after which a session will expire. Note that any value below 5 will be treated as disabling the session expiry setting.
+3. Set the **duration for inactivity time**, after which a session will expire. Note that any value below 5 will be treated as disabling the session expiration setting.
 
 4. Define whether **user login, name, and mail address** should be logged for all requests.
 
@@ -50,7 +50,7 @@ Under the *Single Sign-On (SSO)* tab you can adjust following settings:
 > [!NOTE]
 > Unless you also disable password logins, with this option enabled, users can still log in internally by visiting internal login page, for example `https://yourinstancename.openproject.com/login/internal` login page.
 
-2. Allow **remapping of existing users**. If enabled, this option allows any configured identity provider to authenticate existing users based on their email address, even if those users have never previously signed in with that provider. This feature is particularly useful when migrating your OpenProject instance to a new SSO provider. 
+2. Allow **remapping of existing users**. If enabled, this option allows any configured identity provider to authenticate existing users based on their login, even if those users have never previously signed in with that provider. This feature is particularly useful when migrating your OpenProject instance to a new SSO provider.
 
 > [!IMPORTANT]
 > It is **not recommended** when using an identity provider that is not trusted by all users in your instance, as this may introduce security risks.

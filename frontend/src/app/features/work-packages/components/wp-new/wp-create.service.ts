@@ -26,10 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  Injectable,
-  Injector,
-} from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import {
   firstValueFrom,
   Observable,
@@ -54,8 +51,6 @@ import { UntilDestroyedMixin } from 'core-app/shared/helpers/angular/until-destr
 import { ApiV3Service } from 'core-app/core/apiv3/api-v3.service';
 import {
   HalResource,
-  HalSource,
-  HalSourceLink,
 } from 'core-app/features/hal/resources/hal-resource';
 import idFromLink from 'core-app/features/hal/helpers/id-from-link';
 import { SchemaResource } from 'core-app/features/hal/resources/schema-resource';
@@ -64,28 +59,29 @@ import { HalResourceService } from 'core-app/features/hal/services/hal-resource.
 import { ResourceChangeset } from 'core-app/shared/components/fields/changeset/resource-changeset';
 import { AttachmentsResourceService } from 'core-app/core/state/attachments/attachments.service';
 import { AttachmentCollectionResource } from 'core-app/features/hal/resources/attachment-collection-resource';
+import { HalSource, HalSourceLink } from 'core-app/features/hal/interfaces';
 
 export const newWorkPackageHref = '/api/v3/work_packages/new';
 
 @Injectable()
 export class WorkPackageCreateService extends UntilDestroyedMixin {
+  protected injector = inject(Injector);
+  protected hooks = inject(HookService);
+  protected apiV3Service = inject(ApiV3Service);
+  protected halResourceService = inject(HalResourceService);
+  protected querySpace = inject(IsolatedQuerySpace);
+  protected authorisationService = inject(AuthorisationService);
+  protected halEditing = inject(HalResourceEditingService);
+  protected schemaCache = inject(SchemaCacheService);
+  protected halEvents = inject(HalEventsService);
+  protected attachmentsService = inject(AttachmentsResourceService);
+
   protected form:Promise<FormResource>|undefined;
 
   // Allow callbacks to happen on newly created work packages
   protected newWorkPackageCreatedSubject = new Subject<WorkPackageResource>();
 
-  constructor(
-    protected injector:Injector,
-    protected hooks:HookService,
-    protected apiV3Service:ApiV3Service,
-    protected halResourceService:HalResourceService,
-    protected querySpace:IsolatedQuerySpace,
-    protected authorisationService:AuthorisationService,
-    protected halEditing:HalResourceEditingService,
-    protected schemaCache:SchemaCacheService,
-    protected halEvents:HalEventsService,
-    protected attachmentsService:AttachmentsResourceService,
-  ) {
+  constructor() {
     super();
 
     this.halEditing
@@ -154,6 +150,11 @@ export class WorkPackageCreateService extends UntilDestroyedMixin {
       .toPromise()
       .then((form:FormResource) => {
         const changeset = this.fromCreateForm(form);
+
+        // Override scheduleManually to true when copying a single work package.
+        // Has a copy cannot have children nor predecessors, it must be manually
+        // scheduled despite the scheduling mode of the source work package.
+        changeset.setValue('scheduleManually', true);
 
         return changeset;
       });

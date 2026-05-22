@@ -38,9 +38,26 @@ See COPYRIGHT and LICENSE files for more details.
     dialog.with_body do
       primer_form_with(**form_arguments) do |form|
         render(
-          Primer::OpenProject::FilterableTreeView.new(form_arguments: { builder: form, name: :new_parent })
+          Primer::OpenProject::FilterableTreeView.new(
+            form_arguments: { builder: form, name: :new_parent },
+            include_sub_items_check_box_arguments: { hidden: true },
+            filter_mode_control_arguments: { hidden: true }
+          )
         ) do |tree_view|
-          add_sub_tree(tree_view, hierarchy_items)
+          parent = @hierarchy_item.parent
+          descendants = hierarchy_service.get_descendants(item: @hierarchy_item).value!
+          item_formatter = standard_tree_view_item_formatter
+          label_fn = lambda { |item| item_formatter.format(item:) }
+
+          item_options = {
+            select_variant: :single,
+            expanded: [parent],
+            current: @hierarchy_item,
+            disabled: [parent] + descendants,
+            label_fn:
+          }
+
+          populate_tree_view(tree_view, @custom_field, show_root: true, item_options:)
         end
       end
     end

@@ -1957,6 +1957,24 @@ RSpec.describe WorkPackages::SetAttributesService,
           end
         end
       end
+
+      context "for semantic identifier" do
+        let(:work_package) do
+          build_stubbed(:work_package, project:, sequence_number: 7, identifier: "OLD-7")
+        end
+
+        it "clears sequence_number" do
+          subject
+
+          expect(work_package.sequence_number).to be_nil
+        end
+
+        it "clears identifier" do
+          subject
+
+          expect(work_package.identifier).to be_nil
+        end
+      end
     end
 
     context "when updating project before calling the service" do
@@ -2164,7 +2182,6 @@ RSpec.describe WorkPackages::SetAttributesService,
              due_date: child_due_date)
     end
     let(:call_attributes) { { schedule_manually: false } }
-    let(:expected_attributes) { {} }
 
     context "when the child has dates" do
       let(:child_start_date) { Time.zone.today + 2.days }
@@ -2181,32 +2198,129 @@ RSpec.describe WorkPackages::SetAttributesService,
     end
   end
 
-  context "when the type defines a pattern for an attribute" do
-    let(:type) { build_stubbed(:type, patterns: { subject: { blueprint: "{{type}} {{project_name}}", enabled: true } }) }
-    let(:work_package) { WorkPackage.new(type:) }
+  describe "ignore_non_working_days when switching back to automatic scheduling" do
+    shared_let(:project) { create(:project) }
+    let!(:work_package) do
+      create(:work_package,
+             subject: "work_package",
+             project:,
+             ignore_non_working_days:,
+             schedule_manually: true)
+    end
+    let(:call_attributes) { { schedule_manually: false } }
 
-    it "assigns a placeholder value to the field" do
+    context "without any children" do
+      context "when ignoring non working days" do
+        let(:ignore_non_working_days) { true }
+
+        include_examples "service call", description: "keeps its ignore non-working days value" do
+          let(:expected_attributes) do
+            {
+              ignore_non_working_days: true
+            }
+          end
+        end
+      end
+
+      context "when not ignoring non working days" do
+        let(:ignore_non_working_days) { false }
+
+        include_examples "service call", description: "keeps its ignore non-working days value" do
+          let(:expected_attributes) do
+            {
+              ignore_non_working_days: false
+            }
+          end
+        end
+      end
+    end
+
+    context "with one child ignoring non working days" do
+      let(:ignore_non_working_days) { false }
+      let!(:child) do
+        create(:work_package,
+               subject: "child",
+               project:,
+               parent: work_package,
+               ignore_non_working_days: true)
+      end
+
+      include_examples "service call", description: "sets the parent to ignore non-working days" do
+        let(:expected_attributes) do
+          {
+            ignore_non_working_days: true
+          }
+        end
+      end
+    end
+
+    context "with one child not ignoring non working days" do
+      let(:ignore_non_working_days) { true }
+      let!(:child) do
+        create(:work_package,
+               subject: "child",
+               project:,
+               parent: work_package,
+               ignore_non_working_days: false)
+      end
+
+      include_examples "service call", description: "sets the parent to not ignore non-working days" do
+        let(:expected_attributes) do
+          {
+            ignore_non_working_days: false
+          }
+        end
+      end
+    end
+
+    context "with two children: one ignoring and the other not ignoring non working days" do
+      let(:ignore_non_working_days) { false }
+      let!(:child1) do
+        create(:work_package,
+               subject: "child",
+               project:,
+               parent: work_package,
+               ignore_non_working_days: false)
+      end
+      let!(:child2) do
+        create(:work_package,
+               subject: "child",
+               project:,
+               parent: work_package,
+               ignore_non_working_days: true)
+      end
+
+      include_examples "service call", description: "sets the parent to ignore non-working days" do
+        let(:expected_attributes) do
+          {
+            ignore_non_working_days: true
+          }
+        end
+      end
+    end
+  end
+
+  context "when the type defines a pattern for subject" do
+    let(:type) { build_stubbed(:type, patterns: { subject: { blueprint: "{{type}} {{project_name}}", enabled: true } }) }
+    let(:work_package) { WorkPackage.new(type:, project:) }
+    let(:resolved_subject) { "#{type.name} #{project.name}" }
+    let(:pattern_resolver) do
+      instance_double(WorkPackageTypes::PatternResolver, resolve: resolved_subject).tap do |resolver|
+        allow(WorkPackageTypes::PatternResolver).to receive(:new).and_return(resolver)
+      end
+    end
+
+    # Testing this because the behaviour used to be different.
+    it "does not set the resolved subject from the pattern" do
       instance.call({})
 
-      expect(work_package.subject).to eq(I18n.t("work_packages.templated_subject_hint", type: type.name))
+      expect(work_package.subject).to be_blank
     end
 
-    it "overrides even a passed subject" do
-      instance.call(subject: "I will be overwritten")
+    it "keeps an overridden subject" do
+      instance.call(subject: "My custom subject")
 
-      expect(work_package.subject).to eq(I18n.t("work_packages.templated_subject_hint", type: type.name))
-    end
-
-    context "when the pattern is disabled" do
-      let(:type) do
-        build_stubbed(:type, patterns: { subject: { blueprint: "{{type}} {{project_name}}", enabled: false } })
-      end
-
-      it "does not overwrite the attribute" do
-        instance.call(subject: "I will be kept")
-
-        expect(work_package.subject).to eq("I will be kept")
-      end
+      expect(work_package.subject).to eq("My custom subject")
     end
   end
 end

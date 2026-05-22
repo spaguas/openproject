@@ -30,15 +30,18 @@
 
 module Projects
   class CreateContract < BaseContract
-    # TODO: differentiate on allowed types based on permissions.
-    # Permissions will need to be added: project, program, portfolio.
     attribute :workspace_type
+    attribute :template
 
     include AdminWritableTimestamps
+    include RequiresEnterpriseGuard
 
     # Projects update their updated_at timestamp due to awesome_nested_set
     # so allowing writing here would be useless.
     allow_writable_timestamps :created_at
+
+    self.enterprise_action = :portfolio_management
+    self.enterprise_condition = proc { model.portfolio? || model.program? }
 
     def writable_attributes
       if allowed_to_write_custom_fields?
@@ -51,7 +54,7 @@ module Projects
     protected
 
     def collect_available_custom_field_attributes
-      model.all_visible_custom_fields.map(&:attribute_name)
+      model.all_visible_custom_fields.flat_map(&:all_attribute_names)
     end
 
     private
@@ -67,7 +70,7 @@ module Projects
       user.allowed_in_any_project?(:edit_project_attributes)
     end
 
-    def without_custom_fields(changes) = changes.grep_v(/^custom_field_/)
+    def without_custom_fields(changes) = changes.grep_v(/^custom_(?:field|comment)_/)
 
     def validate_user_allowed_to_manage
       if model.project?

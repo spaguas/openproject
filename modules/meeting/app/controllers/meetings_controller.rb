@@ -34,12 +34,13 @@ class MeetingsController < ApplicationController
   before_action :determine_date_range, only: %i[history]
   before_action :determine_author, only: %i[history]
   before_action :build_meeting, only: %i[new new_dialog fetch_timezone]
-  before_action :find_meeting, except: %i[index new create new_dialog fetch_timezone]
+  before_action :find_meeting, except: %i[index new create new_dialog fetch_timezone fetch_templates]
   before_action :redirect_to_project, only: %i[show]
   before_action :set_activity, only: %i[history]
   before_action :find_copy_from_meeting, only: %i[create]
   before_action :convert_params, only: %i[create update]
-  before_action :prevent_template_destruction, only: :destroy
+  before_action :prevent_series_template_destruction, only: :destroy
+  before_action :check_for_enterprise_token, only: %i[create new_dialog fetch_templates]
 
   helper :watchers
   include MeetingsHelper
@@ -71,11 +72,7 @@ class MeetingsController < ApplicationController
       format.pdf { export_pdf }
       format.html do
         html_title "#{t(:label_meeting)}: #{@meeting.title}"
-        if @meeting.state == "cancelled"
-          render_404
-        else
-          render(Meetings::ShowComponent.new(meeting: @meeting), layout: true)
-        end
+        render(Meetings::ShowComponent.new(meeting: @meeting, state: show_edit_state), layout: true)
       end
     end
   end
@@ -85,6 +82,21 @@ class MeetingsController < ApplicationController
       head :no_content
     else
       respond_with_flash(Meetings::UpdateFlashComponent.new(@meeting))
+    end
+  end
+
+  def new; end
+
+  def edit
+    respond_to do |format|
+      format.turbo_stream do
+        update_header_component_via_turbo_stream(state: :edit)
+
+        render turbo_stream: @turbo_streams
+      end
+      format.html do
+        render :edit
+      end
     end
   end
 
@@ -103,13 +115,16 @@ class MeetingsController < ApplicationController
     @meeting = call.result
 
     if call.success?
-      text = I18n.t(:notice_successful_create)
+      text = ActiveSupport::SafeBuffer.new
+      text << I18n.t(:notice_successful_create)
       unless User.current.pref.time_zone?
         link = I18n.t(:notice_timezone_missing, zone: formatted_time_zone_offset)
-        text += " #{view_context.link_to(link, { controller: '/my', action: :locale, anchor: 'pref_time_zone' },
-                                         class: 'link_to_profile')}"
+        text << " "
+        text << view_context.link_to(link,
+                                     { controller: "/my", action: :locale, anchor: "pref_time_zone" },
+                                     class: "link_to_profile")
       end
-      flash[:notice] = text.html_safe # rubocop:disable Rails/OutputSafety
+      flash[:notice] = text
 
       redirect_to status: :see_other, action: "show", id: @meeting
     else
@@ -126,7 +141,8 @@ class MeetingsController < ApplicationController
             component: Meetings::Index::FormComponent.new(
               meeting: @meeting,
               project: @project,
-              copy_from: @copy_from
+              copy_from: @copy_from,
+              template_selected_via_dropdown: params.dig(:meeting, :template_id).present?
             ),
             status: :bad_request
           )
@@ -140,11 +156,10 @@ class MeetingsController < ApplicationController
   def new_dialog
     respond_with_dialog Meetings::Index::DialogComponent.new(
       meeting: @meeting,
-      project: @project
+      project: @project,
+      copy_from: @copy_from
     )
   end
-
-  def new; end
 
   current_menu_item :new do
     :meetings
@@ -179,6 +194,20 @@ class MeetingsController < ApplicationController
     )
   end
 
+  def update
+    call = ::Meetings::UpdateService
+      .new(user: current_user, model: @meeting)
+      .call(@converted_params)
+
+    if call.success?
+      flash[:notice] = I18n.t(:notice_successful_update)
+      redirect_to action: "show", id: @meeting
+    else
+      @meeting = call.result
+      render action: :edit, status: :unprocessable_entity
+    end
+  end
+
   def destroy # rubocop:disable Metrics/AbcSize
     recurring = @meeting.recurring_meeting
 
@@ -192,21 +221,10 @@ class MeetingsController < ApplicationController
 
     if recurring
       redirect_to project_recurring_meeting_path(@project, recurring), status: :see_other
+    elsif @meeting.onetime_template?
+      redirect_to templates_project_meetings_path(@project), status: :see_other
     else
       redirect_back_or_default project_meetings_path(@project), status: :see_other
-    end
-  end
-
-  def edit
-    respond_to do |format|
-      format.turbo_stream do
-        update_header_component_via_turbo_stream(state: :edit)
-
-        render turbo_stream: @turbo_streams
-      end
-      format.html do
-        render :edit
-      end
     end
   end
 
@@ -221,20 +239,6 @@ class MeetingsController < ApplicationController
     update_header_component_via_turbo_stream(state: :show)
 
     respond_with_turbo_streams
-  end
-
-  def update
-    call = ::Meetings::UpdateService
-      .new(user: current_user, model: @meeting)
-      .call(@converted_params)
-
-    if call.success?
-      flash[:notice] = I18n.t(:notice_successful_update)
-      redirect_to action: "show", id: @meeting
-    else
-      @meeting = call.result
-      render action: :edit, status: :unprocessable_entity
-    end
   end
 
   def details_dialog; end
@@ -290,6 +294,23 @@ class MeetingsController < ApplicationController
     respond_with_turbo_streams
   end
 
+  def change_sharing
+    sharing = params[:sharing]
+
+    if Meeting.sharings.key?(sharing)
+      call = ::Meetings::UpdateService
+        .new(user: current_user, model: @meeting)
+        .call(sharing:)
+
+      render_base_error_in_flash_message_via_turbo_stream(call.errors) unless call.success?
+    end
+
+    update_header_component_via_turbo_stream
+    update_sidebar_sharing_component_via_turbo_stream
+
+    respond_with_turbo_streams
+  end
+
   def download_ics
     ::Meetings::ICalService
       .new(user: current_user, meeting: @meeting)
@@ -321,6 +342,17 @@ class MeetingsController < ApplicationController
     respond_with_turbo_streams
   end
 
+  def fetch_templates
+    selected_project = Project.visible.find_by(id: params.dig(:meeting, :project_id))
+    meeting = Meeting.new(project: selected_project)
+
+    update_via_turbo_stream(
+      component: Meetings::Index::FormComponent.new(meeting: meeting, project: nil)
+    )
+
+    respond_with_turbo_streams
+  end
+
   def generate_pdf_dialog
     respond_with_dialog Meetings::Exports::ModalDialogComponent.new(
       meeting: @meeting,
@@ -335,8 +367,15 @@ class MeetingsController < ApplicationController
   def toggle_notifications
     @meeting.toggle!(:notify)
 
+    # Reload to get the updated value
+    @meeting.recurring_meeting.template.reload if @meeting.series_template?
+
     if @meeting.notify?
-      handle_notification(type: :toggle_notifications)
+      if @meeting.series_template?
+        handle_series_notification
+      else
+        handle_notification(type: :toggle_notifications)
+      end
     end
 
     update_sidebar_component_via_turbo_stream
@@ -345,7 +384,59 @@ class MeetingsController < ApplicationController
     respond_with_turbo_streams
   end
 
+  def exit_draft_mode_dialog
+    respond_with_dialog Meetings::ExitDraftModeDialogComponent.new(meeting: @meeting)
+  end
+
+  def exit_draft_mode
+    call = ::Meetings::UpdateService
+      .new(user: current_user, model: @meeting)
+      .call({ state: "open", notify: meeting_params[:notify] == "1" })
+
+    if call.success?
+      deliver_invitation_mails
+      update_all_via_turbo_stream
+      update_backlog_via_turbo_stream(collapsed: nil)
+
+      respond_with_turbo_streams
+    else
+      @meeting = call.result
+      render action: :edit, status: :unprocessable_entity
+    end
+  end
+
   private
+
+  def check_for_enterprise_token
+    return unless @copy_from&.onetime_template? && !EnterpriseToken.allows_to?(:meeting_templates)
+
+    respond_to do |format|
+      format.turbo_stream do
+        render_error_flash_message_via_turbo_stream(message: I18n.t(:notice_not_authorized))
+        response.status = :forbidden
+        respond_with_turbo_streams
+      end
+      format.any do
+        request.format = "html"
+        render_403
+      end
+    end
+  end
+
+  def deliver_invitation_mails
+    return false unless @meeting.notify?
+
+    @meeting
+      .participants
+      .invited
+      .find_each do |participant|
+      MeetingMailer.invited(
+        @meeting,
+        participant.user,
+        User.current
+      ).deliver_later
+    end
+  end
 
   def load_query
     query = ParamsToQueryService.new(
@@ -354,19 +445,20 @@ class MeetingsController < ApplicationController
     ).call(params)
 
     apply_default_filter_if_none_given(query)
-    apply_time_filter_and_sort(query)
+    apply_default_time_filter_and_sort(query)
     query.where("project_id", "=", @project.id) if @project
 
     query
   end
 
-  def apply_time_filter_and_sort(query)
-    if params[:upcoming] == "false"
-      query.where("time", "=", Queries::Meetings::Filters::TimeFilter::PAST_VALUE)
-      query.order(start_time: :desc)
-    else
+  def apply_default_time_filter_and_sort(query)
+    time_filter = query.filters.find { |f| f.name == :time }
+
+    if time_filter.nil?
       query.where("time", "=", Queries::Meetings::Filters::TimeFilter::FUTURE_VALUE)
       query.order(start_time: :asc)
+    elsif time_filter.past? && query.orders.none?
+      query.order(start_time: :desc)
     end
   end
 
@@ -379,8 +471,9 @@ class MeetingsController < ApplicationController
   def load_meetings
     @query = load_query
 
+    time_filter = @query.find_active_filter(:time)
     # We group meetings into individual groups, but only for upcoming meetings
-    if params[:upcoming] == "false"
+    if time_filter&.past?
       @meetings = show_more_pagination(@query.results, limit: params[:limit])
     else
       service = ::GroupMeetingsService.new(@query.results, limit: params[:limit])
@@ -390,7 +483,7 @@ class MeetingsController < ApplicationController
     end
   end
 
-  def build_meeting
+  def build_meeting # rubocop:disable Metrics/AbcSize
     meeting =
       if params[:type] == "recurring"
         RecurringMeeting.new
@@ -404,6 +497,9 @@ class MeetingsController < ApplicationController
       .call(project: @project)
 
     @meeting = call.result
+
+    # When coming from the "Create from template" button, load the template to hide the form field
+    @copy_from = Meeting.templates_visible_in_project(@project).find_by(id: params[:template_id]) if params[:template_id].present?
   end
 
   def global_upcoming_meetings
@@ -413,8 +509,12 @@ class MeetingsController < ApplicationController
   end
 
   def find_meeting
-    @meeting = Meeting
-      .includes([:project, :author, { participants: :user }, :sections, { agenda_items: :outcomes }])
+    scope = @project ? @project.meetings : Meeting.all
+
+    @meeting = scope
+      .visible
+      .includes([:project, :author, { participants: :user }, { agenda_items: :outcomes }])
+      .preload(:sections)
       .find(params[:id])
   end
 
@@ -437,6 +537,9 @@ class MeetingsController < ApplicationController
 
     # Recurring meeting occurrences can only be copied as one-time meetings
     @converted_params[:recurring_meeting_id] = nil
+
+    # Onetime templates can only be copied as one-time meetings
+    @converted_params[:template] = false if @copy_from&.onetime_template?
   end
 
   def meeting_params
@@ -487,22 +590,45 @@ class MeetingsController < ApplicationController
   end
 
   def find_copy_from_meeting
-    copied_from_meeting_id = params[:copied_from_meeting_id] || params[:meeting][:copied_from_meeting_id]
+    # Check for template selection from form submission
+    template_id = params[:meeting][:template_id]
+    if template_id.present?
+      templates = @project ? Meeting.templates_visible_in_project(@project) : Meeting.templates_visible_globally
+      @copy_from = templates.find_by(id: template_id)
+      return
+    end
+
+    # Check for regular copy
+    copied_from_meeting_id = params[:meeting][:copied_from_meeting_id]
     return unless copied_from_meeting_id
 
     @copy_from = Meeting.visible.find(copied_from_meeting_id)
   end
 
   def copy_attributes
-    {
-      copy_agenda: copy_param(:copy_agenda),
-      copy_attachments: copy_param(:copy_attachments),
-      send_notifications: @converted_params[:send_notifications]
-    }
+    if @copy_from&.onetime_template?
+      {
+        copy_agenda: true,
+        copy_attachments: true,
+        send_notifications: @converted_params[:send_notifications]
+      }
+    elsif @copy_from&.series_template?
+      {
+        copy_agenda: true,
+        copy_attachments: false,
+        send_notifications: @converted_params[:send_notifications]
+      }
+    else
+      {
+        copy_agenda: copy_param(:copy_agenda),
+        copy_attachments: copy_param(:copy_attachments),
+        send_notifications: @converted_params[:send_notifications]
+      }
+    end
   end
 
-  def prevent_template_destruction
-    render_400 if @meeting.templated?
+  def prevent_series_template_destruction
+    render_400 if @meeting.series_template?
   end
 
   def redirect_to_project
@@ -534,12 +660,13 @@ class MeetingsController < ApplicationController
     service = MeetingNotificationService.new(@meeting)
     result = service.call(:invited)
 
-    message = if result.success?
-                I18n.t(:notice_successful_notification)
-              else
-                I18n.t(:error_notification_with_errors,
-                       recipients: result.errors.map(&:name).join("; "))
-              end
+    message =
+      if result.success?
+        I18n.t(:notice_successful_notification)
+      else
+        I18n.t(:error_notification_with_errors,
+               recipients: result.errors.map(&:name).join("; "))
+      end
 
     if type == :notify
       flash[result.success? ? :notice : :error] = message
@@ -548,5 +675,26 @@ class MeetingsController < ApplicationController
     else
       render_error_flash_message_via_turbo_stream(message:)
     end
+  end
+
+  def handle_series_notification
+    recurring_meeting = @meeting.recurring_meeting
+
+    @meeting
+      .participants
+      .invited
+      .find_each do |participant|
+      MeetingSeriesMailer.invited(
+        recurring_meeting,
+        participant.user,
+        User.current
+      ).deliver_later
+    end
+
+    render_success_flash_message_via_turbo_stream(message: I18n.t(:notice_successful_notification))
+  end
+
+  def show_edit_state
+    params[:state] == "edit" ? :edit : :show
   end
 end

@@ -26,9 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  Component, ElementRef, Injector, OnInit,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, Injector, OnInit, inject } from '@angular/core';
 import { IsolatedQuerySpace } from 'core-app/features/work-packages/directives/query-space/isolated-query-space';
 import { State } from '@openproject/reactivestates';
 import { combineLatest } from 'rxjs';
@@ -81,26 +79,28 @@ function newSegment(vp:TimelineViewParameters,
   selector: 'wp-timeline-relations',
   template: '<div class="wp-table-timeline--relations"></div>',
   standalone: false,
+  // TODO: This component has been partially migrated to be zoneless-compatible.
+  // After testing, this should be updated to ChangeDetectionStrategy.OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class WorkPackageTableTimelineRelations extends UntilDestroyedMixin implements OnInit {
+  readonly injector = inject(Injector);
+  elementRef = inject(ElementRef);
+  states = inject(States);
+  workPackageTimelineTableController = inject(WorkPackageTimelineTableController);
+  wpTableTimeline = inject(WorkPackageViewTimelineService);
+  wpRelations = inject(WorkPackageRelationsService);
+
   @InjectField() querySpace:IsolatedQuerySpace;
 
-  private container:JQuery;
+  private container:HTMLElement;
 
-  private workPackagesWithRelations:{ [workPackageId:string]:RelationsStateValue } = {};
-
-  constructor(public readonly injector:Injector,
-              public elementRef:ElementRef,
-              public states:States,
-              public workPackageTimelineTableController:WorkPackageTimelineTableController,
-              public wpTableTimeline:WorkPackageViewTimelineService,
-              public wpRelations:WorkPackageRelationsService) {
-    super();
-  }
+  private workPackagesWithRelations:Record<string, RelationsStateValue> = {};
 
   ngOnInit() {
-    const $element = jQuery(this.elementRef.nativeElement);
-    this.container = $element.find('.wp-table-timeline--relations');
+    const element = this.elementRef.nativeElement;
+    this.container = element.querySelector('.wp-table-timeline--relations');
     this.workPackageTimelineTableController
       .onRefreshRequested('relations', (vp:TimelineViewParameters) => this.refreshView());
 
@@ -188,12 +188,12 @@ export class WorkPackageTableTimelineRelations extends UntilDestroyedMixin imple
 
   private removeRelationElementsForWorkPackage(workPackageId:string) {
     const className = workPackagePrefix(workPackageId);
-    const found = this.container.find(`.${className}`);
-    found.remove();
+    const found = this.container.querySelectorAll(`.${className}`);
+    found.forEach((elem) => elem.remove());
   }
 
   private removeAllVisibleElements() {
-    this.container.find(`.${timelineGlobalElementCssClassname}`).remove();
+    this.container.querySelectorAll(`.${timelineGlobalElementCssClassname}`).forEach((elem) => elem.remove());
   }
 
   private renderElements() {

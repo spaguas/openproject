@@ -31,7 +31,7 @@ import { QuerySortByResource } from 'core-app/features/hal/resources/query-sort-
 import { HalLink } from 'core-app/features/hal/hal-link/hal-link';
 import idFromLink from 'core-app/features/hal/helpers/id-from-link';
 import isPersistedResource from 'core-app/features/hal/helpers/is-persisted-resource';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { QueryFilterInstanceResource } from 'core-app/features/hal/resources/query-filter-instance-resource';
 import { ApiV3Filter, ApiV3FilterBuilder, FilterOperator } from 'core-app/shared/helpers/api-v3/api-v3-filter-builder';
 import { PaginationService } from 'core-app/shared/components/table-pagination/pagination-service';
@@ -102,8 +102,8 @@ export interface QueryRequestParams {
 
 @Injectable({ providedIn: 'root' })
 export class UrlParamsHelperService {
-  public constructor(public paginationService:PaginationService) {
-  }
+  paginationService = inject(PaginationService);
+
 
   // copied more or less from angular buildUrl
   public buildQueryString(params:any) {
@@ -193,7 +193,7 @@ export class UrlParamsHelperService {
       return {
         t: query
           .sortBy
-          .map((sort:QuerySortByResource) => (sort.id as string).replace('-', ':'))
+          .map((sort:QuerySortByResource) => sort.id!.replace('-', ':'))
           .join(),
       };
     }
@@ -355,7 +355,7 @@ export class UrlParamsHelperService {
     }
 
     if (query.highlightedAttributes && query.highlightingMode === 'inline') {
-      queryData['highlightedAttributes[]'] = query.highlightedAttributes.map((el) => el.href as string);
+      queryData['highlightedAttributes[]'] = query.highlightedAttributes.map((el) => el.href!);
     }
 
     if (query.displayRepresentation) {
@@ -390,7 +390,7 @@ export class UrlParamsHelperService {
       return halValue.id.toString();
     }
     if (halValue.href) {
-      return halValue.href.split('/').pop() as string;
+      return halValue.href.split('/').pop()!;
     }
 
     return value.toString();
@@ -401,7 +401,7 @@ export class UrlParamsHelperService {
       return query.columns.map((column:any) => column.id || idFromLink(column.href)) as string[];
     }
     if (query._links.columns) {
-      return query._links.columns.map((column:HalLink) => idFromLink(column.href as string)) as string[];
+      return query._links.columns.map((column:HalLink) => idFromLink(column.href)) as string[];
     }
 
     return [];

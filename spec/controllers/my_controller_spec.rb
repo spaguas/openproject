@@ -45,7 +45,7 @@ RSpec.describe MyController do
 
       it "renders the password template" do
         assert_template "password"
-        assert_response :success
+        expect(response).to have_http_status(:success)
       end
     end
 
@@ -118,6 +118,87 @@ RSpec.describe MyController do
 
       it "allows the user to login with the new password" do
         assert User.try_to_login(user.login, "adminADMIN!New")
+      end
+    end
+
+    describe "with brute force protection",
+             with_settings: { brute_force_block_minutes: 30, brute_force_block_after_failed_logins: 20 } do
+      describe "blocks password change attempts after too many failures" do
+        before do
+          user.update_columns(
+            failed_login_count: 20,
+            last_failed_login_on: 1.minute.ago
+          )
+
+          post :change_password,
+               params: {
+                 password: "adminADMIN!",
+                 new_password: "adminADMIN!New",
+                 new_password_confirmation: "adminADMIN!New"
+               }
+        end
+
+        it "blocks the attempt even with correct password" do
+          expect(response).to have_http_status :unprocessable_entity
+        end
+
+        it "does not change the password" do
+          user.reload
+          expect(user.check_password?("adminADMIN!")).to be true
+          expect(user.check_password?("adminADMIN!New")).to be false
+        end
+      end
+
+      describe "logs failed password attempts" do
+        before do
+          user.update_columns(
+            failed_login_count: 0,
+            last_failed_login_on: nil
+          )
+
+          post :change_password,
+               params: {
+                 password: "WrongPassword!",
+                 new_password: "adminADMIN!New",
+                 new_password_confirmation: "adminADMIN!New"
+               }
+        end
+
+        it "increments failed login count" do
+          user.reload
+          expect(user.failed_login_count).to eq(1)
+        end
+
+        it "updates last failed login timestamp" do
+          user.reload
+          expect(user.last_failed_login_on).to be_within(1.second).of(Time.zone.now)
+        end
+      end
+
+      describe "resets failed login count on successful password change" do
+        before do
+          user.update_columns(
+            failed_login_count: 5,
+            last_failed_login_on: 1.minute.ago
+          )
+
+          post :change_password,
+               params: {
+                 password: "adminADMIN!",
+                 new_password: "adminADMIN!New",
+                 new_password_confirmation: "adminADMIN!New"
+               }
+        end
+
+        it "resets the failed login count to zero" do
+          user.reload
+          expect(user.failed_login_count).to eq(0)
+        end
+
+        it "changes the password successfully" do
+          user.reload
+          expect(user.check_password?("adminADMIN!New")).to be true
+        end
       end
     end
   end
@@ -251,7 +332,7 @@ RSpec.describe MyController do
 
       render_views
       it "renders auto hide popups checkbox" do
-        expect(response.body).to have_css("form #pref_auto_hide_popups")
+        expect(response.body).to have_css("form #auto_hide_popups")
       end
     end
 
@@ -278,6 +359,37 @@ RSpec.describe MyController do
 
     it "does not render 'Change password' menu entry" do
       expect(response.body).to have_no_css("#menu-sidebar li a", text: "Change password")
+    end
+  end
+
+  describe "#working_times" do
+    let!(:user_working_hours) { create(:user_working_hours, valid_from: 1.week.ago, user:) }
+
+    subject { get :working_hours }
+
+    context "with feature enabled", with_flag: { user_working_times: true } do
+      it "responds with success" do
+        subject
+        expect(response).to be_successful
+      end
+
+      it "renders the working_hours template" do
+        subject
+        expect(response).to render_template "working_hours"
+      end
+
+      it "assigns @current_working_hours and @past_working_hours" do
+        subject
+        expect(assigns(:current_working_hours)).to eq(user_working_hours)
+        expect(assigns(:past_working_hours)).to eq([user_working_hours])
+      end
+    end
+
+    context "with feature disabled", with_flag: { user_working_times: false } do
+      it "responds with forbidden" do
+        subject
+        expect(response).to have_http_status(:forbidden)
+      end
     end
   end
 end

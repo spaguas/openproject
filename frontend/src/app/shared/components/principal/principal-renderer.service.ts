@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
 import { colorModes, ColorsService } from 'core-app/shared/components/colors/colors.service';
 import { ApiV3Service } from 'core-app/core/apiv3/api-v3.service';
@@ -17,6 +17,7 @@ export interface HoverCardOptions {
 export interface AvatarOptions {
   hide:boolean;
   size:AvatarSize;
+  imageAltText?:string;
 }
 
 export interface NameOptions {
@@ -27,12 +28,10 @@ export interface NameOptions {
 
 @Injectable({ providedIn: 'root' })
 export class PrincipalRendererService {
-  constructor(
-    private pathHelper:PathHelperService,
-    private apiV3Service:ApiV3Service,
-    private colors:ColorsService,
-  ) {
-  }
+  private pathHelper = inject(PathHelperService);
+  private apiV3Service = inject(ApiV3Service);
+  private colors = inject(ColorsService);
+
 
   renderAbbreviated(
     container:HTMLElement,
@@ -78,6 +77,7 @@ export class PrincipalRendererService {
     for (let i = 0; i < users.length; i++) {
       const userElement = document.createElement('span');
       if (multiLine) {
+        container.classList.add('-multiline');
         userElement.classList.add('op-principal--multi-line');
       }
 
@@ -102,19 +102,17 @@ export class PrincipalRendererService {
     hoverCard:HoverCardOptions = { isActivated: true },
     title:string|null = null,
   ):void {
-    if (!container.dataset.testSelector) {
-      container.dataset.testSelector = 'op-principal';
-    }
+    container.dataset.testSelector ??= 'op-principal';
     container.classList.add('op-principal');
-    const type = typeFromHref(hrefFromPrincipal(principal)) as PrincipalType;
+    const type = typeFromHref(hrefFromPrincipal(principal))!;
 
     if (!avatar.hide) {
-      const el = this.renderAvatar(principal, avatar, hoverCard, type);
+      const el = this.renderAvatar(principal, avatar, hoverCard, type, !name.hide);
       container.appendChild(el);
     }
 
     if (!name.hide) {
-      const el = this.renderName(principal, type, name.link, title || principal.name, name.classes);
+      const el = this.renderName(principal, type, name.link, avatar.hide, title ?? principal.name, name.classes);
       this.setHoverCardAttributes(el, hoverCard, principal, type);
       container.appendChild(el);
     }
@@ -125,6 +123,7 @@ export class PrincipalRendererService {
     options:AvatarOptions,
     hoverCard:HoverCardOptions,
     type:PrincipalType,
+    ariaHidden:boolean,
   ) {
     const userInitials = this.getInitials(principal.name);
     const colorMode = this.colors.colorMode();
@@ -141,6 +140,13 @@ export class PrincipalRendererService {
     fallback.textContent = userInitials;
 
     this.setHoverCardAttributes(fallback, hoverCard, principal, type);
+
+    if (ariaHidden) {
+      fallback.setAttribute('aria-hidden', 'true');
+    } else {
+      fallback.setAttribute('role', 'img');
+      fallback.setAttribute('aria-label', options.imageAltText ?? principal.name);
+    }
 
     if (type === 'placeholder_user' && colorMode !== colorModes.lightHighContrast) {
       fallback.style.color = colorCode;
@@ -178,21 +184,20 @@ export class PrincipalRendererService {
 
     image.src = url;
     image.title = principal.name;
-    image.alt = principal.name;
+    image.alt = options.imageAltText ?? principal.name;
     image.onload = () => {
       fallback.replaceWith(image);
-      // eslint-disable-next-line no-param-reassign
       (fallback as unknown) = undefined;
     };
   }
 
   private userAvatarUrl(principal:PrincipalLike|IPrincipal):string|null {
-    const id = principal.id || idFromLink(hrefFromPrincipal(principal));
+    const id = principal.id ?? idFromLink(hrefFromPrincipal(principal));
     return id ? this.apiV3Service.users.id(id).avatar.toString() : null;
   }
 
   private userHoverCardUrl(principal:PrincipalLike|IPrincipal):string|null {
-    const id = principal.id || idFromLink(hrefFromPrincipal(principal));
+    const id = principal.id ?? idFromLink(hrefFromPrincipal(principal));
     return id ? this.pathHelper.userHoverCardPath(id) : null;
   }
 
@@ -200,6 +205,7 @@ export class PrincipalRendererService {
     principal:PrincipalLike|IPrincipal,
     type:PrincipalType,
     asLink = true,
+    standalone = false,
     title = '',
     classes = '',
   ) {
@@ -208,6 +214,9 @@ export class PrincipalRendererService {
       link.textContent = principal.name;
       link.href = this.principalURL(principal, type);
       link.classList.add('op-principal--name');
+      if (standalone) {
+        link.classList.add('op-principal--name_standalone');
+      }
       link.title = title;
 
       return link;
@@ -216,6 +225,9 @@ export class PrincipalRendererService {
     const span = document.createElement('span');
     span.textContent = principal.name;
     span.classList.add('op-principal--name');
+    if (standalone) {
+      span.classList.add('op-principal--name_standalone');
+    }
     span.title = title;
     classes !== '' && classes.split(' ').forEach((cls) => {
       span.classList.add(cls);
@@ -225,7 +237,7 @@ export class PrincipalRendererService {
 
   private principalURL(principal:PrincipalLike|IPrincipal, type:PrincipalType):string {
     const href = hrefFromPrincipal(principal);
-    const id = principal.id || (href ? idFromLink(href) : '');
+    const id = principal.id ?? (href ? idFromLink(href) : '');
 
     switch (type) {
       case 'group':

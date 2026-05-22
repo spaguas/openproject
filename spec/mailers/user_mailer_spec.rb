@@ -69,40 +69,6 @@ RSpec.describe UserMailer do
     allow(Setting).to receive(:default_language).and_return("en")
   end
 
-  describe "#with_deliveries" do
-    context "with false" do
-      before do
-        described_class.with_deliveries(false) do
-          described_class.test_mail(recipient).deliver_now
-        end
-      end
-
-      it_behaves_like "mail is not sent"
-    end
-
-    context "with true" do
-      before do
-        described_class.with_deliveries(true) do
-          described_class.test_mail(recipient).deliver_now
-        end
-      end
-
-      it_behaves_like "mail is sent"
-    end
-
-    context "with true but user is locked" do
-      let(:recipient) { build_stubbed(:user, status: Principal.statuses[:locked]) }
-
-      before do
-        described_class.with_deliveries(true) do
-          described_class.test_mail(recipient).deliver_now
-        end
-      end
-
-      it_behaves_like "mail is not sent"
-    end
-  end
-
   describe "#test_mail" do
     let(:test_email) { "bob.bobbi@example.com" }
     let(:recipient) { build_stubbed(:user, firstname: "Bob", lastname: "Bobbi", mail: test_email) }
@@ -217,7 +183,10 @@ RSpec.describe UserMailer do
         it "includes a link to the message" do
           expect(html_body)
             .to have_link(message.subject,
-                          href: topic_url(message, host: Setting.host_name, r: message.id, anchor: "message-#{message.id}"))
+                          href: project_forum_topic_url(message.forum.project, message.forum, message.root,
+                                                        host: Setting.host_name,
+                                                        r: message.id,
+                                                        anchor: "message-#{message.id}"))
         end
       end
     end

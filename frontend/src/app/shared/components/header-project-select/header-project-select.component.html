@@ -25,10 +25,7 @@
 
   <ng-container slot="body">
     <div class="op-project-list-modal--header">
-      <h1
-        class="op-project-list-modal--title"
-        [textContent]="text.project.plural"
-      ></h1>
+      <h1 class="op-project-list-modal--title">{{ text.project.plural }}</h1>
 
       @if (this.currentUserService.isLoggedIn) {
         <spot-toggle [options]="displayModeOptions"
@@ -44,15 +41,16 @@
         >
         @if (displayMode !== 'favorited' || (favorites$ | async)?.length > 0) {
           <spot-text-field
-            [placeholder]="displayMode === 'favorited' ? text.search_favorites_placeholder : text.search_placeholder"
+            #projectSearchField
+            [placeholder]="searchPlaceHolder()"
             [(ngModel)]="searchableProjectListService.searchText"
             [ngModelOptions]="{standalone: true}"
             data-test-selector="op-header-project-select--search"
             data-modal-focus-catcher-container="true"
             (keydown)="searchableProjectListService.onKeydown($event, projects)"
-            (inputFocus)="textFieldFocused = true"
+            (inputFocus)="textFieldFocused = true; syncSearchInputAccessibility()"
             (inputBlur)="textFieldFocused = false"
-            >
+          >
             <svg search-icon slot="before" size="small" class="op-header-project-select--search-icon"/>
           </spot-text-field>
         }
@@ -90,7 +88,7 @@
             @if (!(displayMode === 'favorited' && (favorites$ | async).length === 0)) {
               <span
                 class="op-project-list-modal--no-results">
-                {{ displayMode === 'favorited' ? text.no_favorite_results : text.no_results }}
+                {{ noSearchResultsText() }}
               </span>
             }
           }
@@ -106,7 +104,7 @@
                 [href]="allProjectsPath()"
                 >
                 <svg list-unordered-icon size="small" />
-                <span [textContent]="text.project.list"></span>
+                <span [textContent]="currentText.list"></span>
               </a>
               @if (canCreateNewProjects$ | async) {
                 <a

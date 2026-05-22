@@ -71,19 +71,6 @@ RSpec.describe Exports::PDF::Common::Macro do
       custom_field_values: { project_custom_field.id => "Project custom value 2" }
     )
   end
-  shared_let(:work_package) do
-    create(
-      :work_package,
-      subject: "Work package 1",
-      type: type_task,
-      status: create(:status, name: "In Progress"),
-      project: project,
-      custom_field_values: {
-        custom_field.id => "Custom value 1",
-        formatted_custom_field.id => "**Formatted** _text_ content"
-      }
-    )
-  end
   shared_let(:other_work_package) do
     create(
       :work_package,
@@ -116,6 +103,19 @@ RSpec.describe Exports::PDF::Common::Macro do
     )
   end
   shared_let(:formatter) { Class.new { extend Exports::PDF::Common::Macro } }
+  let(:work_package) do
+    create(
+      :work_package,
+      subject: "Work package 1",
+      type: type_task,
+      status: create(:status, name: "In Progress"),
+      project: project,
+      custom_field_values: {
+        custom_field.id => "Custom value 1",
+        formatted_custom_field.id => formatted_custom_field_value
+      }
+    )
+  end
   let(:additional_permissions) { [] }
   let(:user) do
     create(
@@ -127,6 +127,7 @@ RSpec.describe Exports::PDF::Common::Macro do
     )
   end
   let(:markdown) { "" }
+  let(:formatted_custom_field_value) { "**Formatted** _text_ content" }
 
   before do
     User.current = user
@@ -135,7 +136,7 @@ RSpec.describe Exports::PDF::Common::Macro do
   subject(:formatted) do
     formatter
       .apply_markdown_field_macros(markdown, { work_package: work_package, project: project, user: })
-      .sub("\n", "")
+      .chomp
   end
 
   describe "empty text" do
@@ -160,13 +161,11 @@ RSpec.describe Exports::PDF::Common::Macro do
 
       it "loops the tag through" do
         # note: escaped backslash in the tag text for correct markdown rendering
-        expect(formatted).to eq(
-          "<mention class=\"mention\" data-id=\"#{
-                                 work_package.id
-                               }\" data-type=\"work_package\" data-text=\"##{
-                                 work_package.id
-                               }\">\\##{work_package.id}</mention>"
-        )
+        expect(formatted).to eq("<mention class=\"mention\" data-id=\"#{
+          work_package.id
+        }\" data-type=\"work_package\" data-text=\"##{
+          work_package.id
+        }\">\\##{work_package.id}</mention>")
       end
     end
 
@@ -199,6 +198,100 @@ RSpec.describe Exports::PDF::Common::Macro do
 
       it "contains correct data" do
         expect(formatted).to eq("<table><tr><td><p><s>#{expected_tag}</s></p></td></tr></table>")
+      end
+    end
+
+    describe "with semantic identifier" do
+      describe "in semantic mode",
+               with_flag: { semantic_work_package_ids: true },
+               with_settings: { work_packages_identifier: "semantic" } do
+        let(:semantic_project) { create(:project, identifier: "PROJ") }
+        let(:semantic_work_package) do
+          wp = create(:work_package, project: semantic_project, type: type_task, subject: "Semantic")
+          wp.allocate_and_register_semantic_id
+          wp.reload
+        end
+        let(:user) do
+          create(
+            :user,
+            member_with_permissions: {
+              project => %i[view_work_packages view_project_attributes view_project] + additional_permissions,
+              other_project => %i[view_work_packages view_project_attributes view_project] + additional_permissions,
+              semantic_project => %i[view_work_packages view_project_attributes view_project]
+            }
+          )
+        end
+
+        describe "alone" do
+          let(:markdown) { "see ##{semantic_work_package.identifier} here" }
+
+          it "renders the mention with the semantic identifier in data-id" do
+            expect(formatted).to include(%(data-id="#{semantic_work_package.identifier}"))
+            expect(formatted).to include(%(data-text="##{semantic_work_package.identifier}"))
+          end
+        end
+
+        describe "mixed with a numeric reference" do
+          let(:markdown) { "see ##{semantic_work_package.identifier} and ##{work_package.id}" }
+
+          it "renders both as mentions with their respective data-ids" do
+            expect(formatted).to include(%(data-id="#{semantic_work_package.identifier}"))
+            expect(formatted).to include(%(data-id="#{work_package.id}"))
+            expect(formatted).not_to include('data-id="0"')
+          end
+        end
+
+        describe "with an alias from a previous identifier" do
+          before do
+            create(:work_package_semantic_alias,
+                   work_package: semantic_work_package,
+                   identifier: "OLD-1")
+          end
+
+          let(:markdown) { "see #OLD-1 here" }
+
+          it "resolves the alias and renders the current identifier" do
+            expect(formatted).to include(%(data-id="#{semantic_work_package.identifier}"))
+            expect(formatted).to include(%(data-text="##{semantic_work_package.identifier}"))
+            expect(formatted).not_to include(">#OLD-1<")
+          end
+        end
+
+        describe "for a missing work package" do
+          let(:markdown) { "see #GHOST-99 here" }
+
+          it "falls through to literal text without crashing" do
+            expect(formatted).to include("#GHOST-99")
+            expect(formatted).not_to include("<mention")
+            expect(formatted).not_to include('data-id="0"')
+          end
+        end
+
+        describe "for a work package the user cannot see" do
+          let(:hidden_project) { create(:project, identifier: "HIDDEN") }
+          let(:hidden_work_package) do
+            wp = create(:work_package, project: hidden_project, type: type_task, subject: "Hidden")
+            wp.allocate_and_register_semantic_id
+            wp.reload
+          end
+          let(:markdown) { "see ##{hidden_work_package.identifier} here" }
+
+          it "falls through to literal text and does not disclose the work package" do
+            expect(formatted).to include("##{hidden_work_package.identifier}")
+            expect(formatted).not_to include("<mention")
+          end
+        end
+      end
+
+      describe "in classic mode",
+               with_flag: { semantic_work_package_ids: false } do
+        let(:markdown) { "see #PROJ-1 here" }
+
+        it "falls through to literal text without emitting a mention" do
+          expect(formatted).to include("#PROJ-1")
+          expect(formatted).not_to include("<mention")
+          expect(formatted).not_to include('data-id="0"')
+        end
       end
     end
   end
@@ -328,19 +421,41 @@ RSpec.describe Exports::PDF::Common::Macro do
       end
     end
 
-    describe "with formatted custom field" do
-      let(:markdown) { 'workPackageValue:"Custom Formatted Field"' }
+    describe "with nested formatted custom field" do
+      let(:formatted_custom_field_value) { "a complicated **formatted** _text_ with <table></table>" }
 
-      it "outputs an error message for rich text" do
-        expect(formatted).to include(I18n.t("export.macro.rich_text_unsupported"))
+      describe "with relative work package" do
+        let(:markdown) { '<table><tr><td>workPackageValue:"Custom Formatted Field"</td></tr></table>' }
+
+        it "outputs an error message for rich text" do
+          expect(formatted).to include(I18n.t("export.macro.nested_rich_text_unsupported"))
+        end
+      end
+
+      describe "with specific work package ID" do
+        let(:markdown) { "<table><tr><td>workPackageValue:#{work_package.id}:\"Custom Formatted Field\"</td></tr></table>" }
+
+        it "outputs an error message for rich text" do
+          expect(formatted).to include(I18n.t("export.macro.nested_rich_text_unsupported"))
+        end
       end
     end
 
-    describe "with specific work package ID and formatted custom field" do
-      let(:markdown) { "workPackageValue:#{work_package.id}:\"Custom Formatted Field\"" }
+    describe "with formatted custom field" do
+      describe "with relative work package" do
+        let(:markdown) { 'workPackageValue:"Custom Formatted Field"' }
 
-      it "outputs an error message for rich text" do
-        expect(formatted).to include(I18n.t("export.macro.rich_text_unsupported"))
+        it "outputs an error message for rich text" do
+          expect(formatted).to eq("**Formatted** _text_ content")
+        end
+      end
+
+      describe "with specific work package ID" do
+        let(:markdown) { "workPackageValue:#{work_package.id}:\"Custom Formatted Field\"" }
+
+        it "outputs an error message for rich text" do
+          expect(formatted).to eq("**Formatted** _text_ content")
+        end
       end
     end
 
@@ -360,6 +475,14 @@ RSpec.describe Exports::PDF::Common::Macro do
       end
     end
 
+    describe "with two macros in a single line" do
+      let(:markdown) { 'workPackageValue:"Custom Field 1" workPackageValue:subject' }
+
+      it "renders both macro values" do
+        expect(formatted).to eq("Custom value 1 Work package 1")
+      end
+    end
+
     describe "with markdown formatting" do
       let(:markdown) { "**workPackageValue:subject**" }
 
@@ -373,6 +496,46 @@ RSpec.describe Exports::PDF::Common::Macro do
 
       it "processes the macro inside HTML" do
         expect(formatted).to eq("<table><tr><td>Work package 1</td></tr></table>")
+      end
+    end
+
+    describe "with formatted custom field used mid-line and markdown structures" do
+      # Ensure that when a formatted custom field contains markdown that MUST start at BOL
+      # and the macro appears mid-line, a line break is inserted before the markdown.
+      context "with unordered list item" do
+        let(:markdown) { "\nPrefix workPackageValue:\"Custom Formatted Field\"" }
+        let(:formatted_custom_field_value) { "* list item" }
+
+        it "inserts a newline before the list to keep structure" do
+          expect(formatted).to eq("Prefix \n* list item")
+        end
+      end
+
+      context "with blockquote" do
+        let(:markdown) { "\nIntro workPackageValue:\"Custom Formatted Field\"" }
+        let(:formatted_custom_field_value) { "> quoted" }
+
+        it "inserts a newline before the blockquote to keep structure" do
+          expect(formatted).to eq("Intro \n> quoted")
+        end
+      end
+
+      context "with heading" do
+        let(:markdown) { "\nText workPackageValue:\"Custom Formatted Field\"" }
+        let(:formatted_custom_field_value) { "# Heading" }
+
+        it "inserts a newline before the header to keep structure" do
+          expect(formatted).to eq("Text \n# Heading")
+        end
+      end
+
+      context "with fenced code block" do
+        let(:markdown) { "\nPreamble workPackageValue:\"Custom Formatted Field\"" }
+        let(:formatted_custom_field_value) { "```\ncode\n```" }
+
+        it "inserts a newline before the fenced code block to keep structure" do
+          expect(formatted).to eq("Preamble \n```\ncode\n```")
+        end
       end
     end
   end
@@ -638,7 +801,7 @@ RSpec.describe Exports::PDF::Common::Macro do
       let(:markdown) { "projectLabel:status_code" }
 
       it "outputs the status label" do
-        expect(formatted).to eq("Project status")
+        expect(formatted).to eq("Status")
       end
     end
 

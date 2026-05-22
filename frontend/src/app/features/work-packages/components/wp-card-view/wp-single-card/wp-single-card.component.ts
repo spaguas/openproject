@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  EventEmitter,
+  EventEmitter, inject,
   Input,
   OnInit,
   Output,
@@ -35,14 +35,21 @@ import { isClickedWithModifier } from 'core-app/shared/helpers/link-handling/lin
 import isNewResource from 'core-app/features/hal/helpers/is-new-resource';
 import { TimezoneService } from 'core-app/core/datetime/timezone.service';
 import { StatusResource } from 'core-app/features/hal/resources/status-resource';
-import { combineLatest } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { EMPTY, fromEvent, merge } from 'rxjs';
+import { distinctUntilChanged, map } from 'rxjs/operators';
 import { SchemaCacheService } from 'core-app/core/schemas/schema-cache.service';
 import SpotDropAlignmentOption from 'core-app/spot/drop-alignment-options';
 import { BaselineMode, getBaselineState } from 'core-app/features/work-packages/components/wp-baseline/baseline-helpers';
 import {
   CombinedDateDisplayField,
 } from 'core-app/shared/components/fields/display/field-types/combined-date-display.field';
+import {
+  KeepTabService
+} from 'core-app/features/work-packages/components/wp-single-view-tabs/keep-tab/keep-tab.service';
+import { WP_ID_URL_PATTERN } from 'core-app/shared/helpers/work-package-id-pattern';
+import { matchesRoutingId } from 'core-app/features/work-packages/helpers/work-package-id-resolvers';
+
+const DETAILS_URL_PATTERN = new RegExp(`/details/(${WP_ID_URL_PATTERN})(?:/|$)`);
 
 @Component({
   selector: 'wp-single-card',
@@ -92,6 +99,18 @@ export class WorkPackageSingleCardComponent extends UntilDestroyedMixin implemen
 
   @Output() cardContextMenu = new EventEmitter<{ workPackageId:string, event:MouseEvent }>();
 
+  readonly pathHelper = inject(PathHelperService);
+  readonly I18n = inject(I18nService);
+  readonly $state = inject(StateService);
+  readonly uiRouterGlobals = inject(UIRouterGlobals);
+  readonly wpTableSelection = inject(WorkPackageViewSelectionService);
+  readonly wpTableFocus = inject(WorkPackageViewFocusService);
+  readonly cardView = inject(WorkPackageCardViewService);
+  readonly cdRef = inject(ChangeDetectorRef);
+  readonly timezoneService = inject(TimezoneService);
+  readonly schemaCache = inject(SchemaCacheService);
+  readonly keepTabService = inject(KeepTabService);
+
   public uiStateLinkClass:string = uiStateLinkClass;
 
   public selected = false;
@@ -104,6 +123,8 @@ export class WorkPackageSingleCardComponent extends UntilDestroyedMixin implemen
     baseLineIconAdded: this.I18n.t('js.baseline.icon_tooltip.added'),
     baseLineIconChanged: this.I18n.t('js.baseline.icon_tooltip.changed'),
     baseLineIconRemoved: this.I18n.t('js.baseline.icon_tooltip.removed'),
+    assigneeAlt:(assignee:string) =>
+      this.I18n.t('js.label_assignee_alt_text', { name: assignee }),
   };
 
   public isNewResource = isNewResource;
@@ -112,38 +133,40 @@ export class WorkPackageSingleCardComponent extends UntilDestroyedMixin implemen
 
   combinedDateDisplayField = CombinedDateDisplayField;
 
-  constructor(
-    readonly pathHelper:PathHelperService,
-    readonly I18n:I18nService,
-    readonly $state:StateService,
-    readonly uiRouterGlobals:UIRouterGlobals,
-    readonly wpTableSelection:WorkPackageViewSelectionService,
-    readonly wpTableFocus:WorkPackageViewFocusService,
-    readonly cardView:WorkPackageCardViewService,
-    readonly cdRef:ChangeDetectorRef,
-    readonly timezoneService:TimezoneService,
-    readonly schemaCache:SchemaCacheService,
-  ) {
-    super();
-  }
-
   ngOnInit():void {
     // Update selection state
-    combineLatest([
+    // Use merge instead of combineLatest: params$ only emits on uiRouter transitions and
+    // may never emit on pages that don't use uiRouter (e.g. boards). With merge, any
+    // emission from either source triggers re-evaluation of the selection state.
+    // turbo:frame-load is included so that URL-based detection updates when the split
+    // view opens or closes via Turbo frame navigation.
+    merge(
       this.wpTableSelection.live$(),
-      this.uiRouterGlobals.params$,
-    ])
+      this.uiRouterGlobals.params$ ?? EMPTY,
+      fromEvent(document, 'turbo:frame-load'),
+    )
       .pipe(
         this.untilDestroyed(),
         map(() => {
           if (this.selectedWhenOpen) {
-            return this.uiRouterGlobals.params.workPackageId === this.workPackage.id;
+            // In uiRouter views, use the route param directly.
+            const wpIdFromRoute = this.uiRouterGlobals.params.workPackageId as string|undefined;
+            if (wpIdFromRoute) {
+              return matchesRoutingId(this.workPackage, wpIdFromRoute);
+            }
+
+            // In non-router views (e.g. Team Planner, Calendar):
+            // Use URL-based detection so that closing the split view (which changes the URL
+            // but does not clear the selection service) correctly deselects the card.
+            const urlMatch = DETAILS_URL_PATTERN.exec(window.location.pathname);
+            return matchesRoutingId(this.workPackage, urlMatch?.[1]);
           }
 
-          return this.wpTableSelection.isSelected(this.workPackage.id as string);
+          return this.wpTableSelection.isSelected(this.workPackage.id!);
         }),
+        distinctUntilChanged(),
       )
-      .subscribe((selected) => {
+      .subscribe((selected:boolean) => {
         this.selected = selected;
         this.cdRef.detectChanges();
       });
@@ -167,7 +190,7 @@ export class WorkPackageSingleCardComponent extends UntilDestroyedMixin implemen
     event.preventDefault();
   }
 
-  public cardClasses():{ [className:string]:boolean } {
+  public cardClasses():Record<string, boolean> {
     const base = 'op-wp-single-card';
 
     return {
@@ -178,7 +201,6 @@ export class WorkPackageSingleCardComponent extends UntilDestroyedMixin implemen
       [`${base}_inline`]: this.showAsInlineCard,
       [`${base}_closed`]: this.isClosed,
       [`${base}_ghosted`]: this.showAsGhost,
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       [`${base}-${this.workPackage.id}`]: !!this.workPackage.id,
       [`${base}_${this.orientation}`]: true,
     };
@@ -193,23 +215,20 @@ export class WorkPackageSingleCardComponent extends UntilDestroyedMixin implemen
     return this.baselineMode;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   public wpTypeAttribute(wp:WorkPackageResource):string {
     return wp.type.name;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   public wpSubject(wp:WorkPackageResource):string {
     return wp.subject;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   public wpProjectName(wp:WorkPackageResource):string {
     return wp.project?.name;
   }
 
   public fullWorkPackageLink(wp:WorkPackageResource):string {
-    return this.$state.href('work-packages.show', { workPackageId: wp.id });
+    return this.keepTabService.currentShowHref(wp.displayId);
   }
 
   public cardHighlightingClass(wp:WorkPackageResource):string {
@@ -228,7 +247,6 @@ export class WorkPackageSingleCardComponent extends UntilDestroyedMixin implemen
     return this.bcfSnapshotPath(wp) !== null;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   public bcfSnapshotPath(wp:WorkPackageResource):string|null {
     return wp.bcfViewpoints && wp.bcfViewpoints.length > 0 ? `${wp.bcfViewpoints[0].href}/snapshot` : null;
   }
@@ -240,7 +258,6 @@ export class WorkPackageSingleCardComponent extends UntilDestroyedMixin implemen
     return '';
   }
 
-  // eslint-disable-next-line class-methods-use-this
   private attributeHighlighting(type:string, wp:WorkPackageResource):string {
     return Highlighting.inlineClass(type, wp.type.id!);
   }

@@ -33,7 +33,8 @@ class CustomFields::Inputs::Base::Autocomplete::SingleValueInput < CustomFields:
     base_input_attributes.merge(
       autocomplete_options:,
       wrapper_data_attributes: {
-        "qa-field-name": qa_field_name
+        "custom-field-id": @custom_field.id,
+        "test-selector": test_selector
       }
     )
   end
@@ -48,6 +49,6 @@ class CustomFields::Inputs::Base::Autocomplete::SingleValueInput < CustomFields:
   end
 
   def decorated?
-    raise NotImplementedError
+    raise SubclassResponsibilityError
   end
 end

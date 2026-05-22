@@ -113,6 +113,20 @@ RSpec.describe Primer::OpenProject::Forms::Dsl::InputMethods, type: :forms do
       include_examples "input class", Primer::Forms::Dsl::CheckBoxGroupInput
       it_behaves_like "supporting help texts"
     end
+
+    describe "#advanced_radio_button_group" do
+      let(:field_group) { form_dsl.advanced_radio_button_group(name:, label:, **options) }
+
+      include_examples "input class", Primer::OpenProject::Forms::Dsl::AdvancedRadioButtonGroupInput
+      it_behaves_like "supporting help texts"
+    end
+
+    describe "#advanced_check_box_group" do
+      let(:field_group) { form_dsl.advanced_check_box_group(name:, label:, **options) }
+
+      include_examples "input class", Primer::OpenProject::Forms::Dsl::AdvancedCheckBoxGroupInput
+      it_behaves_like "supporting help texts"
+    end
   end
 
   describe "#separator" do
@@ -212,14 +226,14 @@ RSpec.describe Primer::OpenProject::Forms::Dsl::InputMethods, type: :forms do
     end
 
     describe "#single_date_picker" do
-      let(:field_group) { form_dsl.single_date_picker(name:, label:, datepicker_options: {}, **options) }
+      let(:field_group) { form_dsl.single_date_picker(name:, label:, **options) }
 
       include_examples "input class", Primer::OpenProject::Forms::Dsl::SingleDatePickerInput
       it_behaves_like "supporting help texts"
     end
 
     describe "#range_date_picker" do
-      let(:field_group) { form_dsl.range_date_picker(name:, label:, datepicker_options: {}, **options) }
+      let(:field_group) { form_dsl.range_date_picker(name:, label:, **options) }
 
       include_examples "input class", Primer::OpenProject::Forms::Dsl::RangeDatePickerInput
       it_behaves_like "supporting help texts"
@@ -233,7 +247,11 @@ RSpec.describe Primer::OpenProject::Forms::Dsl::InputMethods, type: :forms do
     end
 
     describe "#block_note_editor" do
-      let(:field_group) { form_dsl.block_note_editor(name:, label:, value: "", document_id: "123asdzxc", suggestions: [], **options) }
+      let(:document_name) { "1234asdzxc" }
+      let(:field_group) do
+        form_dsl.block_note_editor(name:, label:, value: "", document_id: 8, document_name:, attachments_upload_url: "",
+                                   attachments_collection_key: "", **options)
+      end
 
       include_examples "input class", Primer::OpenProject::Forms::Dsl::BlockNoteEditorInput
       it_behaves_like "supporting help texts"
@@ -251,6 +269,13 @@ RSpec.describe Primer::OpenProject::Forms::Dsl::InputMethods, type: :forms do
       let(:field_group) { form_dsl.work_package_autocompleter(name:, label:, autocomplete_options: {}, **options) }
 
       include_examples "input class", Primer::OpenProject::Forms::Dsl::WorkPackageAutocompleterInput
+      it_behaves_like "supporting help texts"
+    end
+
+    describe "#select_panel" do
+      let(:field_group) { form_dsl.select_panel(name:, label:, **options) }
+
+      include_examples "input class", Primer::OpenProject::Forms::Dsl::SelectPanelInput
       it_behaves_like "supporting help texts"
     end
   end

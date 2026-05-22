@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { Injectable, Injector } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { catchError, map } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
@@ -50,7 +50,7 @@ import { getPaginatedCollections } from 'core-app/core/apiv3/helpers/get-paginat
 
 export interface HalResourceFactoryConfigInterface {
   cls?:any;
-  attrTypes?:{ [attrName:string]:string };
+  attrTypes?:Record<string, string>;
 }
 
 interface ErrorWithType {
@@ -59,16 +59,13 @@ interface ErrorWithType {
 
 @Injectable({ providedIn: 'root' })
 export class HalResourceService {
+  readonly injector = inject(Injector);
+  readonly http = inject(HttpClient);
+
   /**
    * List of all known hal resources, extendable.
    */
-  private config:{ [typeName:string]:HalResourceFactoryConfigInterface } = {};
-
-  constructor(
-    readonly injector:Injector,
-    readonly http:HttpClient,
-  ) {
-  }
+  private config:Record<string, HalResourceFactoryConfigInterface> = {};
 
   /**
    * Perform a HTTP request and return a HalResource promise.
@@ -291,7 +288,7 @@ export class HalResourceService {
    */
   protected getResourceClassOfType<T extends HalResource>(type:string):HalResourceClass<T> {
     const config = this.config[type];
-    return (config && config.cls) ? config.cls : this.defaultClass as HalResourceClass<T>;
+    return (config?.cls) ? config.cls : this.defaultClass as HalResourceClass<T>;
   }
 
   /**
@@ -303,7 +300,7 @@ export class HalResourceService {
    */
   protected getResourceClassOfAttribute<T extends HalResource = HalResource>(type:string, attribute:string):string|null {
     const typeConfig = this.config[type];
-    const types = (typeConfig && typeConfig.attrTypes) || {};
+    const types = (typeConfig?.attrTypes) || {};
     return types[attribute];
   }
 
@@ -319,7 +316,6 @@ export class HalResourceService {
     let resource:ErrorResource|null = null;
 
     const body = error.error as string|ErrorWithType|unknown;
-    // eslint-disable-next-line no-underscore-dangle
     if (typeof body === 'object' && (body as ErrorWithType)?._type) {
       resource = this.createHalResource<ErrorResource>(error.error);
     }

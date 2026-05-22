@@ -234,6 +234,9 @@ module Components
       end
 
       def type_comment(text)
+        # Wait for any pending Turbo Stream updates to complete
+        wait_for_network_idle
+
         begin
           open_new_comment_editor if page.find_test_selector("op-open-work-package-journal-form-trigger")
         rescue Capybara::ElementNotFound
@@ -282,19 +285,18 @@ module Components
           check_internal_comment_checkbox if internal
 
           if save
-            page.find_test_selector("op-submit-work-package-journal-form").click
-            wait_for_network_idle
-          end
-        end
-
-        if save
-          page.within_test_selector("op-wp-journals-container") do
-            # wait for the comment to be loaded
-            wait_for { page }.to have_test_selector("op-journal-notes-body", text:)
+            wait_for_turbo_stream do
+              page.find_test_selector("op-submit-work-package-journal-form").click
+            end
           end
         end
 
         wait_for_network_idle
+
+        if save
+          # wait for the comment to be loaded
+          expect(page).to have_test_selector("op-journal-notes-body", text:, wait: 10)
+        end
       end
 
       def edit_comment(journal, text: nil, save: true)

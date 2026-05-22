@@ -45,7 +45,7 @@ module Storages
 
             let(:input_data) { Input::FileInfo.build(file_id:).value! }
 
-            it_behaves_like "adapter file_info_query: basic query setup"
+            it_behaves_like "storage adapter: query call signature", "file_info"
 
             context "with a file id requested", vcr: "sharepoint/file_info_query_success_file" do
               let(:file_id) { "#{drive_id}:01ANJ53W5UJK2CQO6IY5HLBVYBVNJ4TKHZ" }
@@ -64,7 +64,7 @@ module Storages
                   last_modified_by_name: "Eric Schubert",
                   last_modified_by_id: "5b5a7dc4-4539-41ba-9fa9-100f0a26acb7",
                   permissions: nil,
-                  location: "/Shared%20Documents/Folder/Nested%20Folder/release_meme.jpg"
+                  location: "/Shared Documents/Folder/Nested Folder/release_meme.jpg"
                 )
               end
 
@@ -88,7 +88,7 @@ module Storages
                   last_modified_by_name: "Eric Schubert",
                   last_modified_by_id: "5b5a7dc4-4539-41ba-9fa9-100f0a26acb7",
                   permissions: nil,
-                  location: "/Shared%20Documents/%C3%9Cml%C3%A6%C3%BBts"
+                  location: "/Shared Documents/Ümlæûts"
                 )
               end
 
@@ -113,7 +113,7 @@ module Storages
                   last_modified_by_name: "Eric Schubert",
                   last_modified_by_id: "5b5a7dc4-4539-41ba-9fa9-100f0a26acb7",
                   permissions: nil,
-                  location: "/Shared%20Documents/%C3%9Cml%C3%A6%C3%BBts/data/written_in_stone.webp"
+                  location: "/Shared Documents/Ümlæûts/data/written_in_stone.webp"
                 )
               end
 
@@ -124,7 +124,7 @@ module Storages
               let(:file_id) { "#{drive_id}:not_existent" }
               let(:error_source) { Internal::DriveItemQuery }
 
-              it_behaves_like "adapter file_info_query: not found"
+              it_behaves_like "storage adapter: error response", :not_found
             end
           end
         end

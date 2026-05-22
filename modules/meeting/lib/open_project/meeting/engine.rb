@@ -44,18 +44,20 @@ module OpenProject::Meeting
         permission :view_meetings,
                    {
                      meetings: %i[index show check_for_updates download_ics
-                                  generate_pdf_dialog history],
+                                  presentation generate_pdf_dialog history],
                      "meetings/menus": %i[show],
                      work_package_meetings_tab: %i[index count],
-                     recurring_meetings: %i[index show new create download_ics]
+                     recurring_meetings: %i[index show new create download_ics],
+                     meeting_templates: %i[index]
                    },
                    permissible_on: :project
         permission :create_meetings,
                    {
-                     meetings: %i[new create copy new_dialog fetch_timezone],
+                     meetings: %i[new create copy new_dialog fetch_timezone fetch_templates],
                      recurring_meetings: %i[new create copy init template_completed],
                      "recurring_meetings/schedule": %i[update_text],
-                     "meetings/menus": %i[show]
+                     "meetings/menus": %i[show],
+                     meeting_templates: %i[new create new_dialog]
                    },
                    dependencies: :view_meetings,
                    permissible_on: :project,
@@ -63,8 +65,8 @@ module OpenProject::Meeting
                    contract_actions: { meetings: %i[create] }
         permission :edit_meetings,
                    {
-                     meetings: %i[edit cancel_edit update update_title change_state toggle_notifications_dialog
-                                  details_dialog update_details toggle_notifications],
+                     meetings: %i[edit cancel_edit update update_title change_state change_sharing toggle_notifications_dialog
+                                  details_dialog update_details toggle_notifications exit_draft_mode_dialog exit_draft_mode],
                      recurring_meetings: %i[edit cancel_edit update update_title details_dialog update_details
                                             notify end_series end_series_dialog],
                      work_package_meetings_tab: %i[add_work_package_to_meeting_dialog add_work_package_to_meeting refresh_form],
@@ -88,9 +90,10 @@ module OpenProject::Meeting
                    require: :member
         permission :manage_agendas,
                    {
-                     meetings: %i[change_state],
                      meeting_agenda_items: %i[new cancel_new create edit cancel_edit update destroy drop move
-                                              move_to_next_meeting move_to_next_meeting_dialog],
+                                              move_to_next_meeting move_to_next_meeting_dialog
+                                              duplicate_in_next_meeting duplicate_in_next_meeting_dialog
+                                              move_to_section move_to_section_dialog],
                      meeting_sections: %i[new cancel_new create edit cancel_edit update destroy drop move
                                           clear_backlog clear_backlog_dialog]
                    },
@@ -125,6 +128,7 @@ module OpenProject::Meeting
            :meetings,
            { tab: :meetings },
            skip_permissions_check: true,
+           after: :relations,
            if: ->(_project) {
              User.current.allowed_in_any_project?(:view_meetings)
            },
@@ -164,29 +168,23 @@ module OpenProject::Meeting
       end
     end
 
-    initializer "openproject-meetings.feature_decisions" do
-      OpenProject::FeatureDecisions.add :meeting_ical_subscription,
-                                        description: "Allows users to subscribe to all of their meetings via iCalendar"
-    end
-
     activity_provider :meetings, class_name: "Activities::MeetingActivityProvider", default: false
 
     patches [:Project]
     patch_with_namespace :BasicData, :SettingSeeder
 
     replace_principal_references "Meeting" => %i[author_id],
-                                 "MeetingAgenda" => %i[author_id],
-                                 "MeetingMinutes" => %i[author_id],
                                  "MeetingAgendaItem" => %i[author_id presenter_id],
+                                 "MeetingOutcome" => :author_id,
                                  "MeetingParticipant" => :user_id,
-                                 "MeetingOutcome" => :author_id
+                                 "RecurringMeeting" => :author_id
 
     extend_api_response(:v3, :work_packages, :work_package,
                         &::OpenProject::Meeting::Patches::API::WorkPackageRepresenter.extension)
 
     add_api_endpoint "API::V3::Root" do
       mount ::API::V3::Meetings::MeetingsAPI
-      mount ::API::V3::Meetings::MeetingContentsAPI
+      mount ::API::V3::RecurringMeetings::RecurringMeetingsAPI
     end
 
     config.to_prepare do
@@ -197,6 +195,9 @@ module OpenProject::Meeting
       ::Exports::Register.register do
         single(::Meeting, Meetings::Exporter)
       end
+
+      Journals::CreateService::Association.register(:AgendaItemable)
+      Journals::CreateService::Association.register(:Participatable)
     end
 
     add_api_path :meetings do
@@ -223,16 +224,60 @@ module OpenProject::Meeting
       "#{meeting(id)}/attachments"
     end
 
-    add_api_path :attachments_by_meeting_content do |id|
-      "#{meeting_content(id)}/attachments"
+    add_api_path :meeting_schema do
+      "#{root}/meetings/schema"
     end
 
-    add_api_path :attachments_by_meeting_agenda do |id|
-      attachments_by_meeting_content id
+    add_api_path :create_meeting_form do
+      "#{root}/meetings/form"
     end
 
-    add_api_path :attachments_by_meeting_minutes do |id|
-      attachments_by_meeting_content id
+    add_api_path :meeting_form do |id|
+      "#{root}/meetings/#{id}/form"
+    end
+
+    add_api_path :meeting_agenda_items do |meeting_id|
+      "#{meeting(meeting_id)}/agenda_items"
+    end
+
+    add_api_path :meeting_agenda_item do |meeting_id, id|
+      "#{meeting(meeting_id)}/agenda_items/#{id}"
+    end
+
+    add_api_path :meeting_sections do |meeting_id|
+      "#{meeting(meeting_id)}/sections"
+    end
+
+    add_api_path :meeting_section do |meeting_id, id|
+      "#{meeting(meeting_id)}/sections/#{id}"
+    end
+
+    add_api_path :recurring_meetings do
+      "#{root}/recurring_meetings"
+    end
+
+    add_api_path :recurring_meeting do |id|
+      "#{root}/recurring_meetings/#{id}"
+    end
+
+    add_api_path :recurring_meeting_occurrences_upcoming do |id|
+      "#{recurring_meeting(id)}/occurrences/upcoming"
+    end
+
+    add_api_path :recurring_meeting_occurrences_past do |id|
+      "#{recurring_meeting(id)}/occurrences/past"
+    end
+
+    add_api_path :recurring_meeting_occurrences_cancelled do |id|
+      "#{recurring_meeting(id)}/occurrences/cancelled"
+    end
+
+    add_api_path :recurring_meeting_occurrences_open do |id|
+      "#{recurring_meeting(id)}/occurrences/open"
+    end
+
+    add_api_path :recurring_meeting_occurrence do |id, start_time|
+      "#{recurring_meeting(id)}/occurrences/#{start_time}"
     end
   end
 end

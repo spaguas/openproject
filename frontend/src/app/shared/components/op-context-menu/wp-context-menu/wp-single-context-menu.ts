@@ -12,18 +12,17 @@ import { OpContextMenuItem } from 'core-app/shared/components/op-context-menu/op
 import {
   PERMITTED_CONTEXT_MENU_ACTIONS,
 } from 'core-app/shared/components/op-context-menu/wp-context-menu/wp-static-context-menu-actions';
-import { OpModalService } from 'core-app/shared/components/modal/modal.service';
 import { CopyToClipboardService } from 'core-app/shared/components/copy-to-clipboard/copy-to-clipboard.service';
 import {
   WorkPackageAction,
 } from 'core-app/features/work-packages/components/wp-table/context-menu-helper/wp-context-menu-helper.service';
-import { WpDestroyModalComponent } from 'core-app/shared/components/modals/wp-destroy-modal/wp-destroy.modal';
 import { WorkPackageAuthorization } from 'core-app/features/work-packages/services/work-package-authorization.service';
 import { TurboRequestsService } from 'core-app/core/turbo/turbo-requests.service';
 import { ApiV3Service } from 'core-app/core/apiv3/api-v3.service';
 import { TimeEntryTimerService } from 'core-app/shared/components/time_entries/services/time-entry-timer.service';
 import { TimeEntryResource } from 'core-app/features/hal/resources/time-entry-resource';
 import { DeviceService } from 'core-app/core/browser/device.service';
+import { CurrentProjectService } from 'core-app/core/current-project/current-project.service';
 
 @Directive({
   // eslint-disable-next-line @angular-eslint/directive-selector
@@ -41,15 +40,17 @@ export class WorkPackageSingleContextMenuDirective extends OpContextMenuTrigger 
   readonly injector = inject(Injector);
   readonly PathHelper = inject(PathHelperService);
   readonly elementRef = inject(ElementRef);
-  readonly opModalService = inject(OpModalService);
   readonly turboRequests = inject(TurboRequestsService);
   readonly apiV3Service = inject(ApiV3Service);
   readonly authorisationService = inject(AuthorisationService);
+  readonly currentProject = inject(CurrentProjectService);
   readonly timeEntryService = inject(TimeEntryTimerService);
   protected copyToClipboardService = inject(CopyToClipboardService);
   protected deviceService = inject(DeviceService);
 
   private closeDialogHandler:EventListener = this.handleTimeEntryDialogClose.bind(this);
+
+  override readonly placement = 'bottom-end';
 
   ngAfterViewInit():void {
     super.ngAfterViewInit();
@@ -64,7 +65,7 @@ export class WorkPackageSingleContextMenuDirective extends OpContextMenuTrigger 
     document.removeEventListener('dialog:close', this.closeDialogHandler);
   }
 
-  protected open(evt:JQuery.TriggeredEvent) {
+  protected open(evt:Event) {
     this.workPackage.project.$load().then(() => {
       this.authorisationService.initModelAuth('work_package', this.workPackage.$links);
 
@@ -81,7 +82,6 @@ export class WorkPackageSingleContextMenuDirective extends OpContextMenuTrigger 
 
     switch (key) {
       case 'copy_to_other_project':
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         window.location.href = `${this.PathHelper.staticBase}/work_packages/move/new?copy=true&ids[]=${this.workPackage.id!}`;
         break;
       case 'start_timer':
@@ -91,16 +91,27 @@ export class WorkPackageSingleContextMenuDirective extends OpContextMenuTrigger 
         void this.timeEntryService.stop();
         break;
       case 'copy':
-        this.$state.go('work-packages.copy', { copiedFromWorkPackageId: this.workPackage.id });
+        if (this.workPackage.id) {
+          window.location.href = `${this.PathHelper.workPackageCopyPath(this.workPackage.project.identifier, this.workPackage.id)}`;
+        }
         break;
-      case 'delete':
-        this.opModalService.show(WpDestroyModalComponent, this.injector, { workPackages: [this.workPackage] });
+      case 'delete': {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const currentBaseRoute = this.$state.current.data?.baseRoute as string | undefined;
+        const backUrl = currentBaseRoute
+          ? this.$state.href(currentBaseRoute)
+          : this.PathHelper.workPackagesPath(this.currentProject.identifier ?? null);
+        void this.turboRequests.request(
+          this.PathHelper.workPackagesBulkDeleteDialogPath([this.workPackage.id!], backUrl),
+          { method: 'GET' },
+        );
         break;
+      }
       case 'log_time':
-        void this.turboRequests.request(this.PathHelper.timeEntryWorkPackageDialog(this.workPackage.id as string), { method: 'GET' });
+        void this.turboRequests.request(this.PathHelper.timeEntryWorkPackageDialog(this.workPackage.id!), { method: 'GET' });
         break;
       case 'generate_pdf':
-        void this.turboRequests.requestStream(link as string);
+        void this.turboRequests.requestStream(link!);
         break;
       case 'copy_link_to_clipboard': {
         const url = new URL(String(link), window.location.origin);
@@ -111,23 +122,6 @@ export class WorkPackageSingleContextMenuDirective extends OpContextMenuTrigger 
         window.location.href = link!;
         break;
     }
-  }
-
-  /**
-   * Positioning args for jquery-ui position.
-   *
-   * @param {Event} openerEvent
-   */
-  public positionArgs(evt:JQuery.TriggeredEvent) {
-    const additionalPositionArgs = {
-      my: 'right top',
-      at: 'right bottom',
-    };
-
-    const position = super.positionArgs(evt);
-    _.assign(position, additionalPositionArgs);
-
-    return position;
   }
 
   private activeForWorkPackage(entry:TimeEntryResource|null):boolean {
@@ -194,9 +188,9 @@ export class WorkPackageSingleContextMenuDirective extends OpContextMenuTrigger 
         hidden: action.hidden === true,
         linkText: I18n.t(`js.button_${key}`),
         href: action.link,
-        icon: action.icon ?? `icon-${key}`,
-        onClick: ($event:JQuery.TriggeredEvent) => {
-          if (action.link && isClickedWithModifier($event)) {
+        icon: action.icon || `icon-${key}`,
+        onClick: (event:MouseEvent) => {
+          if (action.link && isClickedWithModifier(event)) {
             return false;
           }
 

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, Injector, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, Injector, Input, OnInit, ViewChild, inject } from '@angular/core';
 import { IFieldSchema } from 'core-app/shared/components/fields/field.base';
 import { DisplayFieldService } from 'core-app/shared/components/fields/display/display-field.service';
 import { HalResource } from 'core-app/features/hal/resources/hal-resource';
@@ -14,6 +14,10 @@ import { SchemaResource } from 'core-app/features/hal/resources/schema-resource'
   standalone: false,
 })
 export class DisplayFieldComponent implements OnInit {
+  private injector = inject(Injector);
+  private displayFieldService = inject(DisplayFieldService);
+  private schemaCache = inject(SchemaCacheService);
+
   @Input() resource:HalResource;
 
   @Input() fieldName:string;
@@ -22,16 +26,9 @@ export class DisplayFieldComponent implements OnInit {
 
   @Input() containerType:'table'|'single-view'|'timeline' = 'table';
 
-  @Input() displayFieldOptions:{ [key:string]:unknown } = {};
+  @Input() displayFieldOptions:Record<string, unknown> = {};
 
   @ViewChild('displayFieldContainer') container:ElementRef<HTMLSpanElement>;
-
-  constructor(
-    private injector:Injector,
-    private displayFieldService:DisplayFieldService,
-    private schemaCache:SchemaCacheService,
-  ) {
-  }
 
   ngOnInit():void {
     void this.schemaCache
@@ -60,7 +57,6 @@ export class DisplayFieldComponent implements OnInit {
 
   private getDisplayFieldInstance(fieldSchema:IFieldSchema) {
     if (this.displayClass) {
-      // eslint-disable-next-line new-cap
       const instance = new this.displayClass(this.fieldName, this.displayFieldContext);
       instance.apply(this.resource, fieldSchema);
       return instance;

@@ -30,12 +30,17 @@ import { HalResource } from 'core-app/features/hal/resources/hal-resource';
 import { ICKEditorContext } from 'core-app/shared/components/editor/components/ckeditor/ckeditor.types';
 
 export class ProjectResource extends HalResource {
+  public get identifier():string {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    return this.$source.identifier as string;
+  }
+
   public get state() {
     return this.states.projects.get(this.id!) as any;
   }
 
   public getEditorContext(fieldName:string):ICKEditorContext {
-    if (['statusExplanation', 'description'].indexOf(fieldName) !== -1) {
+    if (['statusExplanation', 'description'].includes(fieldName)) {
       return { type: 'full', macros: 'resource' };
     }
 

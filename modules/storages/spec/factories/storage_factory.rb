@@ -93,6 +93,7 @@ FactoryBot.define do
     sequence(:host) { |n| "https://host#{n}.example.com/" }
     authentication_method { "two_way_oauth2" }
     storage_audience { nil }
+    forbidden_file_name_characters { "" }
 
     trait :with_oauth_configured do
       after(:create) do |storage, _evaluator|
@@ -114,7 +115,7 @@ FactoryBot.define do
     trait :as_automatically_managed do
       automatic_management_enabled { true }
       username { "OpenProject" }
-      password { ENV.fetch("NEXTCLOUD_LOCAL_GROUP_USER_PASSWORD", "Password123") }
+      password { "Password123" }
     end
   end
 
@@ -135,6 +136,7 @@ FactoryBot.define do
 
     name { "Nextcloud Local" }
     host { "https://nextcloud.local/" }
+    password { ENV.fetch("NEXTCLOUD_LOCAL_AMPF_PASSWORD", "MISSING_NEXTCLOUD_AMPF_PASSWORD") }
 
     initialize_with do
       Storages::NextcloudStorage.create_or_find_by(attributes.except(:oauth_client, :oauth_application))
@@ -168,6 +170,12 @@ FactoryBot.define do
              integration: storage,
              user: evaluator.oauth_client_token_user,
              origin_user_id: evaluator.origin_user_id)
+    end
+
+    trait :as_automatically_managed do
+      automatic_management_enabled { true }
+      username { "OpenProject" }
+      password { ENV.fetch("NEXTCLOUD_LOCAL_AMPF_PASSWORD", "AMPF_PASSWORD_NOT_SET") }
     end
   end
 
@@ -248,7 +256,7 @@ FactoryBot.define do
 
     trait :sandbox do
       tenant_id { ENV.fetch("SHAREPOINT_TEST_TENANT_ID", "e36f1dbc-fdae-427e-b61b-0d96ddfb81a4") }
-      host { ENV.fetch("SHAREPOINT_TEST_HOST", "https://ymt6d.sharepoint.com/sites/OPTest") }
+      host { ENV.fetch("SHAREPOINT_TEST_HOST", "https://ymt6d.sharepoint.com/sites/OPTest/") }
 
       transient do
         oauth_client_token_user { association :user }

@@ -77,7 +77,7 @@ class RolesController < ApplicationController
 
     if @call.success?
       flash[:notice] = I18n.t(:notice_successful_update)
-      redirect_to action: "index"
+      redirect_to action: "index", status: :see_other
     else
       render action: :edit, status: :unprocessable_entity
     end
@@ -94,7 +94,7 @@ class RolesController < ApplicationController
     else
       flash[:error] = I18n.t(:error_can_not_remove_role)
     end
-    redirect_to action: "index"
+    redirect_to action: "index", status: :see_other
   end
 
   def report
@@ -109,7 +109,7 @@ class RolesController < ApplicationController
 
     if calls.all?(&:success?)
       flash[:notice] = I18n.t(:notice_successful_update)
-      redirect_to action: "index"
+      redirect_to action: "index", status: :see_other
     else
       @calls = calls
       @permissions = visible_permissions

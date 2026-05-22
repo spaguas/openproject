@@ -61,7 +61,7 @@ RSpec.describe "Project attribute help texts", :js do
     grid = create(:grid)
     grid.widgets << create(:grid_widget,
                            identifier: "project_status",
-                           options: { "name" => "Project status" },
+                           options: { "name" => "Status" },
                            start_row: 1,
                            end_row: 2,
                            start_column: 1,
@@ -103,9 +103,13 @@ RSpec.describe "Project attribute help texts", :js do
 
     it_behaves_like "allows to view help texts", show_edit: true
 
-    it "shows the help text on the project create form", :selenium do
+    it "shows the help text on the project create form" do
       visit new_project_path
 
+      # Step 1: Select workspace type (blank project)
+      click_on "Continue"
+
+      # Step 2: Project details - Name field is visible here
       expect(page).to have_field "Name"
 
       within(:element, "label", text: "Name") do

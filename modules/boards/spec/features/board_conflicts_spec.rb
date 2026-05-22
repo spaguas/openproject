@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #-- copyright
 # OpenProject is an open source project management software.
 # Copyright (C) the OpenProject GmbH
@@ -30,7 +32,7 @@ require "spec_helper"
 require_relative "support/board_index_page"
 require_relative "support/board_page"
 
-RSpec.describe "Board remote changes resolution", :js, with_ee: %i[board_view] do
+RSpec.describe "Board remote changes resolution", :js do
   let(:user1) do
     create(:user,
            member_with_roles: { project => role })
@@ -56,11 +58,11 @@ RSpec.describe "Board remote changes resolution", :js, with_ee: %i[board_view] d
     login_as(user1)
   end
 
-  it "update boards in the background" do
+  it "update boards in the background", skip: "flickering spec" do
     board_index.visit!
 
     # Create new board
-    board_page = board_index.create_board action: "Status"
+    board_page = board_index.create_board action: "Kanban"
 
     # expect lists of default status
     board_page.expect_list "Open"

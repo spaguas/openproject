@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #-- copyright
 # OpenProject is an open source project management software.
 # Copyright (C) the OpenProject GmbH
@@ -208,6 +210,13 @@ module OpenProject
 
       def lookbook_enabled?
         self["lookbook_enabled"]
+      end
+
+      def ssrf_protection_ip_allowlist
+        @ssrf_protection_ip_allowlist ||= self["ssrf_protection_ip_allowlist"]
+          .split(/[\s,]+/)
+          .map(&:strip)
+          .map { |addr| IPAddr.new addr }
       end
 
       private

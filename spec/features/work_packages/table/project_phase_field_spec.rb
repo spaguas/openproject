@@ -227,11 +227,11 @@ RSpec.describe "Project phase field in the work package table", :js do
 
       it "includes the group icon in the group row header" do
         within("#wp-table-rowgroup-1") do
-          expect(page).to have_test_selector("project-phase-icon #{other_project_phase.name}")
+          expect(page).to have_test_selector("project-phase-icon phase-definition-#{other_project_phase.definition_id}")
         end
 
         within("#wp-table-rowgroup-2") do
-          expect(page).to have_test_selector("project-phase-icon #{project_phase.name}")
+          expect(page).to have_test_selector("project-phase-icon phase-definition-#{project_phase.definition_id}")
         end
       end
     end
@@ -324,7 +324,7 @@ RSpec.describe "Project phase field in the work package table", :js do
 
         # Has no phase at all:
         wp_table.expect_work_package_with_attributes(wp_from_another_project, { projectPhase: "" })
-        wp_table.expect_work_package_with_attributes(wp_without_phase, { projectPhase: "" })
+        wp_table.expect_work_package_with_attributes(wp_without_phase, { projectPhase: "-" })
 
         # Has an inactive phase:
         wp_table.expect_work_package_with_attributes(wp_with_phase_from_another_project, { projectPhase: "" })

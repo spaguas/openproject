@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #-- copyright
 # OpenProject is an open source project management software.
 # Copyright (C) the OpenProject GmbH
@@ -174,6 +176,10 @@ module API
             "#{project(project_id)}/available_assignees"
           end
 
+          def self.available_assignees_in_workspace(project_id)
+            "#{workspace(project_id)}/available_assignees"
+          end
+
           def self.available_assignees_in_work_package(work_package_id)
             "#{work_package(work_package_id)}/available_assignees"
           end
@@ -210,12 +216,24 @@ module API
             "#{project(id)}/categories"
           end
 
+          def self.categories_by_workspace(id)
+            "#{workspace(id)}/categories"
+          end
+
           def self.configuration
             "#{root}/configuration"
           end
 
+          def self.project_configuration(project_id)
+            "#{project(project_id)}/configuration"
+          end
+
           def self.create_project_work_package_form(project_id)
             "#{work_packages_by_project(project_id)}/form"
+          end
+
+          def self.create_workspace_work_package_form(project_id)
+            "#{work_packages_by_workspace(project_id)}/form"
           end
 
           def self.custom_action(id)
@@ -281,6 +299,10 @@ module API
             "#{days_non_working}/#{date}"
           end
 
+          def self.favor_workspace(workspace_id)
+            "#{workspace(workspace_id)}/favorite"
+          end
+
           index :help_text
           show :help_text
 
@@ -328,6 +350,10 @@ module API
           index :placeholder_user
           show :placeholder_user
 
+          index :portfolio
+          show :portfolio
+          update_form :portfolio
+
           index :post
           show :post
 
@@ -340,6 +366,10 @@ module API
             alias :issue_priorities :priorities
             alias :issue_priority :priority
           end
+
+          index :program
+          show :program
+          update_form :program
 
           show :oauth_application
 
@@ -359,8 +389,10 @@ module API
 
           show :project_status
 
-          def self.projects_available_parents
-            "#{projects}/available_parent_projects"
+          def self.projects_available_parents(of: nil, workspace_type: nil)
+            query = { of:, workspace_type: }.compact_blank.to_query
+
+            "#{projects}/available_parent_projects#{"?#{query}" unless query.empty?}"
           end
 
           def self.projects_schema
@@ -383,6 +415,10 @@ module API
 
           def self.query_project_default(id)
             "#{project(id)}/queries/default"
+          end
+
+          def self.query_workspace_default(id)
+            "#{workspace(id)}/queries/default"
           end
 
           def self.query_star(id)
@@ -433,12 +469,20 @@ module API
             "#{project(id)}/queries/filter_instance_schemas"
           end
 
+          def self.query_workspace_filter_instance_schemas(id)
+            "#{workspace(id)}/queries/filter_instance_schemas"
+          end
+
           def self.query_operator(name)
             "#{queries}/operators/#{name}"
           end
 
           def self.query_project_schema(id)
             "#{project(id)}/queries/schema"
+          end
+
+          def self.query_workspace_schema(id)
+            "#{workspace(id)}/queries/schema"
           end
 
           def self.query_available_projects
@@ -536,6 +580,10 @@ module API
             "#{project(project_id)}/types"
           end
 
+          def self.types_by_workspace(project_id)
+            "#{workspace(project_id)}/types"
+          end
+
           resources :user
 
           def self.user_lock(id)
@@ -544,6 +592,22 @@ module API
 
           def self.user_preferences(id)
             "#{user(id)}/preferences"
+          end
+
+          def self.user_working_hours(user_id)
+            "#{user(user_id)}/working_hours"
+          end
+
+          def self.user_working_hours_record(user_id, id)
+            "#{user_working_hours(user_id)}/#{id}"
+          end
+
+          def self.user_non_working_times(user_id)
+            "#{user(user_id)}/non_working_times"
+          end
+
+          def self.user_non_working_time(user_id, non_working_time_id)
+            "#{user_non_working_times(user_id)}/#{non_working_time_id}"
           end
 
           def self.my_preferences
@@ -574,8 +638,16 @@ module API
             "#{project(project_id)}/versions"
           end
 
+          def self.versions_by_workspace(workspace_id)
+            "#{workspace(workspace_id)}/versions"
+          end
+
           def self.projects_by_version(version_id)
             "#{version(version_id)}/projects"
+          end
+
+          def self.workspaces_by_version(version_id)
+            "#{version(version_id)}/workspaces"
           end
 
           def self.watcher(id, work_package_id)
@@ -651,6 +723,12 @@ module API
             "#{project(project_id)}/work_packages"
           end
 
+          def self.work_packages_by_workspace(workspace_id)
+            "#{workspace(workspace_id)}/work_packages"
+          end
+
+          resources :workspace, except: %i[create_form]
+
           def self.timestamps_to_param_value(timestamps)
             Array(timestamps).map { |timestamp| Timestamp.parse(timestamp).absolute }.join(",")
           end
@@ -686,6 +764,19 @@ module API
             root_url = OpenProject::StaticRouting::StaticUrlHelpers.new.root_url
 
             root_url.gsub(duplicate_regexp, "") + send(path, arguments)
+          end
+
+          def self.path_for_object(object)
+            strategy = if self.class.const_defined?("API::V3::Utilities::PathHelper::#{object.class}Strategy")
+                         "API::V3::Utilities::PathHelper::#{object.class}Strategy".constantize
+                       else
+                         API::V3::Utilities::PathHelper::DefaultStrategy
+                       end
+
+            send(strategy.path_name_for_object(object), object.id)
+          rescue StandardError => e
+            Rails.logger.error "Failed to get path for object #{object}: #{e}"
+            nil
           end
         end
 

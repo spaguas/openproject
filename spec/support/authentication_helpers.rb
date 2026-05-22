@@ -58,7 +58,7 @@ module AuthenticationHelpers
   def login_with(login, password, autologin: false, visit_signin_path: true)
     visit signin_path if visit_signin_path
 
-    within(".user-login--form") do
+    within_test_selector("user-login--form") do
       fill_in "username", with: login
       fill_in "password", with: password
       if autologin
@@ -80,6 +80,10 @@ module AuthenticationHelpers
     else
       page.driver.clear_cookies
     end
+
+    # The login_as method call short circuits the login by mocking the current user.
+    # Thus logging out should also reset the login mock in order to make the logout complete.
+    allow(RequestStore).to receive(:[]).and_call_original
   end
 
   private

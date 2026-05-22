@@ -26,17 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  EventEmitter,
-  Injector,
-  Input,
-  Output,
-  ViewChild,
-} from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Injector, Input, Output, ViewChild, inject } from '@angular/core';
 import { NgSelectComponent } from '@ng-select/ng-select';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { CurrentProjectService } from 'core-app/core/current-project/current-project.service';
@@ -64,6 +54,8 @@ export interface CreateAutocompleterValueOption {
   standalone: false,
 })
 export class CreateAutocompleterComponent extends UntilDestroyedMixin implements AfterViewInit {
+  readonly injector = inject(Injector);
+
   @Input() public availableValues:CreateAutocompleterValueOption[];
 
   @Input() public appendTo:string;
@@ -88,7 +80,7 @@ export class CreateAutocompleterComponent extends UntilDestroyedMixin implements
 
   @Output() public onChange = new EventEmitter<HalResource>();
 
-  @Output() public onKeydown = new EventEmitter<JQuery.TriggeredEvent>();
+  @Output() public onKeydown = new EventEmitter<KeyboardEvent>();
 
   @Output() public onOpen = new EventEmitter<void>();
 
@@ -112,13 +104,13 @@ export class CreateAutocompleterComponent extends UntilDestroyedMixin implements
 
   public groupByFn = (_item:HalResource):string | null => null;
 
-  public text:{ [key:string]:string } = {};
+  public text:Record<string, string> = {};
 
   public createAllowed:boolean|AddTagFn = false;
 
   private _openDirectly = false;
 
-  constructor(readonly injector:Injector) {
+  constructor() {
     super();
 
     this.text.add_new_action = this.I18n.t('js.label_create');
@@ -158,7 +150,7 @@ export class CreateAutocompleterComponent extends UntilDestroyedMixin implements
     this.onClose.emit();
   }
 
-  public keyPressed(event:JQuery.TriggeredEvent) {
+  public keyPressed(event:KeyboardEvent) {
     this.onKeydown.emit(event);
   }
 

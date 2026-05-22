@@ -31,12 +31,13 @@
 class ApplicationForm < Primer::Forms::Base
   include AttributeHelpTexts::FormHelper
 
-  def self.settings_form
+  def self.settings_form(&)
     form do |f|
-      f = Settings::FormDecorator.new(f)
-      yield f
+      instance_exec(Settings::FormObjectDecorator.new(f), &)
     end
   end
+
+  delegate :helpers, to: :ApplicationController
 
   def url_helpers
     Rails.application.routes.url_helpers

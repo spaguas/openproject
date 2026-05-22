@@ -216,10 +216,13 @@ module OpenProject
 
     config.action_controller.asset_host = OpenProject::Configuration::AssetHost.value
 
+    # Remove X-XSS-Protection header
+    config.action_dispatch.default_headers.delete "X-XSS-Protection"
+
     config.log_level = OpenProject::Configuration["log_level"].to_sym
 
     # Enable the Rails 7 cache format
-    config.active_support.cache_format_version = 7.0
+    config.active_support.cache_format_version = 7.1
 
     config.after_initialize do
       Settings::Definition.add_all

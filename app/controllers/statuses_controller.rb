@@ -36,8 +36,7 @@ class StatusesController < ApplicationController
   before_action :require_admin
 
   def index
-    @statuses = Status.page(page_param)
-                .per_page(per_page_param)
+    @statuses = Status.page(page_param).per_page(per_page_param)
 
     render action: "index", layout: false if request.xhr?
   end
@@ -65,7 +64,7 @@ class StatusesController < ApplicationController
     if @status.update(permitted_params.status)
       recompute_progress_values
       flash[:notice] = I18n.t(:notice_successful_update)
-      redirect_to action: "index"
+      redirect_to action: "index", status: :see_other
     else
       render action: :edit, status: :unprocessable_entity
     end
@@ -79,10 +78,10 @@ class StatusesController < ApplicationController
       status.destroy
       flash[:notice] = I18n.t(:notice_successful_delete)
     end
-    redirect_to action: "index"
+    redirect_to action: "index", status: :see_other
   rescue StandardError
     flash[:error] = I18n.t(:error_unable_delete_status)
-    redirect_to action: "index"
+    redirect_to action: "index", status: :see_other
   end
 
   protected

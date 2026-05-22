@@ -72,7 +72,7 @@ module CustomFieldsHelper
   end
 
   def custom_field_tag_for_bulk_edit(name, custom_field, project = nil) # rubocop:disable Metrics/AbcSize
-    field_name = "#{name}[custom_field_values][#{custom_field.id}]"
+    field_name = name.present? ? "#{name}[custom_field_values][#{custom_field.id}]" : "custom_field_values[#{custom_field.id}]"
     field_id = "#{name}_custom_field_values_#{custom_field.id}"
     field_format = OpenProject::CustomFieldFormat.find_by(name: custom_field.field_format)
 
@@ -99,7 +99,7 @@ module CustomFieldsHelper
                         id: field_id,
                         multiple: custom_field.multi_value?,
                         include_blank: I18n.t(:label_no_change_option))
-    when "hierarchy", "scored_list"
+    when "hierarchy", "weighted_item_list"
       base_options = []
       result = CustomFields::Hierarchy::HierarchicalItemService.new
         .get_descendants(item: custom_field.hierarchy_root, include_self: false)

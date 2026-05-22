@@ -28,17 +28,15 @@
 # See COPYRIGHT and LICENSE files for more details.
 # ++
 module Filter
-  # rubocop:disable OpenProject/AddPreviewForViewComponent
   class FilterComponent < ApplicationComponent
     OPERATORS_WITHOUT_VALUES = %w[* !* t w].freeze
+    TURBO_FRAME_ID = "filter_component"
 
-    # rubocop:enable OpenProject/AddPreviewForViewComponent
     options :query
-    options always_visible: false
-
-    def show_filters_section?
-      always_visible || params[:filters].present?
-    end
+    # The path used for fetching the filter section lazily from the backend upon opening it.
+    # If none is provided, the filters are rendered right away.
+    options lazy_loaded_path: false
+    options initially_expanded: false
 
     # Returns filters, active and inactive.
     # In case a filter is active, the active one will be preferred over the inactive one.
@@ -63,6 +61,27 @@ module Filter
       OPERATORS_WITHOUT_VALUES.include?(operator)
     end
 
+    def lazy_loaded? = !!lazy_loaded_path
+
+    def initially_expanded? = initially_expanded
+
+    def turbo_requests? = false
+
+    def skeleton_height
+      # This is an approximation.
+      # * 100 for the padding and the filter selection
+      # * 40 per filter and their bottom margin. But the height of the filters vary unfortunately.
+      "#{100 + (query.filters.count * 40)}px"
+    end
+
+    def filter_classes
+      "op-filters-form op-filters-form_top-margin #{'-expanded' if initially_expanded?}"
+    end
+
+    def lazy_turbo_frame_src
+      public_send(lazy_loaded_path, **params.permit(:filters, :columns, :sortBy, :id, :query_id))
+    end
+
     protected
 
     # With this method we can pass additional options for each type of filter into the frontend. This is especially
@@ -81,6 +100,8 @@ module Filter
         { autocomplete_options: user_autocomplete_options }
       when Queries::Filters::Shared::CustomFields::ListOptional
         { autocomplete_options: custom_field_list_autocomplete_options(filter) }
+      when Queries::Filters::Shared::CustomFields::Hierarchy
+        { autocomplete_options: custom_field_hierarchy_autocomplete_options(filter) }
       when Queries::Projects::Filters::ProjectStatusFilter,
            Queries::Projects::Filters::TypeFilter
         { autocomplete_options: list_autocomplete_options(filter) }
@@ -90,21 +111,33 @@ module Filter
     end
 
     def custom_field_list_autocomplete_options(filter)
-      options = if filter.custom_field.version?
-                  {
-                    items: filter.allowed_values.map { |name, id, project_name| { name:, id:, project_name: } },
-                    groupBy: "project_name"
-                  }
-                else
-                  { items: filter.allowed_values.map { |name, id| { name:, id: } } }
-                end
-      autocomplete_options.merge(options).merge(model: filter.values)
+      all_items = if filter.custom_field.version?
+                    filter.allowed_values.map { |name, id, project_name| { name:, id:, project_name: } }
+                  else
+                    filter.allowed_values.map { |name, id| { name:, id: } }
+                  end
+      selected = filter.values
+      options = { items: all_items }
+      options[:groupBy] = "project_name" if filter.custom_field.version?
+      autocomplete_options.merge(options).merge(model: all_items.select { |item| selected.include?(item[:id]) })
+    end
+
+    def custom_field_hierarchy_autocomplete_options(filter)
+      items = filter.allowed_values.map do |name, id|
+        path = name.split(" / ")
+        { name: path.last, id:, depth: path.length - 1 }
+      end
+      selected = filter.values
+
+      autocomplete_options.merge({ items: }).merge(model: items.select { |item| selected.include?(item[:id]) })
     end
 
     def list_autocomplete_options(filter)
+      all_items = filter.allowed_values.map { |name, id| { name:, id: } }
+      selected = filter.values
       autocomplete_options.merge(
-        items: filter.allowed_values.map { |name, id| { name:, id: } },
-        model: filter.values
+        items: all_items,
+        model: all_items.select { |item| selected.include?(item[:id]) }
       )
     end
 
@@ -136,7 +169,6 @@ module Filter
         resource: "principals",
         url: ::API::V3::Utilities::PathHelper::ApiV3Path.principals,
         filters: [
-          { name: "type", operator: "=", values: ["User"] },
           { name: "status", operator: "!", values: [Principal.statuses["locked"].to_s] }
         ],
         searchKey: "any_name_attribute",

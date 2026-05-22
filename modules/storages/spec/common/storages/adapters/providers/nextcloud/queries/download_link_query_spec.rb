@@ -43,9 +43,9 @@ module Storages
             end
             let(:auth_strategy) { Registry["nextcloud.authentication.user_bound"].call(user, storage) }
 
-            let(:file_link) { create(:file_link, origin_id: "182") }
+            let(:file_link) { create(:file_link, origin_id: "182", origin_name: "file_name_1") }
             let(:not_existent_file_link) { create(:file_link, origin_id: "DeathStarNumberThree") }
-            let(:input_data) { Input::DownloadLink.build(file_link:).value! }
+            let(:input_data) { Input::DownloadLink.build(file_id: file_link.origin_id).value! }
 
             subject { described_class.new(storage) }
 
@@ -70,26 +70,24 @@ module Storages
                 end
 
                 it "returns an error if the file is not found", vcr: "nextcloud/download_link_query_not_found" do
-                  input_data = Input::DownloadLink.build(file_link: not_existent_file_link).value!
+                  input_data = Input::DownloadLink.build(file_id: not_existent_file_link.origin_id).value!
                   download_link = subject.call(auth_strategy:, input_data:)
 
                   expect(download_link).to be_failure
 
                   error = download_link.failure
-                  expect(error.source).to eq(described_class)
+                  expect(error.source).to eq(FileInfoQuery)
                   expect(error.code).to eq(:not_found)
                 end
               end
 
               context "with outbound request returning 200 and an empty body" do
-                it "refreshes the token and returns success", vcr: "nextcloud/download_link_query_unauthorized" do
+                it "fails with code invalid_response", vcr: "nextcloud/download_link_query_unauthorized" do
                   download_link = subject.call(auth_strategy:, input_data:)
-                  expect(download_link).to be_success
+                  expect(download_link).to be_failure
 
-                  uri = download_link.value!
-                  expect(uri.host).to eq("nextcloud.local")
-                  expect(uri.path)
-                    .to match(/index.php\/apps\/integration_openproject\/direct\/[0-9a-zA-Z]+\/#{file_link.origin_name}/)
+                  error = download_link.failure
+                  expect(error.code).to eq(:invalid_response)
                 end
               end
             end

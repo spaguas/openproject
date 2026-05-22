@@ -26,9 +26,13 @@ def register_chrome(language, name: :"chrome_#{language}", headless: "new", over
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-smooth-scrolling")
     # Software GPU to avoid the dreaded "[ERROR] [Canvas '__0']: Failed to get a
-    # WebGL context" error for tests using xeokit, adapted from answers of
-    # https://stackoverflow.com/q/70948512/177665 and
+    # WebGL context" error for tests using xeokit. The automatic fallback to SwiftShader
+    # was disabled in January 2026, so that we now have to enable the fallback manually in
+    # the test environment.
+    # See https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/gpu/swiftshader.md
     options.add_argument("--use-gl=angle")
+    options.add_argument("--use-angle=swiftshader-webgl")
+    options.add_argument("--enable-unsafe-swiftshader")
     # Disable "Select your search engine screen"
     options.add_argument("--disable-search-engine-choice-screen")
 
@@ -120,6 +124,8 @@ end
 register_chrome "en", name: :chrome_billy do |options|
   options.add_argument("proxy-server=#{Billy.proxy.host}:#{Billy.proxy.port}")
   options.add_argument("proxy-bypass-list=127.0.0.1;localhost;#{Capybara.server_host}")
+  # Reduce background Google service traffic that can crash puffing-billy's parser.
+  options.add_argument("--disable-background-networking")
 
   options.accept_insecure_certs = true
 end

@@ -51,6 +51,7 @@ class Journal < ApplicationRecord
   register_journal_formatter OpenProject::JournalFormatter::AgendaItemTitle
   register_journal_formatter OpenProject::JournalFormatter::Attachment
   register_journal_formatter OpenProject::JournalFormatter::Cause
+  register_journal_formatter OpenProject::JournalFormatter::CustomComment
   register_journal_formatter OpenProject::JournalFormatter::CustomField
   register_journal_formatter OpenProject::JournalFormatter::Diff
   register_journal_formatter OpenProject::JournalFormatter::FileLink
@@ -58,6 +59,7 @@ class Journal < ApplicationRecord
   register_journal_formatter OpenProject::JournalFormatter::MeetingStartTime
   register_journal_formatter OpenProject::JournalFormatter::MeetingState
   register_journal_formatter OpenProject::JournalFormatter::MeetingWorkPackageId
+  register_journal_formatter OpenProject::JournalFormatter::ParticipantChange
   register_journal_formatter OpenProject::JournalFormatter::ProjectPhaseActive
   register_journal_formatter OpenProject::JournalFormatter::ProjectPhaseDates
   register_journal_formatter OpenProject::JournalFormatter::ProjectPhaseDefinition
@@ -77,6 +79,7 @@ class Journal < ApplicationRecord
                  %i[
                    type
                    feature
+                   import_history
                    work_package_id
                    changed_days
                    status_name
@@ -86,6 +89,7 @@ class Journal < ApplicationRecord
                  prefix: true
   VALID_CAUSE_TYPES = %w[
     default_attribute_written
+    import
     progress_mode_changed_to_status_based
     status_changed
     system_update
@@ -107,8 +111,10 @@ class Journal < ApplicationRecord
   belongs_to :data, polymorphic: true, dependent: :destroy
 
   has_many :agenda_item_journals, class_name: "Journal::MeetingAgendaItemJournal", dependent: :delete_all
+  has_many :participant_journals, class_name: "Journal::MeetingParticipantJournal", dependent: :delete_all
   has_many :attachable_journals, class_name: "Journal::AttachableJournal", dependent: :delete_all
   has_many :customizable_journals, class_name: "Journal::CustomizableJournal", dependent: :delete_all
+  has_many :custom_comment_journals, class_name: "Journal::CustomCommentJournal", dependent: :delete_all
   has_many :project_phase_journals, class_name: "Journal::ProjectPhaseJournal", dependent: :delete_all
   has_many :storable_journals, class_name: "Journal::StorableJournal", dependent: :delete_all
 
@@ -165,7 +171,7 @@ class Journal < ApplicationRecord
 
   def visible?(user = User.current)
     if internal?
-      user.allowed_in_project?(:view_internal_comments, project)
+      journable.visible?(user) && user.allowed_in_project?(:view_internal_comments, project)
     else
       journable.visible?(user)
     end
@@ -219,12 +225,6 @@ class Journal < ApplicationRecord
     end
   end
 
-  private
-
-  def has_file_links?
-    journable.respond_to?(:file_links)
-  end
-
   def predecessor
     return @predecessor if defined?(@predecessor)
 
@@ -237,5 +237,11 @@ class Journal < ApplicationRecord
                        .order(version: :desc)
                        .first
                    end
+  end
+
+  private
+
+  def has_file_links?
+    journable.respond_to?(:file_links)
   end
 end

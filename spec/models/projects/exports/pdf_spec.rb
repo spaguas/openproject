@@ -86,7 +86,7 @@ RSpec.describe Projects::Exports::PDF do
       expected_document = [
         *expected_cover_page,
         project.name,
-        "Project status description", "some explanation",
+        "Status description", "some explanation",
         "1/1", export_time_formatted, query.name
       ].join(" ")
 
@@ -100,15 +100,31 @@ RSpec.describe Projects::Exports::PDF do
     end
 
     context "without view_project_attributes permission" do
-      let(:permissions) { %i(view_projects) }
-
-      it "does not include custom field values in the export" do
-        expected_document = [
+      let(:permissions) { super() - %i[view_project_attributes] }
+      let(:expected_document) do
+        [
           *expected_cover_page,
           project.name,
           "ID", project.id.to_s,
           "1/1", export_time_formatted, query.name
         ].join(" ")
+      end
+
+      it "does not include custom field values in the export" do
+        expect(subject).to eq expected_document
+      end
+    end
+
+    context "without export_projects permission" do
+      let(:permissions) { %i(view_projects) }
+      let(:expected_document) do
+        [
+          *expected_cover_page,
+          "1/1", export_time_formatted, query.name
+        ].join(" ")
+      end
+
+      it "does not include the project in the export" do
         expect(subject).to eq expected_document
       end
     end
@@ -128,7 +144,7 @@ RSpec.describe Projects::Exports::PDF do
       when "text"
         "Some  long  text"
       when "string", "list"
-        "Some small text"
+        custom_field.admin_only? ? "hidden" : "Some small text"
       when "date"
         format_date(Time.zone.today)
       when "link"
@@ -137,15 +153,116 @@ RSpec.describe Projects::Exports::PDF do
     end
 
     context "with view_project_attributes permission" do
-      it "includes custom field values in the export" do
-        expected_document = [
+      let(:expected_document) do
+        [
           *expected_cover_page,
           project.name,
           "ID", project.id.to_s,
-          *global_project_custom_fields.sort_by(&:name).flat_map { |column| [column.name, get_test_column_value(column)] },
+          *global_project_custom_fields.sort_by(&:name).map { |column| [column.name, get_test_column_value(column)] },
           "1/1", export_time_formatted, query.name
         ].join(" ")
+      end
+
+      it "includes custom field values in the export" do
         expect(subject).to eq expected_document
+      end
+    end
+
+    context "with admin permission" do
+      let(:current_user) { build_stubbed(:admin) }
+      let(:expected_document) do
+        custom_fields = global_project_custom_fields - [not_used_string_cf]
+        system_version_project = system_version.project
+
+        [
+          *expected_cover_page,
+
+          I18n.t(:label_table_of_contents),
+          "1.", "2", project.name,
+          "2.", "2", system_version_project.name,
+          "1/2", export_time_formatted, query.name,
+
+          "1.", project.name,
+          "ID", project.id.to_s,
+          *custom_fields.sort_by(&:name).map { |column| [column.name, get_test_column_value(column)] },
+          "2.", system_version_project.name,
+          "ID", system_version_project.id.to_s,
+          "2/2", export_time_formatted, query.name
+        ].join(" ")
+      end
+
+      it "includes custom field values in the export" do
+        expect(subject).to eq expected_document
+      end
+    end
+  end
+
+  describe "custom comment columns selected" do
+    let(:query_columns) do
+      %w[id name] + global_project_custom_fields.map(&:comment_column_name)
+    end
+
+    context "without view_project_attributes permission" do
+      let(:permissions) { super() - %i[view_project_attributes] }
+      let(:expected_document) do
+        [
+          *expected_cover_page,
+          project.name,
+          "ID", project.id.to_s,
+          "1/1", export_time_formatted, query.name
+        ].join(" ")
+      end
+
+      it "does not include custom comments in the export" do
+        expect(subject).to eq expected_document
+      end
+    end
+
+    context "with view_project_attributes permission" do
+      let(:expected_document) do
+        [
+          *expected_cover_page,
+          project.name,
+          "ID", project.id.to_s,
+          "#{version_cf.name} comment", "Comment visible to members",
+          "1/1", export_time_formatted, query.name
+        ].join(" ")
+      end
+
+      it "includes custom comments in the export" do
+        expect(subject).to eq expected_document
+      end
+    end
+
+    context "with admin permission" do
+      let(:current_user) { build_stubbed(:admin) }
+      let(:expected_document) do
+        system_version_project = system_version.project
+
+        [
+          *expected_cover_page,
+
+          I18n.t(:label_table_of_contents),
+          "1.", "2", project.name,
+          "2.", "2", system_version_project.name,
+          "1/2", export_time_formatted, query.name,
+
+          "1.", project.name,
+          "ID", project.id.to_s,
+          "#{version_cf.name} comment", "Comment visible to members",
+          "#{hidden_cf.name} comment", "Comment visible to admins",
+          "2.", system_version_project.name,
+          "ID", system_version_project.id.to_s,
+          "2/2", export_time_formatted, query.name
+        ].join(" ")
+      end
+
+      it "includes custom comments in the export" do
+        expect(subject).to eq expected_document
+      end
+
+      it "doesn't include unused custom comment" do
+        expect(subject).not_to include("#{not_used_string_cf.name} comment")
       end
     end
   end
@@ -173,10 +290,12 @@ RSpec.describe Projects::Exports::PDF do
 
     before do
       login_as current_user
-      create(:member,
-             project: child_project,
-             principal: current_user,
-             roles: [role])
+      create(
+        :member,
+        project: child_project,
+        principal: current_user,
+        roles: [create(:project_role, permissions: permissions - %i[view_project_attributes])]
+      )
     end
 
     it "includes both projects in the export" do

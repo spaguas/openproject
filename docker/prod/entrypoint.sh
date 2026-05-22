@@ -49,17 +49,17 @@ if [ "$(id -u)" = '0' ]; then
 	echo "-----> Setting PGVERSION=$PGVERSION PGBIN=$PGBIN PGCONF_FILE=$PGCONF_FILE"
 	export PATH="$PGBIN:$PATH"
 
-	mkdir -p $APP_DATA_PATH/{files,git,svn}
+	mkdir -p "$APP_DATA_PATH"/{files,git,svn}
 	# The $APP_DATA_PATH may be hosted on a NAS that creates snapshots (or a btrfs filesystem). In such a case, the .snapshot folder cannot be touched.
-  find $APP_DATA_PATH | grep -v .snapshot | xargs -n 1 chown $APP_USER:$APP_USER
+	find "$APP_DATA_PATH" -path '*/.snapshot*' -prune -o -exec chown "$APP_USER:$APP_USER" {} +
 	if [ -d /etc/apache2/sites-enabled ]; then
-		chown -R $APP_USER:$APP_USER /etc/apache2/sites-enabled
+		chown -R "$APP_USER:$APP_USER" /etc/apache2/sites-enabled
 		echo "OpenProject currently expects to be reached on the following domain: ${SERVER_NAME:=localhost}, which does not seem to be how your installation is configured." > /var/www/html/index.html
 		echo "If you are an administrator, please ensure you have correctly set the SERVER_NAME variable when launching your container." >> /var/www/html/index.html
 	fi
 
 	# Clean up any dangling PID file
-	rm -f $APP_PATH/tmp/pids/*
+	rm -f "$APP_PATH"/tmp/pids/*
 
 	# Clean up a dangling PID file of apache
 	if [ -e "$APACHE_PIDFILE" ]; then
@@ -84,7 +84,25 @@ if [ "$(id -u)" = '0' ]; then
 		exec "$@"
 	fi
 
-	if [ "$1" = "./docker/prod/supervisord" ] || [ "$1" = "./docker/prod/proxy" ]; then
+	if [ "$1" = "./docker/prod/supervisord" ]; then
+		if [ "$OPENPROJECT_COLLABORATIVE__EDITING__HOCUSPOCUS__URL" = "auto" ]; then
+			# If no hocuspocus config was defined, we generate one here to use the bundled hocuspocus
+			# which is started via supervisord along side everything else.
+			# Exporting the config here will apply to all services, though it's only needed by
+			# web and hocuspocus.
+			HP_PROTOCOL="wss"
+			if [ "$OPENPROJECT_HTTPS" = "false" ]; then
+				HP_PROTOCOL="ws"
+			fi
+
+			HP_HOST=${OPENPROJECT_HOST__NAME:="localhost"}
+			export OPENPROJECT_COLLABORATIVE__EDITING__HOCUSPOCUS__URL="${HP_PROTOCOL}://${HP_HOST}/hocuspocus"
+			# Use a YAML-safe secret charset because environment values are parsed via YAML.
+			export OPENPROJECT_COLLABORATIVE__EDITING__HOCUSPOCUS__SECRET="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)"
+		fi
+
+		exec "$@"
+	elif [ "$1" = "./docker/prod/proxy" ]; then
 		exec "$@"
 	fi
 

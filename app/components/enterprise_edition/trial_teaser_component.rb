@@ -65,11 +65,11 @@ module EnterpriseEdition
     end
 
     def description
-      I18n.t("ee.teaser.description", trial_plan: plan_name).html_safe
+      helpers.t("ee.teaser.description_html", trial_plan: plan_name)
     end
 
     def plan_name
-      render(Primer::Beta::Text.new(font_weight: :bold, classes: "upsell-colored")) do
+      render(Primer::Beta::Text.new(font_weight: :bold, classes: "upsell-colored-text")) do
         I18n.t("ee.upsell.plan_name", plan: token.plan.capitalize)
       end
     end

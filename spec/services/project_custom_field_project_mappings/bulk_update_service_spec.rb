@@ -52,6 +52,14 @@ RSpec.describe ProjectCustomFieldProjectMappings::BulkUpdateService do
              project_custom_field_section:)
     end
 
+    shared_let(:visible_activated_project_custom_field) do
+      create(:project_custom_field,
+             name: "Visible activated field",
+             admin_only: false,
+             is_for_all: true,
+             project_custom_field_section:)
+    end
+
     shared_let(:invisible_project_custom_field) do
       create(:project_custom_field,
              name: "Admin only field",
@@ -62,23 +70,23 @@ RSpec.describe ProjectCustomFieldProjectMappings::BulkUpdateService do
     context "with admin permissions" do
       let(:user) { create(:admin) }
 
-      it "bulk enables/disables all (non-required) fields of the section, including invisible ones" do
-        expect(project.project_custom_fields).to contain_exactly(
-          visible_required_project_custom_field
-        )
+      it "bulk enables/disables all (non-for_all) fields of the section, including invisible ones" do
+        expect(project.project_custom_fields).to contain_exactly(visible_activated_project_custom_field)
 
         expect(instance.call(action: :enable)).to be_success
 
-        expect(project.reload.project_custom_fields).to contain_exactly(
-          visible_required_project_custom_field, visible_project_custom_field, invisible_project_custom_field
-        )
+        expected = [
+          visible_activated_project_custom_field,
+          visible_required_project_custom_field,
+          visible_project_custom_field,
+          invisible_project_custom_field
+        ]
+        expect(project.reload.project_custom_fields).to match_array(expected)
 
         expect(instance.call(action: :disable)).to be_success
 
-        # required fields cannot be disabled, even not by admins
-        expect(project.reload.project_custom_fields).to contain_exactly(
-          visible_required_project_custom_field
-        )
+        # for_all fields cannot be disabled, even not by admins
+        expect(project.reload.project_custom_fields).to contain_exactly(visible_activated_project_custom_field)
       end
     end
 
@@ -97,24 +105,27 @@ RSpec.describe ProjectCustomFieldProjectMappings::BulkUpdateService do
       end
 
       it "bulk enables/disables all fields of the section, excluding invisible ones" do
-        expect(project.project_custom_fields).to contain_exactly(
-          visible_required_project_custom_field
-        )
+        expect(project.project_custom_fields).to contain_exactly(visible_activated_project_custom_field)
 
         expect(instance.call(action: :enable)).to be_success
 
-        expect(project.reload.project_custom_fields).to contain_exactly(
-          visible_required_project_custom_field, visible_project_custom_field
-        )
+        expected = [
+          visible_activated_project_custom_field,
+          visible_required_project_custom_field,
+          visible_project_custom_field
+        ]
+        expect(project.reload.project_custom_fields).to match_array(expected)
 
         project.project_custom_fields << invisible_project_custom_field
 
         expect(instance.call(action: :disable)).to be_success
 
-        # required fields cannot be disabled, invisible fields are not affected by non-admins
-        expect(project.reload.project_custom_fields).to contain_exactly(
-          visible_required_project_custom_field, invisible_project_custom_field
-        )
+        # force-activated fields cannot be disabled, invisible fields are not affected by non-admins
+        expected = [
+          visible_activated_project_custom_field,
+          invisible_project_custom_field
+        ]
+        expect(project.reload.project_custom_fields).to match_array(expected)
       end
     end
 
@@ -132,22 +143,54 @@ RSpec.describe ProjectCustomFieldProjectMappings::BulkUpdateService do
       end
 
       it "cannot bulk enable/disable project custom fields" do
-        expect(project.project_custom_fields).to contain_exactly(
-          visible_required_project_custom_field
-        )
+        expect(project.project_custom_fields).to contain_exactly(visible_activated_project_custom_field)
 
         expect(instance.call(action: :enable)).to be_failure
 
-        expect(project.reload.project_custom_fields).to contain_exactly(
-          visible_required_project_custom_field
-        )
+        expect(project.reload.project_custom_fields).to contain_exactly(visible_activated_project_custom_field)
 
         expect(instance.call(action: :disable)).to be_failure
       end
     end
   end
 
-  describe "calculated values", with_flag: { calculated_value_project_attribute: true } do
+  describe "project creation wizard fields" do
+    shared_let(:visible_user_project_custom_field) do
+      create(:user_project_custom_field,
+             name: "User field",
+             admin_only: false,
+             project_custom_field_section:)
+    end
+
+    before do
+      project.project_creation_wizard_enabled = true
+      project.save!
+    end
+
+    shared_let(:user) { create(:admin) }
+
+    it "disables fields not configured for project creation wizard" do
+      project.project_custom_fields << visible_user_project_custom_field
+      expect(project.project_custom_fields).to contain_exactly(visible_user_project_custom_field)
+
+      expect(instance.call(action: :disable)).to be_success
+
+      expect(project.reload.project_custom_fields).to be_empty
+    end
+
+    it "does not disable fields configured for project creation wizard" do
+      project.project_custom_fields << visible_user_project_custom_field
+      expect(project.project_custom_fields).to contain_exactly(visible_user_project_custom_field)
+
+      project.project_creation_wizard_assignee_custom_field_id = visible_user_project_custom_field.id
+
+      expect(instance.call(action: :disable)).to be_success
+
+      expect(project.reload.project_custom_fields).to contain_exactly(visible_user_project_custom_field)
+    end
+  end
+
+  describe "calculated values", with_ee: %i[calculated_values] do
     using CustomFieldFormulaReferencing
 
     shared_let(:user) { create(:admin) }

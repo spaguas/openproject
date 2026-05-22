@@ -57,10 +57,40 @@ RSpec.describe Meetings::IcalendarBuilder,
   context "with a single meeting" do
     let(:meeting) { create(:meeting, :author_participates, start_time: Time.zone.parse("2025-08-30 10:00")) }
 
+    context "when meeting has been created before we added RSVP support" do
+      subject(:builder) { described_class.new(timezone:, user: meeting.author) }
+
+      let(:parsed_calendar) { Icalendar::Calendar.parse(builder.to_ical).first }
+
+      before do
+        meeting.participants.first.update(participation_status: "unknown")
+      end
+
+      it "does not set PARTSTAT and RSVP for current user" do
+        builder.add_single_meeting_event(meeting:)
+        builder.update_calendar_status(cancelled: false)
+
+        event = parsed_calendar.events.first
+        expect(event.attendee).not_to be_empty
+
+        # Find the current user's attendee entry
+        current_user_attendee = event.attendee.find { |a| a.to_s.include?(meeting.author.mail) }
+        expect(current_user_attendee).to be_present
+        expect(current_user_attendee.ical_params).not_to have_key("partstat")
+        expect(current_user_attendee.ical_params["rsvp"]).to be_nil
+        expect(current_user_attendee.ical_params["cutype"]).to eq(["INDIVIDUAL"])
+        expect(current_user_attendee.ical_params["role"]).to eq(["REQ-PARTICIPANT"])
+      end
+    end
+
     context "when current user needs to take action" do
       subject(:builder) { described_class.new(timezone:, user: meeting.author) }
 
       let(:parsed_calendar) { Icalendar::Calendar.parse(builder.to_ical).first }
+
+      before do
+        meeting.participants.first.update(participation_status: :needs_action)
+      end
 
       it "sets PARTSTAT to NEEDS-ACTION and RSVP to TRUE for current user" do
         builder.add_single_meeting_event(meeting:)
@@ -90,7 +120,11 @@ RSpec.describe Meetings::IcalendarBuilder,
 
     context "when current user has accepted all invitations" do
       subject(:builder) do
-        described_class.new(timezone:, user: meeting.author).tap(&:treat_participations_from_user_as_accepted!)
+        described_class.new(timezone:, user: meeting.author)
+      end
+
+      before do
+        meeting.participants.first.update(participation_status: :accepted)
       end
 
       let(:parsed_calendar) { Icalendar::Calendar.parse(builder.to_ical).first }
@@ -104,7 +138,7 @@ RSpec.describe Meetings::IcalendarBuilder,
 
         event.attendee.each do |attendee|
           expect(attendee.ical_params["partstat"]).to eq(["ACCEPTED"])
-          expect(attendee.ical_params["rsvp"]).to eq(["FALSE"])
+          expect(attendee.ical_params["rsvp"]).to be_nil
           expect(attendee.ical_params["cutype"]).to eq(["INDIVIDUAL"])
           expect(attendee.ical_params["role"]).to eq(["REQ-PARTICIPANT"])
         end
@@ -115,9 +149,13 @@ RSpec.describe Meetings::IcalendarBuilder,
       let(:other_user) { create(:user) }
       let(:parsed_calendar) { Icalendar::Calendar.parse(builder.to_ical).first }
 
+      before do
+        meeting.participants.first.update(participation_status: "unknown")
+      end
+
       subject(:builder) { described_class.new(timezone:, user: other_user) }
 
-      it "sets PARTSTAT to ACCEPTED and RSVP to FALSE for all attendees" do
+      it "does not set PARTSTAT and RSVP for any attendees" do
         builder.add_single_meeting_event(meeting:)
         builder.update_calendar_status(cancelled: false)
 
@@ -125,8 +163,8 @@ RSpec.describe Meetings::IcalendarBuilder,
         expect(event.attendee).not_to be_empty
 
         event.attendee.each do |attendee|
-          expect(attendee.ical_params["partstat"]).to eq(["ACCEPTED"])
-          expect(attendee.ical_params["rsvp"]).to eq(["FALSE"])
+          expect(attendee.ical_params["partstat"]).to be_nil
+          expect(attendee.ical_params["rsvp"]).to be_nil
           expect(attendee.ical_params["cutype"]).to eq(["INDIVIDUAL"])
           expect(attendee.ical_params["role"]).to eq(["REQ-PARTICIPANT"])
         end
@@ -138,8 +176,8 @@ RSpec.describe Meetings::IcalendarBuilder,
       let(:user2) { create(:user, firstname: "Jane", lastname: "Smith", mail: "jane@example.com") }
       let(:meeting_with_participants) do
         meeting = create(:meeting, start_time: Time.zone.parse("2025-08-30 10:00"))
-        create(:meeting_participant, meeting:, user: user1)
-        create(:meeting_participant, meeting:, user: user2)
+        create(:meeting_participant, :needs_action, meeting:, user: user1)
+        create(:meeting_participant, :accepted, meeting:, user: user2)
         meeting
       end
 
@@ -170,39 +208,9 @@ RSpec.describe Meetings::IcalendarBuilder,
 
           # Jane is not the current user, so she should have ACCEPTED and RSVP=FALSE
           expect(jane_attendee.ical_params["partstat"]).to eq(["ACCEPTED"])
-          expect(jane_attendee.ical_params["rsvp"]).to eq(["FALSE"])
+          expect(jane_attendee.ical_params["rsvp"]).to be_nil
           expect(jane_attendee.ical_params["cutype"]).to eq(["INDIVIDUAL"])
           expect(jane_attendee.ical_params["role"]).to eq(["REQ-PARTICIPANT"])
-        end
-      end
-
-      context "when current user has accepted all invitations" do
-        subject(:builder) do
-          described_class.new(timezone:, user: user1).tap(&:treat_participations_from_user_as_accepted!)
-        end
-
-        let(:parsed_calendar) { Icalendar::Calendar.parse(builder.to_ical).first }
-
-        it "sets PARTSTAT to ACCEPTED and RSVP to FALSE for all multiple attendees" do
-          builder.add_single_meeting_event(meeting: meeting_with_participants)
-          builder.update_calendar_status(cancelled: false)
-
-          event = parsed_calendar.events.first
-          expect(event.attendee.count).to eq(2)
-
-          # Find attendees by email
-          john_attendee = event.attendee.find { |a| a.to_s.include?("john@example.com") }
-          jane_attendee = event.attendee.find { |a| a.to_s.include?("jane@example.com") }
-
-          expect(john_attendee).to be_present
-          expect(jane_attendee).to be_present
-
-          [john_attendee, jane_attendee].each do |attendee|
-            expect(attendee.ical_params["partstat"]).to eq(["ACCEPTED"])
-            expect(attendee.ical_params["rsvp"]).to eq(["FALSE"])
-            expect(attendee.ical_params["cutype"]).to eq(["INDIVIDUAL"])
-            expect(attendee.ical_params["role"]).to eq(["REQ-PARTICIPANT"])
-          end
         end
       end
     end
@@ -222,23 +230,24 @@ RSpec.describe Meetings::IcalendarBuilder,
              time_zone: timezone.tzinfo.name).tap do |recurring_meeting|
         create(:meeting_participant, :invitee, meeting: recurring_meeting.template, user: user1)
         create(:meeting_participant, :invitee, meeting: recurring_meeting.template, user: user2)
+
+        recurring_meeting.template.participants.update_all(participation_status: :unknown)
       end
     end
 
     let!(:second_occurrence) do
       # Cancel second occurrence
-      create(:scheduled_meeting,
-             :cancelled,
+      t = recurring_meeting.start_time + 1.week
+      create(:meeting,
              recurring_meeting:,
-             start_time: recurring_meeting.start_time + 1.week)
+             start_time: t,
+             recurrence_start_time: t,
+             state: :cancelled)
     end
 
     let!(:third_occurence) do
       # Third occurrence instantiated and moved by +10 minutes
       base_start = recurring_meeting.start_time + 2.weeks
-      create(:scheduled_meeting,
-             recurring_meeting:,
-             start_time: base_start)
 
       result = RecurringMeetings::InitOccurrenceService
           .new(user: User.system, recurring_meeting:)
@@ -246,14 +255,55 @@ RSpec.describe Meetings::IcalendarBuilder,
 
       meeting = result.result
 
-      # Reschedule meeting to be 10 minutes later. It should still have the correct recurrence
+      # Reschedule meeting to be 10 minutes later. It should still have the correct recurrence_start_time
       meeting.update(start_time: base_start + 10.minutes)
 
-      meeting.scheduled_meeting
+      meeting
+    end
+
+    context "when using the cache" do
+      subject(:builder) { described_class.new(timezone:) }
+
+      before do
+        builder.preload_for_recurring_meetings(recurring_meetings: [recurring_meeting])
+      end
+
+      it "preloads the correct caches" do
+        builder.add_series_event(recurring_meeting:)
+
+        expect(builder.instance_variable_get(:@excluded_dates_cache)).to eq(
+          recurring_meeting.id => [second_occurrence.recurrence_start_time]
+        )
+
+        expect(builder.instance_variable_get(:@instantiated_occurrences_cache)).to eq(
+          recurring_meeting.id => [third_occurence]
+        )
+
+        expect(builder.instance_variable_get(:@series_cache_loaded)).to be true
+      end
+
+      it "puts the correct EXDATEs in the generated event (REGRESSION: #68068)" do
+        builder.add_series_event(recurring_meeting:)
+
+        parsed_calendar = Icalendar::Calendar.parse(builder.to_ical).first
+        event = parsed_calendar.events.find { |e| e.uid == recurring_meeting.uid }
+
+        expect(event.exdate).not_to be_empty
+        exdate_values = event.exdate.map(&:value)
+        expect(exdate_values).to contain_exactly(second_occurrence.recurrence_start_time)
+      end
     end
 
     context "when current user needs to take action" do
       subject(:builder) { described_class.new(timezone:, user: user1) }
+
+      before do
+        recurring_meeting.template.participants.find_by(user: user1).update!(participation_status: :needs_action)
+        recurring_meeting.meetings.each do |meeting|
+          meeting.participants.find_by(user: user1)&.update(participation_status: :needs_action)
+        end
+        recurring_meeting.template.participants.find_by(user: user2).update!(participation_status: :declined)
+      end
 
       let(:parsed_calendar) { Icalendar::Calendar.parse(builder.to_ical).first }
 
@@ -274,9 +324,9 @@ RSpec.describe Meetings::IcalendarBuilder,
         expect(current_user_attendee.ical_params["cutype"]).to eq(["INDIVIDUAL"])
         expect(current_user_attendee.ical_params["role"]).to eq(["REQ-PARTICIPANT"])
 
-        # Other user should have ACCEPTED and RSVP=FALSE
-        expect(other_user_attendee.ical_params["partstat"]).to eq(["ACCEPTED"])
-        expect(other_user_attendee.ical_params["rsvp"]).to eq(["FALSE"])
+        # Other user should have DECLINED
+        expect(other_user_attendee.ical_params["partstat"]).to eq(["DECLINED"])
+        expect(other_user_attendee.ical_params["rsvp"]).to be_nil
         expect(other_user_attendee.ical_params["cutype"]).to eq(["INDIVIDUAL"])
         expect(other_user_attendee.ical_params["role"]).to eq(["REQ-PARTICIPANT"])
 
@@ -288,8 +338,8 @@ RSpec.describe Meetings::IcalendarBuilder,
 
           expect(current_user_override.ical_params["partstat"]).to eq(["NEEDS-ACTION"])
           expect(current_user_override.ical_params["rsvp"]).to eq(["TRUE"])
-          expect(other_user_override.ical_params["partstat"]).to eq(["ACCEPTED"])
-          expect(other_user_override.ical_params["rsvp"]).to eq(["FALSE"])
+          expect(other_user_override.ical_params["partstat"]).to be_nil
+          expect(other_user_override.ical_params["rsvp"]).to be_nil
         end
       end
 
@@ -305,14 +355,14 @@ RSpec.describe Meetings::IcalendarBuilder,
 
         # Check override event timestamps
         overrides.each do |override_event|
-          # Find the corresponding scheduled meeting for this override
-          scheduled_meeting = [second_occurrence, third_occurence].find do |sm|
-            sm.meeting && override_event.recurrence_id.to_time.utc.to_i == sm.start_time.utc.to_i
+          # Find the corresponding meeting occurrence for this override
+          meeting_occurrence = [second_occurrence, third_occurence].find do |m|
+            override_event.recurrence_id.to_time.utc.to_i == m.recurrence_start_time.utc.to_i
           end
 
-          if scheduled_meeting&.meeting
-            expect(override_event.created.to_time).to be_within(1.second).of(scheduled_meeting.meeting.created_at.utc)
-            expect(override_event.last_modified.to_time).to be_within(1.second).of(scheduled_meeting.meeting.updated_at.utc)
+          if meeting_occurrence
+            expect(override_event.created.to_time).to be_within(1.second).of(meeting_occurrence.created_at.utc)
+            expect(override_event.last_modified.to_time).to be_within(1.second).of(meeting_occurrence.updated_at.utc)
           end
         end
       end
@@ -320,12 +370,12 @@ RSpec.describe Meetings::IcalendarBuilder,
 
     context "when current user has accepted all invitations" do
       subject(:builder) do
-        described_class.new(timezone:, user: user1).tap(&:treat_participations_from_user_as_accepted!)
+        described_class.new(timezone:, user: user1)
       end
 
       let(:parsed_calendar) { Icalendar::Calendar.parse(builder.to_ical).first }
 
-      it "sets PARTSTAT to ACCEPTED and RSVP to FALSE for all attendees in recurring meeting series" do
+      it "does not set PARTSTAT and RSVP for all attendees in recurring meeting series" do
         builder.add_series_event(recurring_meeting:)
 
         master = parsed_calendar.events.find { |e| e.rrule.present? && e.recurrence_id.blank? }
@@ -334,8 +384,8 @@ RSpec.describe Meetings::IcalendarBuilder,
         # Check master event attendees
         expect(master.attendee).not_to be_empty
         master.attendee.each do |attendee|
-          expect(attendee.ical_params["partstat"]).to eq(["ACCEPTED"])
-          expect(attendee.ical_params["rsvp"]).to eq(["FALSE"])
+          expect(attendee.ical_params["partstat"]).to be_nil
+          expect(attendee.ical_params["rsvp"]).to be_nil
           expect(attendee.ical_params["cutype"]).to eq(["INDIVIDUAL"])
           expect(attendee.ical_params["role"]).to eq(["REQ-PARTICIPANT"])
         end
@@ -344,11 +394,23 @@ RSpec.describe Meetings::IcalendarBuilder,
         overrides.each do |override_event|
           expect(override_event.attendee).not_to be_empty
           override_event.attendee.each do |attendee|
-            expect(attendee.ical_params["partstat"]).to eq(["ACCEPTED"])
-            expect(attendee.ical_params["rsvp"]).to eq(["FALSE"])
+            expect(attendee.ical_params["partstat"]).to be_nil
+            expect(attendee.ical_params["rsvp"]).to be_nil
             expect(attendee.ical_params["cutype"]).to eq(["INDIVIDUAL"])
             expect(attendee.ical_params["role"]).to eq(["REQ-PARTICIPANT"])
           end
+        end
+      end
+
+      it "sets occurrence override SEQUENCE >= series SEQUENCE" do
+        builder.add_series_event(recurring_meeting:)
+
+        master = parsed_calendar.events.find { |e| e.rrule.present? && e.recurrence_id.blank? }
+        overrides = parsed_calendar.events.select { |e| e.recurrence_id.present? }
+
+        expect(master.sequence).to be >= 0
+        overrides.each do |override_event|
+          expect(override_event.sequence).to be >= master.sequence
         end
       end
 
@@ -364,17 +426,97 @@ RSpec.describe Meetings::IcalendarBuilder,
 
         # Check override event timestamps
         overrides.each do |override_event|
-          # Find the corresponding scheduled meeting for this override
-          scheduled_meeting = [second_occurrence, third_occurence].find do |sm|
-            sm.meeting && override_event.recurrence_id.to_time.utc.to_i == sm.start_time.utc.to_i
+          # Find the corresponding meeting occurrence for this override
+          meeting_occurrence = [second_occurrence, third_occurence].find do |m|
+            override_event.recurrence_id.to_time.utc.to_i == m.recurrence_start_time.utc.to_i
           end
 
-          if scheduled_meeting&.meeting
-            expect(override_event.created.to_time).to be_within(1.second).of(scheduled_meeting.meeting.created_at.utc)
-            expect(override_event.last_modified.to_time).to be_within(1.second).of(scheduled_meeting.meeting.updated_at.utc)
+          if meeting_occurrence
+            expect(override_event.created.to_time).to be_within(1.second).of(meeting_occurrence.created_at.utc)
+            expect(override_event.last_modified.to_time).to be_within(1.second).of(meeting_occurrence.updated_at.utc)
           end
         end
       end
+    end
+  end
+
+  context "with a recurring meeting and interim responses" do
+    let(:project) { create(:project) }
+    let(:user1) do
+      create(:user, firstname: "John", lastname: "Doe", member_with_permissions: { project => [:view_meetings] })
+    end
+    let(:user2) do
+      create(:user, firstname: "John", lastname: "Doe", member_with_permissions: { project => [:view_meetings] })
+    end
+
+    let(:recurring_meeting) do
+      create(:recurring_meeting,
+             start_time: Time.zone.parse("2025-08-25 09:00"),
+             iterations: 10,
+             project: project,
+             end_after: :iterations,
+             time_zone: timezone.tzinfo.name).tap do |recurring_meeting|
+        create(:meeting_participant, :invitee, meeting: recurring_meeting.template, user: user1, participation_status: :accepted)
+        create(:meeting_participant, :invitee, meeting: recurring_meeting.template, user: user2, participation_status: :tentative)
+      end
+    end
+
+    let!(:interim_response) do
+      RecurringMeetingInterimResponse.create!(
+        recurring_meeting:,
+        user: user2,
+        start_time: recurring_meeting.start_time + 1.week,
+        participation_status: :declined
+      )
+    end
+
+    let(:parsed_calendar) { Icalendar::Calendar.parse(builder.to_ical).first }
+
+    subject(:builder) { described_class.new(timezone:) }
+
+    context "when using the cache" do
+      before do
+        builder.preload_for_recurring_meetings(recurring_meetings: [recurring_meeting])
+      end
+
+      it "preloads the correct caches" do
+        builder.add_series_event(recurring_meeting:)
+
+        expect(builder.instance_variable_get(:@interim_responses_cache)).to eq(
+          recurring_meeting.id => [interim_response]
+        )
+
+        expect(builder.instance_variable_get(:@series_cache_loaded)).to be true
+      end
+    end
+
+    it "builds the correct events with correct participation statuses" do
+      builder.add_series_event(recurring_meeting:)
+
+      # expect(parsed_calendar.events.size).to eq(2)
+      recurring_event = parsed_calendar.events.find { |e| e.rrule.present? && e.recurrence_id.blank? }
+      expect(recurring_event).to be_present
+      expect(recurring_event.dtstart).to eq(recurring_meeting.start_time)
+
+      # attendance for the recurring event is from the template
+      user1_attendee = recurring_event.attendee.find { |a| a.to_s.include?(user1.mail) }
+      expect(user1_attendee.ical_params["partstat"]).to eq(["ACCEPTED"])
+      user2_attendee = recurring_event.attendee.find { |a| a.to_s.include?(user2.mail) }
+      expect(user2_attendee.ical_params["partstat"]).to eq(["TENTATIVE"])
+
+      # no meeting has been instantiated but to properly display the response to the single meeting,
+      # we have stored the interim response and from those we are building up the single recurrence event
+      single_recurrence_event = parsed_calendar.events.find { |e| e.recurrence_id.present? }
+      expect(single_recurrence_event).to be_present
+      expect(single_recurrence_event.dtstart).to eq(interim_response.start_time)
+
+      # user 1 has not changed his status for the single occurrence
+      user1_single = single_recurrence_event.attendee.find { |a| a.to_s.include?(user1.mail) }
+      expect(user1_single.ical_params["partstat"]).to eq(["ACCEPTED"])
+
+      # user 2 has declined the single occurrence via interim response
+      user2_single = single_recurrence_event.attendee.find { |a| a.to_s.include?(user2.mail) }
+      expect(user2_single.ical_params["partstat"]).to eq(["DECLINED"])
     end
   end
 

@@ -3,8 +3,8 @@ import {
 } from 'core-app/core/setup/globals/onboarding/helpers';
 import { OnboardingStep } from 'core-app/core/setup/globals/onboarding/onboarding_tour';
 
-export function boardTourSteps(edition:'basic'|'enterprise'):OnboardingStep[] {
-  const listExplanation = edition === 'basic' ? 'basic' : 'kanban';
+export function boardTourSteps():OnboardingStep[] {
+  const listExplanation = 'kanban';
 
   return [
     {
@@ -30,26 +30,21 @@ export function boardTourSteps(edition:'basic'|'enterprise'):OnboardingStep[] {
       nextButton: { text: I18n.t('js.onboarding.buttons.next') },
       containerClass: '-dark -hidden-arrow',
       onNext() {
-        jQuery('[data-tour-selector="main-menu--arrow-left_boards"]')[0].click();
+        document.querySelector<HTMLElement>('[data-tour-selector="main-menu--arrow-left_boards"]')?.click();
       },
     },
   ];
 }
 
-export function navigateToBoardStep(edition:'basic'|'enterprise'):OnboardingStep {
-  let boardName:string;
-  if (edition === 'basic') {
-    boardName = 'Basic board';
-  } else {
-    boardName = 'Kanban';
-  }
+export function navigateToBoardStep():OnboardingStep {
+  const boardName= 'Kanban';
 
   return {
     'next #boards-wrapper>.boards-menu-item': I18n.t('js.onboarding.steps.boards.overview'),
     showSkip: false,
     nextButton: { text: I18n.t('js.onboarding.buttons.next') },
     onNext() {
-      jQuery('#boards-wrapper>.boards-menu-item ~ .toggler')[0].click();
+      document.querySelector<HTMLElement>('#boards-wrapper>.boards-menu-item ~ .toggler')?.click();
       waitForElement(
         '.op-submenu--item-action',
         '#main-menu',

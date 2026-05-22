@@ -1,8 +1,4 @@
-import {
-  Component,
-  Injector,
-  OnInit,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Injector, OnInit, inject } from '@angular/core';
 import { ConfigurationService } from 'core-app/core/config/configuration.service';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { WorkPackageViewFiltersService } from 'core-app/features/work-packages/routing/wp-view-base/view-services/wp-view-filters.service';
@@ -16,8 +12,19 @@ import { SchemaCacheService } from 'core-app/core/schemas/schema-cache.service';
   templateUrl: './wp-table-configuration-relation-selector.html',
   selector: 'wp-table-configuration-relation-selector',
   standalone: false,
+  // TODO: This component has been partially migrated to be zoneless-compatible.
+  // After testing, this should be updated to ChangeDetectionStrategy.OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class WpTableConfigurationRelationSelectorComponent implements OnInit {
+  readonly injector = inject(Injector);
+  readonly I18n = inject(I18nService);
+  readonly wpTableFilters = inject(WorkPackageViewFiltersService);
+  readonly ConfigurationService = inject(ConfigurationService);
+  readonly schemaCache = inject(SchemaCacheService);
+  readonly cdRef = inject(ChangeDetectorRef);
+
   private relationFilterIds:string[] = [
     'parent',
     'precedes',
@@ -56,28 +63,21 @@ export class WpTableConfigurationRelationSelectorComponent implements OnInit {
     includes: this.I18n.t('js.relation_labels.partof'),
   };
 
-  constructor(readonly injector:Injector,
-    readonly I18n:I18nService,
-    readonly wpTableFilters:WorkPackageViewFiltersService,
-    readonly ConfigurationService:ConfigurationService,
-    readonly schemaCache:SchemaCacheService) {
+  ngOnInit() {
+    void this.initializeRelationFilters();
   }
 
-  ngOnInit() {
-    const self:WpTableConfigurationRelationSelectorComponent = this;
-
-    this.wpTableFilters
-      .onReady()
-      .then(() => {
-        self.availableRelationFilters = self.relationFiltersOf(self.wpTableFilters.availableFilters) as QueryFilterResource[];
-        self.setSelectedRelationFilter();
-      });
+  private async initializeRelationFilters():Promise<void> {
+    await this.wpTableFilters.onReady();
+    this.availableRelationFilters = this.relationFiltersOf(this.wpTableFilters.availableFilters) as QueryFilterResource[];
+    this.setSelectedRelationFilter();
+    this.cdRef.markForCheck();
   }
 
   private setSelectedRelationFilter():void {
     const currentRelationFilters:QueryFilterInstanceResource[] = this.relationFiltersOf(this.wpTableFilters.current) as QueryFilterInstanceResource[];
     if (currentRelationFilters.length > 0) {
-      this.selectedRelationFilter = _.find(this.availableRelationFilters, { id: currentRelationFilters[0].id }) as QueryFilterResource;
+      this.selectedRelationFilter = _.find(this.availableRelationFilters, { id: currentRelationFilters[0].id })!;
     } else {
       this.selectedRelationFilter = this.availableRelationFilters[0];
     }

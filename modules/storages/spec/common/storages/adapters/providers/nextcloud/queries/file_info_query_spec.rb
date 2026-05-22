@@ -43,26 +43,26 @@ module Storages
             let(:auth_strategy) { Registry["nextcloud.authentication.user_bound"].call(user, storage) }
             let(:input_data) { Input::FileInfo.build(file_id:).value! }
 
-            it_behaves_like "adapter file_info_query: basic query setup"
+            it_behaves_like "storage adapter: query call signature", "file_info"
 
             context "with a file id requested", vcr: "nextcloud/file_info_query_success_file" do
-              let(:file_id) { "267" }
+              let(:file_id) { "56" }
               let(:file_info) do
                 Results::StorageFileInfo.new(
                   id: file_id,
                   status: "ok",
                   status_code: 200,
-                  name: "android-studio-linux.tar.gz",
-                  size: 982713473,
-                  mime_type: "application/gzip",
-                  created_at: Time.parse("1970-01-01T00:00:00Z"),
-                  last_modified_at: Time.parse("2022-12-01T07:43:36Z"),
+                  name: "Reasons to use Nextcloud.pdf",
+                  size: 976625,
+                  mime_type: "application/pdf",
+                  created_at: Time.at(0).utc,
+                  last_modified_at: Time.parse("2025-09-08T11:32:11Z"),
                   owner_name: "admin",
                   owner_id: "admin",
-                  last_modified_by_name: nil,
-                  last_modified_by_id: nil,
+                  last_modified_by_name: "admin",
+                  last_modified_by_id: "admin",
                   permissions: "RGDNVW",
-                  location: "/My%20files/android-studio-linux.tar.gz"
+                  location: "/Reasons to use Nextcloud.pdf"
                 )
               end
 
@@ -86,7 +86,7 @@ module Storages
                   last_modified_by_name: nil,
                   last_modified_by_id: nil,
                   permissions: "RGDNVCK",
-                  location: "/Folder/%C3%9Cml%C3%A6%C3%BBts"
+                  location: "/Folder/Ümlæûts"
                 )
               end
 
@@ -111,8 +111,7 @@ module Storages
                   last_modified_by_name: nil,
                   last_modified_by_id: nil,
                   permissions: "RGDNVW",
-                  location:
-                    "/Folder%20with%20spaces/%C3%9Cml%C3%A4uts%20%26%20spe%C2%A2i%C3%A6l%20characters/what_have_you_done.md"
+                  location: "/Folder with spaces/Ümläuts & spe¢iæl characters/what_have_you_done.md"
                 )
               end
 
@@ -123,7 +122,14 @@ module Storages
               let(:file_id) { "not_existent" }
               let(:error_source) { described_class }
 
-              it_behaves_like "adapter file_info_query: not found"
+              it_behaves_like "storage adapter: error response", :not_found
+            end
+
+            context "with integration app disabled", vcr: "nextcloud/file_info_query_app_disabled" do
+              let(:file_id) { "56" }
+              let(:error_source) { described_class }
+
+              it_behaves_like "storage adapter: error response", :error
             end
           end
         end

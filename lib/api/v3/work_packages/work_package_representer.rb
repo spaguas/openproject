@@ -31,6 +31,7 @@ module API
     module WorkPackages
       class WorkPackageRepresenter < ::API::Decorators::Single
         include API::Decorators::LinkedResource
+        include API::V3::Workspaces::LinkedResource
         include API::Decorators::DateProperty
         include API::Decorators::FormattableProperty
         include API::Caching::CachedRepresenter
@@ -270,10 +271,10 @@ module API
 
         link :addChild,
              cache_if: -> { add_work_packages_allowed? } do
-          next if represented.milestone? || represented.new_record?
+          next if represented.milestone? || represented.new_record? || represented.project.nil?
 
           {
-            href: api_v3_paths.work_packages_by_project(represented.project.identifier),
+            href: api_v3_paths.work_packages_by_workspace(represented.project.identifier),
             method: :post,
             title: "Add child of #{represented.subject}"
           }
@@ -326,7 +327,8 @@ module API
           visible_children.map do |child|
             {
               href: api_v3_paths.work_package(child.id),
-              title: child.subject
+              title: child.subject,
+              displayId: child.display_id.to_s
             }
           end
         end
@@ -336,13 +338,19 @@ module API
           represented.visible_ancestors(current_user).map do |ancestor|
             {
               href: api_v3_paths.work_package(ancestor.id),
-              title: ancestor.subject
+              title: ancestor.subject,
+              displayId: ancestor.display_id.to_s
             }
           end
         end
 
         property :id,
                  render_nil: true
+
+        property :display_id,
+                 as: :displayId,
+                 render_nil: true,
+                 getter: ->(*) { display_id&.to_s }
 
         property :lock_version,
                  render_nil: true,
@@ -488,7 +496,7 @@ module API
 
         associated_resource :priority
 
-        associated_resource :project
+        associated_project
 
         resource :project_phase,
                  link_cache_if: -> { any_phase_active_in_project? && view_project_phase_allowed? },
@@ -500,8 +508,7 @@ module API
                      }
                    else
                      {
-                       href: nil,
-                       title: nil
+                       href: nil
                      }
                    end
                  },
@@ -534,8 +541,7 @@ module API
             }
           else
             {
-              href: nil,
-              title: nil
+              href: nil
             }
           end
         end
@@ -580,8 +586,7 @@ module API
                                 }
                               else
                                 {
-                                  href: nil,
-                                  title: nil
+                                  href: nil
                                 }
                               end
                             },
@@ -598,7 +603,7 @@ module API
                                               expected_version: "3",
                                               expected_namespace: "work_packages"
 
-                                  WorkPackage.find_by(id:) ||
+                                  WorkPackage.visible.find_by(id:) ||
                                     ::WorkPackage::InexistentWorkPackage.new(id:)
                                 end
 
@@ -656,10 +661,8 @@ module API
         def current_user_update_allowed?
           return @current_user_update_allowed if defined?(@current_user_update_allowed)
 
-          @current_user_update_allowed =
-            current_user.allowed_in_work_package?(:edit_work_packages, represented) ||
-              current_user.allowed_in_project?(:change_work_package_status, represented.project) ||
-              current_user.allowed_in_project?(:assign_versions, represented.project)
+          @current_user_update_allowed = ::WorkPackages::UpdateContract.update_allowed?(user: current_user,
+                                                                                        work_package: represented)
         end
 
         def view_time_entries_allowed?
@@ -724,7 +727,7 @@ module API
         end
 
         def any_phase_active_in_project?
-          represented.project.phases.any?(&:active?)
+          represented.project&.phases&.any?(&:active?)
         end
 
         def relations
@@ -801,7 +804,8 @@ module API
            represented.cache_checksum,
            Setting.work_package_done_ratio,
            Setting.show_work_package_attachments,
-           Setting.feeds_enabled?]
+           Setting.feeds_enabled?,
+           Setting::WorkPackageIdentifier.semantic_mode_active?]
         end
 
         def load_complete_model(model)

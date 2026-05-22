@@ -23,7 +23,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # See COPYRIGHT and LICENSE files for more details.
 #++
@@ -32,26 +32,29 @@ Rails.application.reloader.to_prepare do
   OpenProject::AccessControl.map do |map|
     map.project_module nil, order: 100 do
       map.permission :add_project,
-                     { projects: %i[new create] },
+                     { projects: %i[new create],
+                       "projects/identifier_suggestion": %i[show] },
                      permissible_on: :global,
                      require: :loggedin,
                      contract_actions: { projects: %i[create] }
 
       map.permission :add_portfolios,
-                     { projects: %i[new create] },
+                     { portfolios: %i[new create] },
                      permissible_on: :global,
                      require: :loggedin,
-                     visible: -> { OpenProject::FeatureDecisions.portfolio_models_active? }
+                     visible: -> { OpenProject::FeatureDecisions.portfolio_models_active? },
+                     contract_actions: { portfolios: %i[create] }
 
       map.permission :add_programs,
-                     { projects: %i[new create] },
+                     { programs: %i[new create] },
                      permissible_on: :global,
                      require: :loggedin,
-                     visible: -> { OpenProject::FeatureDecisions.portfolio_models_active? }
+                     visible: -> { OpenProject::FeatureDecisions.portfolio_models_active? },
+                     contract_actions: { programs: %i[create] }
 
       map.permission :archive_project,
                      {
-                       "projects/archive": %i[create]
+                       "projects/archive": %i[create dialog]
                      },
                      permissible_on: :project,
                      require: :member
@@ -67,23 +70,38 @@ Rails.application.reloader.to_prepare do
 
       map.permission :create_user,
                      {
-                       users: %i[index show new create resend_invitation],
+                       users: %i[index show new create resend_invitation configure_view_modal],
                        "users/memberships": %i[create],
                        admin: %i[index]
                      },
                      permissible_on: :global,
                      require: :loggedin,
+                     dependencies: :view_all_principals,
                      contract_actions: { users: %i[read create] }
 
       map.permission :manage_user,
                      {
-                       users: %i[index show edit update change_status change_status_info],
+                       users: %i[index show edit update change_status change_status_info
+                                 update_reminders update_email_alerts update_workdays
+                                 update_participating update_non_participating update_date_alerts
+                                 new_project_settings create_project_settings
+                                 edit_project_settings update_project_settings destroy_project_settings
+                                 configure_view_modal],
                        "users/memberships": %i[create update destroy],
                        admin: %i[index]
                      },
                      permissible_on: :global,
                      require: :loggedin,
+                     dependencies: :view_all_principals,
                      contract_actions: { users: %i[read update] }
+
+      map.permission :view_all_principals,
+                     {
+                       users: %i[index show configure_view_modal]
+                     },
+                     permissible_on: :global,
+                     require: :loggedin,
+                     contract_actions: { users: %i[read] }
 
       map.permission :manage_placeholder_user,
                      {
@@ -92,6 +110,7 @@ Rails.application.reloader.to_prepare do
                        admin: %i[index]
                      },
                      permissible_on: :global,
+                     dependencies: :view_all_principals,
                      require: :loggedin,
                      contract_actions: { placeholder_users: %i[create read update] }
 
@@ -101,7 +120,7 @@ Rails.application.reloader.to_prepare do
                      require: :loggedin
 
       map.permission :view_project,
-                     { projects: [:show] },
+                     { projects: %i[show] },
                      permissible_on: :project,
                      public: true
 
@@ -116,8 +135,15 @@ Rails.application.reloader.to_prepare do
                        "projects/settings/storage": %i[show],
                        "projects/settings/work_packages": %i[show],
                        "projects/settings/work_packages/internal_comments": %i[show update],
+                       "projects/settings/creation_wizard": %i[show disable_dialog toggle refresh_submission_form
+                                                               update_name_settings update_submission_settings
+                                                               update_artifact_export_settings
+                                                               toggle_project_custom_field
+                                                               disable_all_of_section enable_all_of_section],
+                       "projects/settings/subitems": %i[show update],
+                       "projects/settings/template": %i[show update toggle_template],
                        "projects/templated": %i[create destroy],
-                       "projects/identifier": %i[show update],
+                       "projects/identifier": %i[show update identifier_update_dialog],
                        "projects/status": %i[update destroy]
                      },
                      permissible_on: :project,
@@ -136,8 +162,17 @@ Rails.application.reloader.to_prepare do
                      permissible_on: :project,
                      dependencies: :view_project
 
+      map.permission :export_projects,
+                     {
+                       projects: %i[export_project_initiation_pdf]
+                     },
+                     permissible_on: :project,
+                     dependencies: :view_project
+
       map.permission :edit_project_attributes,
-                     {},
+                     {
+                       "projects/creation_wizard": %i[show update help_text]
+                     },
                      permissible_on: :project,
                      require: :member,
                      dependencies: :view_project_attributes,
@@ -182,6 +217,12 @@ Rails.application.reloader.to_prepare do
                      dependencies: :view_members,
                      contract_actions: { members: %i[create update destroy] }
 
+      map.permission :invite_members_by_email,
+                     {},
+                     permissible_on: :project,
+                     require: :member,
+                     dependencies: :manage_members
+
       map.permission :view_members,
                      {
                        members: %i[index menu],
@@ -213,7 +254,8 @@ Rails.application.reloader.to_prepare do
                      require: :member
 
       map.permission :add_subprojects,
-                     { projects: %i[new create] },
+                     { projects: %i[new create],
+                       "projects/identifier_suggestion": %i[show] },
                      permissible_on: :project,
                      require: :member
 
@@ -251,6 +293,14 @@ Rails.application.reloader.to_prepare do
                      {},
                      permissible_on: :project_query,
                      require: :loggedin
+
+      map.permission :manage_own_working_times,
+                     {},
+                     permissible_on: :global
+
+      map.permission :manage_working_times,
+                     {},
+                     permissible_on: :global
     end
 
     map.project_module :work_package_tracking, order: 90 do |wpt|
@@ -261,7 +311,8 @@ Rails.application.reloader.to_prepare do
                        work_packages: %i[show index show_conflict_flash_message share_upsell],
                        work_packages_api: [:get],
                        "work_packages/reports": %i[report report_details],
-                       "work_packages/activities_tab": %i[index update_streams update_sorting update_filter],
+                       "work_packages/activities_tab": %i[index page_streams item_actions update_streams update_sorting
+                                                          update_filter],
                        "work_packages/menus": %i[show],
                        "work_packages/hover_card": %i[show],
                        work_package_relations_tab: %i[index],
@@ -272,7 +323,8 @@ Rails.application.reloader.to_prepare do
 
       wpt.permission :add_work_packages,
                      {
-                       work_package_relations: %i[new create]
+                       work_package_relations: %i[new create],
+                       work_packages: %i[new]
                      },
                      permissible_on: :project,
                      dependencies: :view_work_packages,
@@ -295,7 +347,10 @@ Rails.application.reloader.to_prepare do
                      contract_actions: { work_packages: %i[move] }
 
       wpt.permission :copy_work_packages,
-                     { "work_packages/moves": %i[new create] },
+                     {
+                       "work_packages/moves": %i[new create],
+                       work_packages: %i[copy]
+                     },
                      permissible_on: %i[work_package project],
                      require: :loggedin,
                      dependencies: :view_work_packages,
@@ -306,7 +361,7 @@ Rails.application.reloader.to_prepare do
                        # FIXME: Although the endpoint is removed, the code checking whether a user
                        # is eligible to add work packages through the API still seems to rely on this.
                        journals: [:new],
-                       "work_packages/activities_tab": %i[create toggle_reaction sanitize_internal_mentions]
+                       "work_packages/activities_tab": %i[emoji_actions create toggle_reaction sanitize_internal_mentions]
                      },
                      permissible_on: %i[work_package project],
                      dependencies: :view_work_packages
@@ -359,7 +414,8 @@ Rails.application.reloader.to_prepare do
       wpt.permission :add_work_package_attachments,
                      {},
                      permissible_on: %i[work_package project],
-                     dependencies: :view_work_packages
+                     dependencies: :view_work_packages,
+                     contract_actions: { work_package_attachments: %i[create] }
 
       # WorkPackage categories
       wpt.permission :manage_categories,
@@ -380,7 +436,7 @@ Rails.application.reloader.to_prepare do
       wpt.permission :delete_work_packages,
                      {
                        work_packages: :destroy,
-                       "work_packages/bulk": :destroy
+                       "work_packages/bulk": %i[delete_dialog destroy reassign]
                      },
                      permissible_on: :project,
                      require: :member,
@@ -497,57 +553,26 @@ Rails.application.reloader.to_prepare do
 
     map.project_module :wiki do |wiki|
       wiki.permission :view_wiki_pages,
-                      { wiki: %i[index show special menu] },
-                      permissible_on: :project
-
-      wiki.permission :list_attachments,
-                      { wiki: :list_attachments },
-                      permissible_on: :project,
-                      require: :member
-
-      wiki.permission :manage_wiki,
-                      { wikis: %i[edit destroy] },
-                      permissible_on: :project,
-                      require: :member
-
-      wiki.permission :manage_wiki_menu,
-                      { wiki_menu_items: %i[edit update select_main_menu_item replace_main_menu_item] },
-                      permissible_on: :project,
-                      require: :member
-
-      wiki.permission :rename_wiki_pages,
-                      { wiki: :rename },
-                      permissible_on: :project,
-                      require: :member
-
-      wiki.permission :change_wiki_parent_page,
-                      { wiki: %i[edit_parent_page update_parent_page] },
-                      permissible_on: :project,
-                      require: :member
-
-      wiki.permission :delete_wiki_pages,
-                      { wiki: :destroy },
-                      permissible_on: :project,
-                      require: :member
-
-      wiki.permission :export_wiki_pages,
-                      { wiki: [:export] },
+                      { wiki: %i[index show special menu export] },
                       permissible_on: :project
 
       wiki.permission :view_wiki_edits,
                       { wiki: %i[history diff annotate] },
+                      dependencies: :view_wiki_pages,
                       permissible_on: :project
 
       wiki.permission :edit_wiki_pages,
-                      { wiki: %i[edit update preview add_attachment new new_child create] },
+                      { wiki: %i[edit update preview add_attachment new new_child create rename] },
+                      dependencies: :view_wiki_pages,
                       permissible_on: :project
 
-      wiki.permission :delete_wiki_pages_attachments,
-                      {},
-                      permissible_on: :project
-
-      wiki.permission :protect_wiki_pages,
-                      { wiki: :protect },
+      wiki.permission :manage_wiki,
+                      {
+                        wiki: %i[destroy protect edit_parent_page update_parent_page],
+                        wikis: %i[edit destroy],
+                        wiki_menu_items: %i[edit update select_main_menu_item replace_main_menu_item]
+                      },
+                      dependencies: :edit_wiki_pages,
                       permissible_on: :project,
                       require: :member
     end

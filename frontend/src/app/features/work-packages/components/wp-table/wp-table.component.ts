@@ -26,19 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  EventEmitter,
-  Injector,
-  Input,
-  NgZone,
-  OnInit,
-  Output,
-  ViewEncapsulation,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, Injector, Input, OnInit, Output, ViewEncapsulation, OnDestroy, inject } from '@angular/core';
 import { QueryResource } from 'core-app/features/hal/resources/query-resource';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import {
@@ -82,7 +70,20 @@ export interface WorkPackageFocusContext {
   selector: 'wp-table',
   standalone: false,
 })
-export class WorkPackagesTableComponent extends UntilDestroyedMixin implements OnInit, TableEventComponent {
+export class WorkPackagesTableComponent extends UntilDestroyedMixin implements OnInit, TableEventComponent, OnDestroy {
+  readonly elementRef = inject(ElementRef);
+  readonly injector = inject(Injector);
+  readonly states = inject(States);
+  readonly querySpace = inject(IsolatedQuerySpace);
+  readonly I18n = inject(I18nService);
+  readonly cdRef = inject(ChangeDetectorRef);
+  readonly wpTableGroupBy = inject(WorkPackageViewGroupByService);
+  readonly wpTableTimeline = inject(WorkPackageViewTimelineService);
+  readonly wpTableColumns = inject(WorkPackageViewColumnsService);
+  readonly wpTableSortBy = inject(WorkPackageViewSortByService);
+  readonly wpTableSums = inject(WorkPackageViewSumService);
+  readonly wpTableBaseline = inject(WorkPackageViewBaselineService);
+
   @Input() projectIdentifier:string;
 
   @Input('configuration') configurationObject:WorkPackageTableConfigurationObject;
@@ -95,7 +96,7 @@ export class WorkPackagesTableComponent extends UntilDestroyedMixin implements O
 
   public configuration:WorkPackageTableConfiguration;
 
-  private $element:JQuery;
+  private element:HTMLElement;
 
   private scrollSyncUpdate:(timelineVisible:boolean) => any;
 
@@ -105,7 +106,7 @@ export class WorkPackagesTableComponent extends UntilDestroyedMixin implements O
 
   public workPackageTable:WorkPackageTable;
 
-  public tbody:JQuery;
+  public tbody:HTMLTableSectionElement;
 
   public query:QueryResource;
 
@@ -137,27 +138,9 @@ export class WorkPackagesTableComponent extends UntilDestroyedMixin implements O
 
   public sumVisible = false;
 
-  constructor(
-    readonly elementRef:ElementRef,
-    readonly injector:Injector,
-    readonly states:States,
-    readonly querySpace:IsolatedQuerySpace,
-    readonly I18n:I18nService,
-    readonly cdRef:ChangeDetectorRef,
-    readonly zone:NgZone,
-    readonly wpTableGroupBy:WorkPackageViewGroupByService,
-    readonly wpTableTimeline:WorkPackageViewTimelineService,
-    readonly wpTableColumns:WorkPackageViewColumnsService,
-    readonly wpTableSortBy:WorkPackageViewSortByService,
-    readonly wpTableSums:WorkPackageViewSumService,
-    readonly wpTableBaseline:WorkPackageViewBaselineService,
-  ) {
-    super();
-  }
-
   ngOnInit():void {
     this.configuration = new WorkPackageTableConfiguration(this.configurationObject);
-    this.$element = jQuery(this.elementRef.nativeElement);
+    this.element = this.elementRef.nativeElement;
 
     // Clear any old table subscribers
     this.querySpace.stopAllSubscriptions.next();
@@ -237,16 +220,16 @@ export class WorkPackagesTableComponent extends UntilDestroyedMixin implements O
   }
 
   public registerTimeline(controller:WorkPackageTimelineTableController, timelineBody:HTMLElement) {
-    const tbody = this.$element.find('.work-package--results-tbody');
-    const scrollContainer = this.$element.find('.work-package-table--container')[0];
+    const tbody = this.element.querySelector<HTMLTableSectionElement>('.work-package--results-tbody')!;
+    const scrollContainer = this.element.querySelector<HTMLElement>('.work-package-table--container')!;
     this.workPackageTable = new WorkPackageTable(
       this.injector,
       // Outer container for both table + Timeline
-      this.$element[0],
+      this.element,
       // Scroll container for the table/timeline
       scrollContainer,
       // Table tbody to insert into
-      tbody[0],
+      tbody,
       // Timeline body to insert into
       timelineBody,
       // Timeline controller
@@ -266,11 +249,11 @@ export class WorkPackagesTableComponent extends UntilDestroyedMixin implements O
     this.timeline = tableAndTimeline[1];
 
     // sync hover from table to timeline
-    this.wpTableHoverSync = new WpTableHoverSync(this.$element);
+    this.wpTableHoverSync = new WpTableHoverSync(this.element);
     this.wpTableHoverSync.activate();
 
     // sync scroll from table to timeline
-    this.scrollSyncUpdate = createScrollSync(this.$element);
+    this.scrollSyncUpdate = createScrollSync(this.element);
     this.scrollSyncUpdate(this.timelineVisible);
 
     this.cdRef.detectChanges();
@@ -281,13 +264,13 @@ export class WorkPackagesTableComponent extends UntilDestroyedMixin implements O
   }
 
   private getTableAndTimelineElement():[HTMLElement, HTMLElement] {
-    const $tableSide = this.$element.find('.work-packages-tabletimeline--table-side');
-    const $timelineSide = this.$element.find('.work-packages-tabletimeline--timeline-side');
+    const tableSide = this.element.querySelector<HTMLElement>('.work-packages-tabletimeline--table-side');
+    const timelineSide = this.element.querySelector<HTMLElement>('.work-packages-tabletimeline--timeline-side');
 
-    if ($timelineSide.length === 0 || $tableSide.length === 0) {
+    if (!tableSide || !timelineSide) {
       throw new Error('invalid state');
     }
 
-    return [$tableSide[0], $timelineSide[0]];
+    return [tableSide, timelineSide];
   }
 }

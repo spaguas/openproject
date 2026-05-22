@@ -31,7 +31,7 @@
 require "spec_helper"
 require_relative "../../../modules/my_page/spec/support/pages/my/page"
 
-RSpec.describe "Favorite projects", :js, :selenium do
+RSpec.describe "Favorite projects", :js do
   shared_let(:project) { create(:public_project, name: "My favorite!", enabled_module_names: []) }
   shared_let(:other_project) { create(:public_project, name: "Other project", enabled_module_names: []) }
   shared_let(:user) do
@@ -61,9 +61,11 @@ RSpec.describe "Favorite projects", :js, :selenium do
       visit project_path(project)
       expect(page).to have_css "a", accessible_name: "Add to favorites"
 
-      click_link_or_button(accessible_name: "Add to favorites")
+      wait_for_turbo do
+        click_link_or_button(accessible_name: "Add to favorites")
+      end
 
-      expect(page).to have_css "a", accessible_name: "Remove from favorite"
+      expect(page).to have_css "a", accessible_name: "Remove from favorites"
 
       project.reload
       expect(project).to be_favorited_by(user)

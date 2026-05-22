@@ -1,5 +1,5 @@
 ---
-Sidebar_navigation:
+sidebar_navigation:
   title: OpenID providers
   priority: 800
 description: OpenID providers for OpenProject.
@@ -244,6 +244,11 @@ is expected to be named `groups`, but you can change this if desired.
 The default behaviour of OpenProject is to create a new group for each unknown group listed in this claim. It will match existing groups by their name before creating a new group. You can later rename groups created this way in the group management UI, they will still be linked
 to the ID with which they are referenced in OpenID Connect claims and recognized that way.
 
+Once this option is enabled, the identity provider becomes fully responsible for managing group assignments. Each time a user logs in through this provider, only the group memberships declared by the identity provider will be assigned to that user. Any group memberships not declared by the identity provider will be removed.
+
+> [!IMPORTANT]
+> There are no exceptions — even if a different assignment was previously configured in OpenProject, it will be overwritten if it is not set in the identity provider.
+
 ##### Matching groups with regular expressions
 
 For advanced use cases, it's possible to filter which groups will be imported into OpenProject and which part of the group name will be considered.
@@ -444,6 +449,9 @@ OPENPROJECT_OPENID__CONNECT_KEYCLOAK_USERINFO__ENDPOINT="/realms/<REALM>/protoco
 # Optional: endpoint to redirect users for logout
 OPENPROJECT_OPENID__CONNECT_KEYCLOAK_END__SESSION__ENDPOINT="http://keycloak.example.com/realms/<REALM>/protocol/openid-connect/logout"
 
+# Optional: space separated list of grant types supported by the provider
+OPENPROJECT_OPENID__CONNECT_KEYCLOAK_GRANT__TYPES__SUPPORTED="authorization_code urn:ietf:params:oauth:grant-type:token-exchange"
+
 # Host name of Keycloak, required if endpoint information are not absolute URLs
 OPENPROJECT_OPENID__CONNECT_KEYCLOAK_HOST="<Hostname of the keycloak server>"
 
@@ -464,6 +472,12 @@ OPENPROJECT_OPENID__CONNECT_KEYCLOAK_ACR__VALUES="phr phrh Multi_Factor"
 
 # Optional: Claim mapping using JSON, see Step 7 above for more information on syntax
 OPENPROJECT_OPENID__CONNECT_KEYCLOAK_CLAIMS="{\"id_token\":{\"acr\":{\"essential\":true,\"values\":[\"phr\",\"phrh\",\"Multi_Factor\"]}}}"
+
+# Optional: Whether group synchronization should be enabled (default: false)
+OPENPROJECT_OPENID__CONNECT_KEYCLOAK_SYNC__GROUPS="true"
+
+# Optional: The name of the claim in the ID token that contains the group memberships
+OPENPROJECT_OPENID__CONNECT_KEYCLOAK_GROUPS__CLAIM="groups"
 ```
 
 
@@ -479,7 +493,7 @@ To apply the configuration after changes, you need to run the `db:seed` rake tas
 
 ## Troubleshooting
 
-Q: After clicking on a provider badge, I am redirected to a signup form that says a user already exists with that login.
+**Q: After clicking on a provider badge, I am redirected to a signup form that says a user already exists with that login.**
 
 A: This can happen if you previously created user accounts in OpenProject with the same email than what is stored in the OpenID provider. In this case, if you want to allow existing users to be automatically remapped to the OpenID provider, you should do the following:
 
@@ -491,8 +505,6 @@ sudo openproject run console
 # docker-compose run --rm web bundle exec rails console
 ```
 
-
-
 Once in the console you can then enter the following to enable the setting and leave the console.
 
 ```shell
@@ -500,8 +512,15 @@ Setting.oauth_allow_remapping_of_existing_users = true
 exit
 ```
 
-
-
 Then, existing users should be able to log in using their Azure identity. Note that this works only if the user is using password-based authentication, and is not linked to any other authentication source (e.g. LDAP) or OpenID provider.
 
 Note that this setting is set to true by default for new installations already.
+
+**Q: How can I automatically log users out of OpenProject after I delete them from the SSO provider?**
+
+A: OpenProject does not currently revalidate user sessions after the initial login of a user. So even if the SSO provider session expires
+or the user is removed from the SSO provider, this will not immediately have an effect in OpenProject. [A feature  was requested](https://community.openproject.org/wp/65072) to improve this flow.
+
+Workarounds that are available:
+* Ensure that the SSO provider performs a backchannel logout for all sessions of the user upon account suspension
+* Synchronize the user account via a provisioning integration, such as SCIM, to ensure that account suspensions are synchronized quickly

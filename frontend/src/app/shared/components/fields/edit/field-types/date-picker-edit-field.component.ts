@@ -26,35 +26,22 @@
  *  See COPYRIGHT and LICENSE files for more details.
  */
 
-import {
-  ChangeDetectorRef,
-  Directive,
-  ElementRef,
-  Inject,
-  Injector,
-  OnDestroy,
-  OnInit,
-} from '@angular/core';
+import { Directive, OnDestroy, OnInit, inject } from '@angular/core';
 import { InjectField } from 'core-app/shared/helpers/angular/inject-field.decorator';
 import { TimezoneService } from 'core-app/core/datetime/timezone.service';
 import {
   EditFieldComponent,
-  OpEditingPortalChangesetToken,
-  OpEditingPortalHandlerToken,
-  OpEditingPortalSchemaToken,
 } from 'core-app/shared/components/fields/edit/edit-field.component';
 import { DeviceService } from 'core-app/core/browser/device.service';
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
-import { I18nService } from 'core-app/core/i18n/i18n.service';
-import { ResourceChangeset } from 'core-app/shared/components/fields/changeset/resource-changeset';
-import { HalResource } from 'core-app/features/hal/resources/hal-resource';
-import { IFieldSchema } from 'core-app/shared/components/fields/field.base';
-import { EditFieldHandler } from 'core-app/shared/components/fields/edit/editing-portal/edit-field-handler';
 import { OpModalService } from 'core-app/shared/components/modal/modal.service';
 import { OpWpDatePickerModalComponent } from 'core-app/shared/components/datepicker/wp-date-picker-modal/wp-date-picker.modal';
 
 @Directive()
 export abstract class DatePickerEditFieldComponent extends EditFieldComponent implements OnInit, OnDestroy {
+  readonly pathHelper = inject(PathHelperService);
+  readonly opModalService = inject(OpModalService);
+
   @InjectField() readonly timezoneService:TimezoneService;
 
   @InjectField() deviceService:DeviceService;
@@ -64,20 +51,6 @@ export abstract class DatePickerEditFieldComponent extends EditFieldComponent im
   private createHandler:EventListener = this.handleSuccessfulCreate.bind(this);
   private updateHandler:EventListener = this.handleSuccessfulUpdate.bind(this);
   private cancelHandler:EventListener = this.cancel.bind(this);
-
-  constructor(
-    readonly I18n:I18nService,
-    readonly elementRef:ElementRef,
-    @Inject(OpEditingPortalChangesetToken) protected change:ResourceChangeset<HalResource>,
-    @Inject(OpEditingPortalSchemaToken) public schema:IFieldSchema,
-    @Inject(OpEditingPortalHandlerToken) readonly handler:EditFieldHandler,
-    readonly cdRef:ChangeDetectorRef,
-    readonly injector:Injector,
-    readonly pathHelper:PathHelperService,
-    readonly opModalService:OpModalService,
-  ) {
-    super(I18n, elementRef, change, schema, handler, cdRef, injector);
-  }
 
   ngOnInit():void {
     super.ngOnInit();
@@ -135,15 +108,21 @@ export abstract class DatePickerEditFieldComponent extends EditFieldComponent im
       includeNonWorkingDays,
       scheduleManually } } = event as { detail:{ duration:number, startDate:Date, dueDate:Date, includeNonWorkingDays:boolean, scheduleManually:boolean } };
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     this.resource.duration = duration ? this.timezoneService.toISODuration(duration, 'days') : null;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
-    this.resource.dueDate = dueDate;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
-    this.resource.startDate = startDate;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
-    this.resource.includeNonWorkingDays = includeNonWorkingDays;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
+    // debugger;
+    if (this.isMilestone()) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      this.resource.date = startDate;
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      this.resource.dueDate = dueDate;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      this.resource.startDate = startDate;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    this.resource.ignoreNonWorkingDays = includeNonWorkingDays;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     this.resource.scheduleManually = scheduleManually;
 
     this.onModalClosed();
@@ -162,4 +141,8 @@ export abstract class DatePickerEditFieldComponent extends EditFieldComponent im
   }
 
   public cancel():void {}
+
+  private isMilestone():boolean {
+    return !!this.change.schema.isMilestone;
+  }
 }

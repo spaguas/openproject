@@ -42,33 +42,32 @@ RSpec.describe WorkPackagesController do
                                                              action: "index")
   end
 
-  it "connects GET /work_packages/new to work_packages#index" do
+  it "connects GET /work_packages/new to work_packages#new" do
     expect(get("/work_packages/new"))
       .to route_to(controller: "work_packages",
-                   action: "index",
-                   state: "new")
+                   action: "new")
   end
 
-  it "connects GET /projects/:project_id/work_packages/new to work_packages#index" do
+  it "connects GET /projects/:project_id/work_packages/new to work_packages#new" do
     expect(get("/projects/1/work_packages/new"))
       .to route_to(controller: "work_packages",
-                   action: "index",
-                   project_id: "1",
-                   state: "new")
+                   action: "new",
+                   project_id: "1")
   end
 
   it "connects GET /work_packages/:id/overview to work_packages#show" do
     expect(get("/work_packages/1/overview"))
       .to route_to(controller: "work_packages",
-                   action: "show", id: "1", state: "overview")
+                   action: "show", id: "1", tab: "overview")
   end
 
-  it "connects GET /projects/:project_id/work_packages/:id/overview to work_packages#index" do
+  it "connects GET /projects/:project_id/work_packages/:id/overview to work_packages#show" do
     expect(get("/projects/1/work_packages/2/overview"))
       .to route_to(controller: "work_packages",
-                   action: "index",
+                   action: "show",
                    project_id: "1",
-                   state: "2/overview")
+                   id: "2",
+                   tab: "overview")
   end
 
   it "connects GET /work_packages/details/:state to work_packages#index" do
@@ -91,6 +90,18 @@ RSpec.describe WorkPackagesController do
     expect(get("/work_packages/1")).to route_to(controller: "work_packages",
                                                 action: "show",
                                                 id: "1")
+  end
+
+  it "connects GET /work_packages/:id to work_packages#show with semantic identifier" do
+    expect(get("/work_packages/PROJ-42")).to route_to(controller: "work_packages",
+                                                      action: "show",
+                                                      id: "PROJ-42")
+  end
+
+  it "routes lowercase identifiers to show (caught by resource route, resolved at controller level)" do
+    expect(get("/work_packages/proj-42")).to route_to(controller: "work_packages",
+                                                      action: "show",
+                                                      id: "proj-42")
   end
 
   it "connects GET /work_packages/:id/share to work_packages/shares#index" do

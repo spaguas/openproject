@@ -31,7 +31,8 @@ import { OpWorkPackagesCalendarService } from 'core-app/features/calendar/op-wor
 import { OpCalendarService } from 'core-app/features/calendar/op-calendar.service';
 
 @Component({
-  templateUrl: '../../../work-packages/routing/partitioned-query-space-page/partitioned-query-space-page.component.html',
+  selector: 'op-team-planner-page',
+  templateUrl: '../../../work-packages/routing/partitioned-query-space-page/primerized-partitioned-query-space-page.component.html',
   styleUrls: [
     '../../../work-packages/routing/partitioned-query-space-page/partitioned-query-space-page.component.sass',
   ],
@@ -51,9 +52,6 @@ export class TeamPlannerPageComponent extends PartitionedQuerySpacePageComponent
     title: this.I18n.t('js.team_planner.title'),
     unsaved_title: this.I18n.t('js.team_planner.unsaved_title'),
   };
-
-  /** Go back using back-button */
-  backButtonCallback:() => void;
 
   /** Current query title to render */
   selectedTitle = this.text.unsaved_title;
@@ -101,6 +99,17 @@ export class TeamPlannerPageComponent extends PartitionedQuerySpacePageComponent
   public ngOnInit():void {
     super.ngOnInit();
 
+    // Fix showToolbarSaveButton from actual URL params (not uiRouter state)
+    this.showToolbarSaveButton = !!new URLSearchParams(window.location.search).get('query_props');
+
+    // Update save button reactively when query_props changes via pushState
+    this.wpListChecksumService.visibleChecksum$
+      .pipe(this.untilDestroyed())
+      .subscribe((checksum) => {
+        this.showToolbarSaveButton = !!checksum;
+        this.cdRef.detectChanges();
+      });
+
     registerEffectCallbacks(this, this.untilDestroyed());
 
     this.wpTableFilters.hidden.push(
@@ -126,9 +135,8 @@ export class TeamPlannerPageComponent extends PartitionedQuerySpacePageComponent
 
   breadcrumbItems() {
     return [
-      { href: this.pathHelperService.homePath(), text: this.titleService.appTitle },
-      { href: this.pathHelperService.projectPath(this.currentProject.identifier as string), text: (this.currentProject.name) },
-      { href: this.pathHelperService.projectTeamplannerPath(this.currentProject.identifier as string), text: this.I18n.t('js.team_planner.label_team_planner_plural') },
+      { href: this.pathHelperService.projectPath(this.currentProject.identifier!), text: (this.currentProject.name) },
+      { href: this.pathHelperService.projectTeamplannerPath(this.currentProject.identifier!), text: this.I18n.t('js.team_planner.label_team_planner_plural') },
       this.selectedTitle?? '',
     ];
   }

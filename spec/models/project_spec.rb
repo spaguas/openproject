@@ -37,7 +37,7 @@ RSpec.describe Project do
 
   let(:active) { true }
   let(:project) { create(:project, active:) }
-  let(:build_project) { build_stubbed(:project, active:) }
+  let(:build_project) { build(:project, active:) }
   let(:user) { create(:user) }
 
   describe ".templated" do
@@ -46,6 +46,22 @@ RSpec.describe Project do
 
     it "returns templated projects only" do
       expect(described_class.templated).to match_array(templated_projects)
+    end
+  end
+
+  describe "template associations" do
+    let(:template) { create(:template_project) }
+    let(:project_from_template) { create(:project, template:) }
+
+    it { is_expected.to belong_to(:template).class_name("Project").optional }
+    it { is_expected.to have_many(:templated_projects).class_name("Project").with_foreign_key("template_id") }
+
+    it "allows a project to reference its template" do
+      expect(project_from_template.template).to eq(template)
+    end
+
+    it "allows a template to access projects created from it" do
+      expect(template.templated_projects).to include(project_from_template)
     end
   end
 
@@ -476,9 +492,15 @@ RSpec.describe Project do
     let(:instance) { project }
   end
 
-  it_behaves_like "acts_as_customizable included" do
-    let(:model_instance) { project }
-    let(:custom_field) { create(:string_project_custom_field) }
+  it_behaves_like "acts_as_customizable included", admin_only_allowed: true, comments: true do
+    let!(:model_instance) { project }
+    let!(:new_model_instance) { build_project }
+    let!(:custom_field) { create(:string_project_custom_field) }
+
+    before do
+      allow(project).to receive(:available_custom_fields) { ProjectCustomField.all }
+      allow(new_model_instance).to receive(:available_custom_fields) { ProjectCustomField.all }
+    end
 
     describe "valid?" do
       let(:custom_field) { create(:string_project_custom_field, is_required: true) }
@@ -487,6 +509,11 @@ RSpec.describe Project do
         model_instance.custom_field_values = { custom_field.id => "test" }
         model_instance.save
         model_instance.custom_field_values = { custom_field.id => nil }
+        # Ensure the custom values are validated.
+        # Note: Since the default behavior is to not validate custom values unless they are
+        # received from the user input, the :saving_custom_fields validation context might
+        # not be required anymore.
+        model_instance.custom_values_to_validate = model_instance.custom_field_values
       end
 
       context "without a validation context" do
@@ -513,57 +540,82 @@ RSpec.describe Project do
     end
   end
 
-  describe "url identifier" do
-    let(:reserved) do
-      Rails.application.routes.routes
-        .map { |route| route.path.spec.to_s }
-        .filter_map { |path| path[%r{^/projects/(\w+)\(\.:format\)$}, 1] }
-        .uniq
+  describe "#custom_values_for_custom_field" do
+    let(:custom_field) { create(:list_project_custom_field, multi_value: true) }
+    # intentionally out of order
+    let!(:cv2) { create(:custom_value, id: 1002, customized: project, custom_field:) }
+    let!(:cv1) { create(:custom_value, id: 1001, customized: project, custom_field:) }
+    let!(:cv3) { create(:custom_value, id: 1003, customized: project, custom_field:) }
+
+    before do
+      allow(project).to receive(:available_custom_fields) { ProjectCustomField.all }
     end
 
-    it "is set from name" do
-      project = described_class.new(name: "foo")
-
-      project.validate
-
-      expect(project.identifier).to eq("foo")
+    it "returns values ordered by id" do
+      values = project.custom_values_for_custom_field(custom_field)
+      expect(values).to eq([cv1, cv2, cv3])
     end
+  end
 
-    it "is not allowed to clash with projects routing" do
-      expect(reserved).not_to be_empty
+  describe "#allowed_parent_workspace_types" do
+    {
+      project: %i[portfolio program project],
+      program: %i[portfolio],
+      portfolio: %i[]
+    }.each do |workspace_type, allowed_parent_workspace_types|
+      context "for workspace type #{workspace_type}" do
+        let(:project) { described_class.new(workspace_type:) }
 
-      reserved.each do |word|
-        project = described_class.new(name: word)
+        subject { project.allowed_parent_workspace_types }
 
-        project.validate
-
-        expect(project.identifier).not_to eq(word)
+        it { is_expected.to match_array(allowed_parent_workspace_types) }
       end
     end
 
-    # The acts_as_url plugin defines validation callbacks on :create and it is not automatically
-    # called when calling a custom context. However we need the acts_as_url callback to set the
-    # identifier when the validations are called with the :saving_custom_fields context.
-    context "when validating with :saving_custom_fields context" do
-      it "is set from name" do
-        project = described_class.new(name: "foo")
+    context "for unknown workspace type" do
+      let(:project) { described_class.new(workspace_type: :unknown) }
 
-        project.validate(:saving_custom_fields)
+      subject { project.allowed_parent_workspace_types }
 
-        expect(project.identifier).to eq("foo")
+      it { is_expected.to eq [] }
+    end
+  end
+
+  describe "#parent_allowed?" do
+    context "for a project" do
+      let(:workspace) { build_stubbed(:project) }
+
+      it "is truthy" do
+        expect(workspace).to be_parent_allowed
       end
+    end
 
-      it "is not allowed to clash with projects routing" do
-        expect(reserved).not_to be_empty
+    context "for a program" do
+      let(:workspace) { build_stubbed(:program) }
 
-        reserved.each do |word|
-          project = described_class.new(name: word)
-
-          project.validate(:saving_custom_fields)
-
-          expect(project.identifier).not_to eq(word)
-        end
+      it "is truthy" do
+        expect(workspace).to be_parent_allowed
       end
+    end
+
+    context "for a portfolio" do
+      let(:workspace) { build_stubbed(:portfolio) }
+
+      it "is falsey" do
+        expect(workspace).not_to be_parent_allowed
+      end
+    end
+  end
+
+  describe "projects.identifier unique database constraint" do
+    let!(:other_project) { create(:project, identifier: "my-app") }
+    let(:project) { build(:project, identifier: "my-app") }
+
+    it "ensures uniqueness with disabled validation" do
+      expect { project.save!(validate: false) }.to raise_error(
+        ActiveRecord::RecordNotUnique,
+        /PG::UniqueViolation: ERROR:  duplicate key value violates unique constraint "index_projects_on_lower_identifier"\n/
+      )
     end
   end
 end

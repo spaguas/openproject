@@ -1,15 +1,4 @@
-import {
-  Component,
-  ElementRef,
-  ViewChild,
-  forwardRef,
-  HostBinding,
-  HostListener,
-  Input,
-  Output,
-  EventEmitter,
-  ChangeDetectorRef,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild, forwardRef, inject } from '@angular/core';
 import {
   ControlValueAccessor,
   NG_VALUE_ACCESSOR,
@@ -24,8 +13,14 @@ import {
     multi: true,
   }],
   standalone: false,
+  // TODO: This component has been partially migrated to be zoneless-compatible.
+  // After testing, this should be updated to ChangeDetectionStrategy.OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class SpotTextFieldComponent implements ControlValueAccessor {
+  private cdRef = inject(ChangeDetectorRef);
+
   @HostBinding('class.spot-text-field') public className = true;
 
   @HostBinding('class.spot-text-field_focused') public focused = false;
@@ -71,7 +66,7 @@ export class SpotTextFieldComponent implements ControlValueAccessor {
   /**
    * Whether the field should be receive a [required] property.
    */
-  @Input() public required:boolean = false;
+  @Input() public required = false;
 
   /**
    * The html input (Regexp) pattern to provide hints to keyboards what layout to use
@@ -94,17 +89,15 @@ export class SpotTextFieldComponent implements ControlValueAccessor {
 
   @Output() public inputBlur = new EventEmitter<FocusEvent>();
 
-  constructor(
-    private cdRef:ChangeDetectorRef,
-  ) {}
-
   onInputFocus(event:FocusEvent):void {
     this.focused = true;
+    this.cdRef.markForCheck();
     this.inputFocus.next(event);
   }
 
   onInputBlur(event:FocusEvent):void {
     this.focused = false;
+    this.cdRef.markForCheck();
     this.inputBlur.next(event);
   }
 

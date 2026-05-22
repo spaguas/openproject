@@ -46,13 +46,31 @@ module RecurringMeetings
       start_time = params.fetch(:start_time)
       in_context(recurring_meeting, send_notifications: false) do
         call = instantiate(start_time)
-        create_schedule(call) if call.success?
+        if call.success?
+          move_interim_responses_to_participants(call.result)
+        end
 
         call
       end
     end
 
     def instantiate(start_time)
+      # If a cancelled occurrence exists for this recurrence_start_time, restore it
+      existing = recurring_meeting.meetings.not_templated.find_by(recurrence_start_time: start_time)
+      if existing&.cancelled?
+        restore_cancelled(existing)
+      else
+        copy_from_template(start_time)
+      end
+    end
+
+    def restore_cancelled(meeting)
+      ::RecurringMeetings::ResetToTemplateService
+        .new(user:, meeting:, params: { state: :open })
+        .call
+    end
+
+    def copy_from_template(start_time)
       ::Meetings::CopyService
         .new(user:, model: recurring_meeting.template)
         .call(attributes: instantiate_params(start_time),
@@ -64,21 +82,26 @@ module RecurringMeetings
     def instantiate_params(start_time)
       {
         start_time:,
+        recurrence_start_time: start_time,
         recurring_meeting:,
         template: false
       }
     end
 
-    def create_schedule(call)
-      meeting = call.result
-
-      schedule = ScheduledMeeting.find_or_initialize_by(
+    def move_interim_responses_to_participants(meeting)
+      interim_responses = RecurringMeetingInterimResponse.where(
         recurring_meeting: recurring_meeting,
-        start_time: meeting.start_time
+        start_time: params.fetch(:start_time),
+        user_id: meeting.participants.select(:user_id)
       )
 
-      unless schedule.update(meeting:, cancelled: false)
-        call.merge!(ServiceResult.failure(errors: schedule.errors))
+      interim_responses.each do |response|
+        participant = meeting.participants.find { it.user == response.user }
+        next unless participant
+
+        if participant.update(participation_status: response.participation_status, comment: response.comment)
+          response.destroy!
+        end
       end
     end
   end

@@ -84,14 +84,6 @@ project_phase_colors:
     t_name: PM2 Green Yellow
     hexcode: "#B1D13A"
 
-document_categories:
-  - t_name: Documentation
-    position: 1
-  - t_name: Specification
-    position: 2
-  - t_name: Other
-    position: 3
-
 # Palette by open-color
 # https://yeun.github.io/open-color/
 # TODO: should the color name be translated?
@@ -354,16 +346,9 @@ project_roles:
       - :edit_reportings
       - :delete_reportings
       - :manage_wiki
-      - :rename_wiki_pages
-      - :change_wiki_parent_page
-      - :delete_wiki_pages
       - :view_wiki_pages
-      - :export_wiki_pages
       - :view_wiki_edits
       - :edit_wiki_pages
-      - :delete_wiki_pages_attachments
-      - :protect_wiki_pages
-      - :list_attachments
       - :add_messages
       - :edit_own_messages
       - :delete_own_messages
@@ -381,6 +366,7 @@ project_roles:
       - :add_internal_comments
       - :edit_own_internal_comments
       - :view_project_phases
+      - :export_projects
   - reference: :default_role_reader
     t_name: Reader
     position: 4
@@ -394,8 +380,6 @@ project_roles:
       - :view_timelines
       - :view_reportings
       - :view_wiki_pages
-      - :export_wiki_pages
-      - :list_attachments
       - :add_messages
       - :edit_own_messages
       - :delete_own_messages
@@ -419,6 +403,8 @@ global_roles:
       - :create_user
       - :manage_user
       - :manage_placeholder_user
+      - :view_all_principals
+      - :invite_users_by_email
   - reference: :default_role_standard_global
     t_name: Standard global role
     position: 7

@@ -31,7 +31,7 @@
 require "spec_helper"
 require "support/flash/expectations"
 
-RSpec.describe "Work package activity", :js, :with_cuprite do
+RSpec.describe "Work package activity", :js, :with_cuprite, with_ee: %i[internal_comments] do
   include Flash::Expectations
 
   let(:project) { create(:project, enabled_internal_comments: true) }
@@ -676,6 +676,9 @@ RSpec.describe "Work package activity", :js, :with_cuprite do
       end
 
       it "resets an only_changes filter if a comment is added by the user" do
+        activity_tab.expect_journal_notes(text: "First comment by admin")
+        activity_tab.expect_journal_notes(text: "Second comment by admin")
+
         activity_tab.filter_journals(:only_changes)
 
         # expect only the changes
@@ -958,10 +961,13 @@ RSpec.describe "Work package activity", :js, :with_cuprite do
       # navigate to another tab and back
       page.find("li[data-tab-id=\"relations\"]").click
       page.find("li[data-tab-id=\"activity\"]").click
+      wp_page.wait_for_activity_tab
 
       # expect the editor content to be rescued on the client side
       within_test_selector("op-work-package-journal-form-element") do
         editor = FormFields::Primerized::EditorFormField.new("notes", selector: "#work-package-journal-form-element")
+        # Wait for CKEditor to be fully initialized and have the rescued content
+        expect(page).to have_css(".ck-editor__editable_inline", text: "First comment by admin", wait: 10)
         editor.expect_value("First comment by admin")
         # save the comment, which was rescued on the client side
         page.find_test_selector("op-submit-work-package-journal-form").click
@@ -1035,7 +1041,7 @@ RSpec.describe "Work package activity", :js, :with_cuprite do
     let(:work_package) { create(:work_package, project:, author: admin) }
 
     # create enough comments to make the journal container scrollable
-    20.times do |i|
+    25.times do |i|
       let!(:"comment_#{i + 1}") do
         create(:work_package_journal, user: admin, notes: "Comment #{i + 1}", journable: work_package, version: i + 2)
       end

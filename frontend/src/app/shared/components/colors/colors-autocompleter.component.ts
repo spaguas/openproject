@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { ChangeDetectionStrategy, Component, ElementRef, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnInit, inject } from '@angular/core';
 import {
   Highlighting,
 } from 'core-app/features/work-packages/components/wp-fast-table/builders/highlighting/highlighting.functions';
@@ -62,6 +62,9 @@ interface ColorItem {
   standalone: false,
 })
 export class ColorsAutocompleterComponent implements OnInit {
+  protected elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected readonly I18n = inject(I18nService);
+
   public options:ColorItem[];
 
   public selectedOption?:ColorItem|string;
@@ -74,16 +77,10 @@ export class ColorsAutocompleterComponent implements OnInit {
 
   private selectedColorId:string;
 
-  constructor(
-    protected elementRef:ElementRef<HTMLElement>,
-    protected readonly I18n:I18nService,
-  ) {
-  }
-
   ngOnInit() {
     this.setColorOptions();
 
-    this.updateInputField = document.getElementsByName(this.elementRef.nativeElement.dataset.updateInput as string)[0] as HTMLInputElement|undefined;
+    this.updateInputField = document.getElementsByName(this.elementRef.nativeElement.dataset.updateInput!)[0] as HTMLInputElement|undefined;
     this.highlightTextInline = JSON.parse(this.elementRef.nativeElement.dataset.highlightTextInline || 'false') as boolean;
     this.classes = this.elementRef.nativeElement.dataset.classes || '';
   }
@@ -95,7 +92,7 @@ export class ColorsAutocompleterComponent implements OnInit {
   }
 
   private setColorOptions() {
-    this.options = JSON.parse(this.elementRef.nativeElement.dataset.colors as string) as {
+    this.options = JSON.parse(this.elementRef.nativeElement.dataset.colors!) as {
       name:string,
       value:string
     }[];
@@ -107,7 +104,7 @@ export class ColorsAutocompleterComponent implements OnInit {
       this.selectedOption = this.selectedOption.value;
     } else {
       // Differentiate between "No color" and a color that is now not selectable any more
-      this.selectedColorId = this.elementRef.nativeElement.dataset.selectedColor as string;
+      this.selectedColorId = this.elementRef.nativeElement.dataset.selectedColor!;
       this.selectedOption = this.selectedColorId ? this.selectedColorId : '';
     }
   }

@@ -34,7 +34,6 @@ require "cgi"
 require "doorkeeper/dashboard_helper"
 
 class ApplicationController < ActionController::Base
-  class_attribute :_model_object
   class_attribute :_model_scope
   class_attribute :accept_key_auth_actions
 
@@ -51,7 +50,7 @@ class ApplicationController < ActionController::Base
   include Accounts::UserLogin
   include Accounts::Authorization
   include Accounts::EnterpriseGuard
-  include ::OpenProject::Authentication::SessionExpiry
+  include ::OpenProject::Authentication::SessionExpiration
   include AdditionalUrlHelpers
   include OpenProjectErrorHelper
   include Security::DefaultUrlOptions
@@ -152,7 +151,6 @@ class ApplicationController < ActionController::Base
                 :tag_request,
                 :check_if_login_required,
                 :log_requesting_user,
-                :reset_i18n_fallbacks,
                 :check_session_lifetime,
                 :stop_if_feeds_disabled,
                 :set_cache_buster,
@@ -224,14 +222,6 @@ class ApplicationController < ActionController::Base
     string.gsub(/[^0-9a-zA-Z@._\-"'!?=\/ ]{1}/, "#")
   end
 
-  def reset_i18n_fallbacks
-    fallbacks = [I18n.default_locale] + Redmine::I18n.valid_languages.map(&:to_sym)
-    return if I18n.fallbacks.defaults == fallbacks
-
-    I18n.fallbacks = nil
-    I18n.fallbacks.defaults = fallbacks
-  end
-
   def set_localization
     # 1. Use completely authenticated user
     # 2. Use user with some authenticated stages not completed.
@@ -255,18 +245,20 @@ class ApplicationController < ActionController::Base
   # Find project of id params[:id]
   # Note: find() is Project.friendly.find()
   def find_project
-    @project = Project.find(params[:id])
+    @project = Project.visible.find(params[:id])
   end
 
   # Find project of id params[:project_id]
   # Note: find() is Project.friendly.find()
   def find_project_by_project_id
-    @project = Project.find(params[:project_id])
+    @project = Project.visible.find(params[:project_id])
   end
 
   # Find project by project_id if given
   def find_optional_project
-    @project = Project.find(params[:project_id]) if params[:project_id].present?
+    @project = Project.visible.find(params[:project_id]) if params[:project_id].present?
+  rescue ActiveRecord::RecordNotFound
+    render_404
   end
 
   # Finds and sets @project based on @object.project
@@ -276,71 +268,12 @@ class ApplicationController < ActionController::Base
     @project = @object.project
   end
 
-  def find_model_object(object_id = :id)
-    model = self.class._model_object
-    if model
-      @object = model.find(params[object_id])
-      instance_variable_set(:"@#{controller_name.singularize}", @object) if @object
-    end
-  end
-
-  def find_model_object_and_project(object_id = :id)
-    if params[object_id]
-      model_object = self.class._model_object
-      instance = model_object.find(params[object_id])
-      @project = instance.project
-      instance_variable_set(:"@#{model_object.to_s.underscore}", instance)
-    else
-      @project = Project.find(params[:project_id])
-    end
-  end
-
-  # TODO: this method is right now only suited for controllers of objects that somehow have an association to Project
-  def find_object_and_scope
-    model_object = self.class._model_object.find(params[:id]) if params[:id].present?
-
-    associations = self.class._model_scope + [Project]
-
-    associated = find_belongs_to_chained_objects(associations, model_object)
-
-    associated.each do |a|
-      instance_variable_set("@" + a.class.to_s.downcase, a)
-    end
-  end
-
-  # this method finds all records that are specified in the associations param
-  # after the first object is found it traverses the belongs_to chain of that first object
-  # if a start_object is provided it is taken as the starting point of the traversal
-  # e.g associations [Message, Board, Project] finds Message by find(:message_id)
-  # then message.forum and board.project
-  def find_belongs_to_chained_objects(associations, start_object = nil)
-    associations.inject([start_object].compact) do |instances, association|
-      scope_name, scope_association = if association.is_a?(Hash)
-                                        [association.keys.first.to_s.downcase, association.values.first]
-                                      else
-                                        [association.to_s.downcase, association.to_s.downcase]
-                                      end
-
-      # TODO: Remove this hidden dependency on params
-      instances << (
-        if instances.last.nil?
-          scope_name.camelize.constantize.find(params[:"#{scope_name}_id"])
-        else
-          instances.last.send(scope_association.to_sym)
-        end)
-      instances
-    end
-  end
-
-  def self.model_object(model, options = {})
-    self._model_object = model
-    self._model_scope = Array(options[:scope]) if options[:scope]
-  end
-
-  # Filter for bulk work package operations
+  # Filter for bulk work package operations. Either :work_package_id (single-WP
+  # routes) or :ids (bulk routes) may carry numeric or semantic identifiers
+  # ("PROJ-42") since both originate from human-facing URLs or forms.
   def find_work_packages
-    @work_packages = WorkPackage.includes(:project)
-                                .where(id: params[:work_package_id] || params[:ids])
+    @work_packages = WorkPackage.where_display_id_in(params[:work_package_id] || params[:ids])
+                                .includes(:project)
                                 .order("id ASC")
     fail ActiveRecord::RecordNotFound if @work_packages.empty?
 

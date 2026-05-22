@@ -1,9 +1,13 @@
 <div
   class="op-ian-item--row"
+  tabindex="0"
+  role="button"
   (click)="onClick()"
+  (keydown.enter)="$event.preventDefault(); onClick()"
+  (keydown.space)="$event.preventDefault(); onClick()"
   (dblclick)="onDoubleClick()"
   >
-  @if (workPackage$ && (workPackage$ | async); as workPackage) {
+  @if (workPackage$ | async; as workPackage) {
     <div
       class="op-ian-item--top-line"
       >
@@ -14,9 +18,9 @@
         class="op-ian-item--work-package-id-link spot-link"
         [class.spot-link_inactive]="isMobile()"
         [attr.title]="workPackage.subject"
-        uiSref="work-packages.show"
-        [uiParams]="{workPackageId: workPackage.id, projects: null, projectPath: null}"
-        [textContent]="'#' + workPackage.id"
+        [textContent]="workPackage.formattedId"
+        [attr.href]="pathHelper.workPackagePath(workPackage.displayId)"
+        (click)="onLinkClick($event)"
         >
       </a>
       @if (project) {
@@ -51,9 +55,12 @@
       <i
         data-test-selector="mark-as-read-button"
         class="op-ian-item--button icon-mark-read"
+        tabindex="0"
+        role="button"
         [title]="text.mark_as_read"
         (click)="markAsRead($event, aggregatedNotifications)"
-        tabindex="0"
+        (keydown.enter)="$event.preventDefault(); markAsRead($event, aggregatedNotifications)"
+        (keydown.space)="$event.preventDefault(); markAsRead($event, aggregatedNotifications)"
         >
       </i>
     }
@@ -101,7 +108,7 @@
 </div>
 } @else {
   <div class="op-ian-item--loading">
-    @if (workPackage$) {
+    @if (workPackageId) {
       <op-content-loader
         class="op-ian-item--loading-indicator"
         viewBox="0 0 200 20"

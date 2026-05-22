@@ -23,7 +23,7 @@ Welcome to the central overview of frequently asked questions for OpenProject.
 
 ### How do I get access to the OpenProject Enterprise add-ons?
 
-We offer the Enterprise add-ons of OpenProject (incl. boards) for two different OpenProject variants:
+We offer the Enterprise add-ons of OpenProject for two different OpenProject variants:
 
 * For the OpenProject Enterprise cloud edition (hosted by us),
 * For the self-hosted (on-premises) OpenProject Enterprise on-premises edition
@@ -33,7 +33,7 @@ Have you already installed the [OpenProject Community edition](https://www.openp
 
 ### Can I have some users with Enterprise add-ons and some without?
 
-As the Enterprise Enterprise add-ons affect the whole instance (e.g. with Agile Boards and project custom fields) it's not possible to upgrade only some users.
+As the Enterprise Enterprise add-ons affect the whole instance (e.g. with project custom fields) it's not possible to upgrade only some users.
 
 ### What are the system requirements?
 
@@ -165,7 +165,9 @@ You can then select "Settings" from the side menu on the left side and [change t
 
 ### Is there an OpenProject app?
 
-There is no native iOS or Android app for OpenProject, but OpenProject is responsive - so it displays well on smaller screens.
+OpenProject is responsive - so it displays well on smaller screens.
+
+In addition, there is an iOS and an Android app for OpenProject. [Read more](../mobile-app-guide).
 
 ### Is it possible to connect MS Project and OpenProject or to migrate from MS Project to OpenProject?
 
@@ -245,6 +247,8 @@ Furthermore, we are planning a direct integration into Solibri. Then you don't n
 
 ### Does clicking on a BCF-issue zoom you to the appropriate location in the model?
 
+
+
 Yes, the so-called camera position is stored in the BCF-issues, so that exactly the same camera position is assumed when you click on the BCF-issue. These are called viewpoints. If you have several models, e.g. architecture and technical building equipment, these must be activated (made visible) before you click on the BCF-issue. In the same way, BCF-elements of the model can be hidden or selected via the viewpoint.
 
 In our [introductory video](https://www.youtube.com/watch?v=ThA4_17yedg) to the OpenProject BIM edition the basics are shown very well. In particular, the integration of BCF management into the rest of the project management of a construction project is the strength of OpenProject.
@@ -270,21 +274,13 @@ You can use the first two steps of [this instruction](../installation-and-operat
 
 To migrate from Bitnami **to Enterprise on-premises** please use [this instruction](../installation-and-operations/installation-faq/#how-can-i-migrate-from-bitnami-to-the-official-openproject-installation-packages). We offer (paid) installation support to help you migrate to OpenProject (for the Enterprise on-premises edition). Please contact us to request it.
 
-### How can I migrate from Jira/Confluence to OpenProject?
+### How can I migrate from JIRA/Confluence to OpenProject?
 
-At the moment there are these ways to migrate:
-
-- our [API](../api/)
-- our [Excel sync](../system-admin-guide/integrations/excel-synchronization)
-- Using a [Markdown export app](https://marketplace.atlassian.com/apps/1221351/markdown-exporter-for-confluence) you can export pages from Confluence and paste them (via copy & paste) into OpenProject in e.g. the wiki. This should preserve at least most of the layout. Attachments would then have to be added manually.
-
-Our partners at [ALMToolbox](https://www.almtoolbox.com/)  are happy to support you with Jira or Confluence migration. 
-
-For more information please contact us.
+Please consult [JIRA migration overview page](../installation-and-operations/jira-migration/) for an overview of all existing options.
 
 ### How can I migrate from Community edition or Enterprise on-premises to Enterprise cloud?
 
-We will need a [backup](../system-admin-guide/backup) of your OpenProject Installation which we will restore to your new Enterprise cloud. Please calculate with a downtime of approximately 60 minutes in regular cases. Please contact us to plan the migration and get more instructions.
+We will need a [backup](../system-admin-guide/backup) of your OpenProject Installation which we will restore to your new Enterprise cloud. Please calculate with a downtime of approximately 60 minutes in regular cases. Please keep in mind that this is a paid service. Contact us to plan the migration and get more instructions.
 
 ### How can I migrate from Enterprise cloud to Enterprise on-premises?
 

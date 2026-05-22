@@ -1,15 +1,4 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  EventEmitter,
-  Input,
-  OnInit,
-  OnDestroy,
-  Output,
-  ViewChild,
-} from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnInit, OnDestroy, Output, ViewChild, inject } from '@angular/core';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { NgSelectComponent } from '@ng-select/ng-select';
 import { DragulaService, Group } from 'ng2-dragula';
@@ -34,9 +23,17 @@ export interface DraggableOption {
   templateUrl: './draggable-autocomplete.component.html',
   styleUrls: ['./draggable-autocomplete.component.sass'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    DragulaService
+  ],
   standalone: false,
 })
 export class DraggableAutocompleteComponent extends UntilDestroyedMixin implements OnInit, AfterViewInit, OnDestroy {
+  readonly I18n = inject(I18nService);
+  readonly elementRef = inject(ElementRef);
+  readonly dragula = inject(DragulaService);
+  readonly alternativeSearchService = inject(AlternativeSearchService);
+
   /** Options to show in the autocompleter */
   @Input() options:DraggableOption[];
 
@@ -94,15 +91,6 @@ export class DraggableAutocompleteComponent extends UntilDestroyedMixin implemen
   @ViewChild('input') inputElement:ElementRef;
 
   public appendTo = 'body';
-
-  constructor(
-    readonly I18n:I18nService,
-    readonly elementRef:ElementRef,
-    readonly dragula:DragulaService,
-    readonly alternativeSearchService:AlternativeSearchService,
-  ) {
-    super();
-  }
 
   ngOnInit():void {
     populateInputsFromDataset(this);

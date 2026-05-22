@@ -8,7 +8,7 @@ gem 'omniauth-openid_connect-providers',
 
 gem 'omniauth-openid-connect',
     git: 'https://github.com/opf/omniauth-openid-connect.git',
-    ref: 'e923d9dd14fa4ca04b98720ac2185807b263f5ed'
+    ref: '825d06235b64f6bc872bba709f1c2d48fd5cede4'
 
 group :opf_plugins do
     # included so that engines can reference OpenProject::Version
@@ -39,7 +39,9 @@ group :opf_plugins do
   gem 'openproject-team_planner',              path: 'modules/team_planner'
   gem 'openproject-gantt',                     path: 'modules/gantt'
   gem 'openproject-calendar',                  path: 'modules/calendar'
+  gem 'openproject-resource_management',       path: 'modules/resource_management'
   gem 'openproject-storages',                  path: 'modules/storages'
+  gem 'openproject-wikis',                     path: 'modules/wikis'
   gem 'openproject-documents',                 path: 'modules/documents'
 
   gem 'openproject-bim',                       path: 'modules/bim'

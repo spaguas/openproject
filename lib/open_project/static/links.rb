@@ -74,6 +74,12 @@ module OpenProject
           links[:website][:href]
         end
 
+        def reset_cache
+          @cache_key = nil
+          @links = nil
+          @static_links = nil
+        end
+
         private
 
         def links
@@ -111,7 +117,7 @@ module OpenProject
         end
 
         def current_release_notes_link
-          version = OpenProject::VERSION.to_semver(separator: "-", include_special: false)
+          version = OpenProject::VERSION.to_semver(separator: "-")
           "https://www.openproject.org/docs/release-notes/#{version}"
         end
 

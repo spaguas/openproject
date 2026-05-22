@@ -107,8 +107,10 @@ export function initializeCoreDisplayFields(displayFieldService:DisplayFieldServ
         'TimeEntriesActivity',
         'Version',
         'Category',
+        'Sprint',
         'CustomField::Hierarchy::Item',
-        'CustomOption'])
+        'CustomOption',
+        'Workspace'])
       .addFieldType(ProjectPhaseDisplayField, 'projectPhase', ['ProjectPhase'])
       .addFieldType(ResourcesDisplayField, 'resources', ['[]CustomOption', '[]CustomField::Hierarchy::Item'])
       .addFieldType(ResourcesDisplayField, 'resources', ['[]Version'])

@@ -28,41 +28,37 @@
 
 import { OpContextMenuItem } from 'core-app/shared/components/op-context-menu/op-context-menu.types';
 import { StateService } from '@uirouter/core';
-import { OPContextMenuService } from 'core-app/shared/components/op-context-menu/op-context-menu.service';
-import { Directive, ElementRef, Input } from '@angular/core';
+import { Directive, Input, AfterViewInit, inject } from '@angular/core';
 import { isClickedWithModifier } from 'core-app/shared/helpers/link-handling/link-handling';
-import {
-  OpContextMenuTrigger,
-} from 'core-app/shared/components/op-context-menu/handlers/op-context-menu-trigger.directive';
-import { BrowserDetector } from 'core-app/core/browser/browser-detector.service';
+import { OpContextMenuTrigger } from 'core-app/shared/components/op-context-menu/handlers/op-context-menu-trigger.directive';
 import { WorkPackageCreateService } from 'core-app/features/work-packages/components/wp-new/wp-create.service';
-import {
-  Highlighting,
-} from 'core-app/features/work-packages/components/wp-fast-table/builders/highlighting/highlighting.functions';
+import { Highlighting } from 'core-app/features/work-packages/components/wp-fast-table/builders/highlighting/highlighting.functions';
 import { TypeResource } from 'core-app/features/hal/resources/type-resource';
+import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
+import { CurrentProjectService } from 'core-app/core/current-project/current-project.service';
+import { extendSearchParams } from 'core-stimulus/helpers/url-helpers';
+import { BrowserDetector } from 'core-app/core/browser/browser-detector.service';
 
 @Directive({
   selector: '[opTypesCreateDropdown]',
   standalone: false,
 })
-export class OpTypesContextMenuDirective extends OpContextMenuTrigger {
-  @Input('projectIdentifier') public projectIdentifier:string|null|undefined;
+export class OpTypesContextMenuDirective extends OpContextMenuTrigger implements AfterViewInit {
+  readonly wpCreate = inject(WorkPackageCreateService);
+  readonly $state = inject(StateService);
+  readonly pathHelper = inject(PathHelperService);
+  readonly currentProject = inject(CurrentProjectService);
+  readonly browser = inject(BrowserDetector);
 
-  @Input('stateName') public stateName:string;
+  @Input() public projectIdentifier:string|null|undefined;
+
+  @Input() public stateName:string;
 
   @Input('dropdownActive') active:boolean;
 
-  public isOpen = false;
+  @Input() routedFromAngular = true;
 
-  constructor(
-    readonly elementRef:ElementRef,
-    readonly opContextMenu:OPContextMenuService,
-    readonly browserDetector:BrowserDetector,
-    readonly wpCreate:WorkPackageCreateService,
-    readonly $state:StateService,
-  ) {
-    super(elementRef, opContextMenu);
-  }
+  public isOpen = false;
 
   ngAfterViewInit():void {
     super.ngAfterViewInit();
@@ -70,14 +66,9 @@ export class OpTypesContextMenuDirective extends OpContextMenuTrigger {
     if (!this.active) {
       return;
     }
-
-    // Force full-view create if in mobile view
-    if (this.browserDetector.isMobile) {
-      this.stateName = 'work-packages.new';
-    }
   }
 
-  protected open(evt:JQuery.TriggeredEvent) {
+  protected open(evt:Event) {
     this.isOpen = !this.isOpen;
     if (this.isOpen) {
       void this
@@ -93,7 +84,7 @@ export class OpTypesContextMenuDirective extends OpContextMenuTrigger {
     }
   }
 
-  onClose(focus:boolean = false) {
+  onClose(focus = false) {
     this.isOpen = false;
     super.onClose(focus);
   }
@@ -112,13 +103,20 @@ export class OpTypesContextMenuDirective extends OpContextMenuTrigger {
       href: this.$state.href(this.stateName, { type: type.id! }),
       ariaLabel: type.name,
       class: Highlighting.inlineClass('type', type.id!),
-      onClick: ($event:JQuery.TriggeredEvent) => {
-        this.isOpen = false;
-        if (isClickedWithModifier($event)) {
-          return false;
-        }
+      onClick: (event:MouseEvent) => {
+        if (this.routedFromAngular && !this.browser.isMobile) {
+          this.isOpen = false;
+          if (isClickedWithModifier(event)) {
+            return false;
+          }
 
-        this.$state.go(this.stateName, { type: type.id });
+          this.$state.go(this.stateName, { type: type.id });
+        } else {
+          window.location.href = extendSearchParams(
+            this.pathHelper.projectWorkPackageNewPath(this.currentProject.id!),
+            { type: type.id! },
+          );
+        }
         return true;
       },
     }));

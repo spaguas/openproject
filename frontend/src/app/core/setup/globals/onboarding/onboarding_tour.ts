@@ -18,6 +18,8 @@ import { ganttOnboardingTourSteps } from 'core-app/core/setup/globals/onboarding
 import { ConfigurationService } from 'core-app/core/config/configuration.service';
 
 import 'core-vendor/enjoyhint';
+import { wpFullViewOnboardingTourSteps } from 'core-app/core/setup/globals/onboarding/tours/work_package_full_view_tour';
+import { getMetaContent } from '../global-helpers';
 
 declare global {
   interface Window {
@@ -25,7 +27,7 @@ declare global {
   }
 }
 
-export type OnboardingStep = {
+export interface OnboardingStep {
   [key:string]:string|unknown,
   event?:string,
   description?:string,
@@ -39,22 +41,25 @@ export type OnboardingStep = {
   condition?:() => boolean,
   onNext?:() => void,
   onBeforeStart?:() => void,
-};
+}
 
 function initializeTour(storageValue:string) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-assignment
   window.onboardingTourInstance = new window.EnjoyHint({
     onStart() {
-      jQuery('#content-wrapper, #menu-sidebar').addClass('-hidden-overflow');
+      document.querySelectorAll('#content-wrapper, #menu-sidebar')
+        .forEach((elem) => elem.classList.add('-hidden-overflow'));
       sessionStorage.setItem(onboardingTourStorageKey, storageValue);
     },
     onEnd() {
       sessionStorage.setItem(onboardingTourStorageKey, storageValue);
-      jQuery('#content-wrapper, #menu-sidebar').removeClass('-hidden-overflow');
+      document.querySelectorAll('#content-wrapper, #menu-sidebar')
+        .forEach((elem) => elem.classList.remove('-hidden-overflow'));
     },
     onSkip() {
       sessionStorage.setItem(onboardingTourStorageKey, 'skipped');
-      jQuery('#content-wrapper, #menu-sidebar').removeClass('-hidden-overflow');
+      document.querySelectorAll('#content-wrapper, #menu-sidebar')
+        .forEach((elem) => elem.classList.remove('-hidden-overflow'));
     },
   });
 }
@@ -77,28 +82,25 @@ function workPackageTour() {
   });
 }
 
-function ganttTour(configuration:ConfigurationService) {
-  initializeTour('ganttTourFinished');
 
-  const boardsDemoDataAvailable = jQuery('meta[name=boards_demo_data_available]').attr('content') === 'true';
-  const teamPlannerDemoDataAvailable = jQuery('meta[name=demo_view_of_type_team_planner_seeded]').attr('content') === 'true';
-  const eeTokenAvailable = configuration.availableFeatures.includes('board_view');
+function workPackageFullViewTour() {
+  initializeTour('wpFullViewTourFinished');
+  waitForElement('.work-package--single-view', '#content', () => {
+    const steps:OnboardingStep[] = wpFullViewOnboardingTourSteps();
+
+    startTour(steps);
+  });
+}
+
+function ganttTour(_configuration:ConfigurationService) {
+  initializeTour('ganttTourFinished');
 
   waitForElement('.work-package--results-tbody', '#content', () => {
     let steps:OnboardingStep[] = ganttOnboardingTourSteps();
-    // Check for EE edition
-    if (eeTokenAvailable) {
-      // ... and available seed data of boards.
-      // Then add boards to the tour, otherwise skip it.
-      if (boardsDemoDataAvailable && moduleVisible('boards')) {
-        steps = steps.concat(navigateToBoardStep('enterprise'));
-      } else if (teamPlannerDemoDataAvailable && moduleVisible('team-planner-view')) {
-        steps = steps.concat(navigateToTeamPlannerStep());
-      } else {
-        steps = steps.concat(menuTourSteps());
-      }
-    } else if (boardsDemoDataAvailable && moduleVisible('boards')) {
-      steps = steps.concat(navigateToBoardStep('basic'));
+    if (showBoardsTour()) {
+      steps = steps.concat(navigateToBoardStep());
+    } else if (showTeamPlannerTour(_configuration)) {
+      steps = steps.concat(navigateToTeamPlannerStep());
     } else {
       steps = steps.concat(menuTourSteps());
     }
@@ -107,18 +109,16 @@ function ganttTour(configuration:ConfigurationService) {
   });
 }
 
-function boardTour(configuration:ConfigurationService) {
+function boardTour(_configuration:ConfigurationService) {
   initializeTour('boardsTourFinished');
 
-  const teamPlannerDemoDataAvailable = jQuery('meta[name=demo_view_of_type_team_planner_seeded]').attr('content') === 'true';
-  const eeTokenAvailable = configuration.availableFeatures.includes('board_view');
 
   waitForElement('wp-single-card', '#content', () => {
-    let steps:OnboardingStep[] = eeTokenAvailable ? boardTourSteps('enterprise') : boardTourSteps('basic');
+    let steps:OnboardingStep[] = boardTourSteps();
 
     // Available seed data of team planner.
     // Then add Team planner to the tour, otherwise skip it.
-    if (teamPlannerDemoDataAvailable && moduleVisible('team-planner-view')) {
+    if (showTeamPlannerTour(_configuration)) {
       steps = steps.concat(navigateToTeamPlannerStep());
     } else {
       steps = steps.concat(menuTourSteps());
@@ -138,6 +138,19 @@ function teamPlannerTour() {
   });
 }
 
+function showBoardsTour():boolean {
+  const boardsDemoDataAvailable = getMetaContent('boards_demo_data_available') === 'true';
+
+  return boardsDemoDataAvailable && moduleVisible('boards');
+}
+
+function showTeamPlannerTour(configuration:ConfigurationService):boolean {
+  const eeTokenAvailable = configuration.availableFeatures.includes('team_planner_view');
+  const teamPlannerDemoDataAvailable = getMetaContent('demo_view_of_type_team_planner_seeded') === 'true';
+
+  return eeTokenAvailable && teamPlannerDemoDataAvailable && moduleVisible('team-planner-view');
+}
+
 export function start(name:OnboardingTourNames, configuration:ConfigurationService):void {
   switch (name) {
     case 'homescreen':
@@ -146,6 +159,9 @@ export function start(name:OnboardingTourNames, configuration:ConfigurationServi
       break;
     case 'workPackages':
       workPackageTour();
+      break;
+    case 'workPackagesFullView':
+      workPackageFullViewTour();
       break;
     case 'gantt':
       ganttTour(configuration);

@@ -1,20 +1,20 @@
 import { Title } from '@angular/platform-browser';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { getMetaContent } from '../setup/globals/global-helpers';
 
 const titlePartsSeparator = ' | ';
 
 @Injectable({ providedIn: 'root' })
 export class OpTitleService {
-  constructor(private titleService:Title) {
-  }
+  private titleService = inject(Title);
+
 
   public get current():string {
     return this.titleService.getTitle();
   }
 
   public get base():string {
-    const appTitle = document.querySelector('meta[name=app_title]') as HTMLMetaElement;
-    return appTitle.content;
+    return getMetaContent('app_title');
   }
 
   public get titleParts():string[] {

@@ -26,18 +26,16 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  Inject,
-  Injectable,
-} from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { isVisible } from 'core-app/shared/helpers/dom-helpers';
 
 export const ANIMATION_RATE_MS = 100;
 
 @Injectable({ providedIn: 'root' })
 export class TopMenuService {
-  constructor(@Inject(DOCUMENT) private document:Document) {
-  }
+  private document = inject<Document>(DOCUMENT);
+
 
   register():void {
     this.skipContentClickListener();
@@ -45,17 +43,15 @@ export class TopMenuService {
 
   private skipContentClickListener():void {
     // Skip menu on content
-    const skipLink = this.document.querySelector('#skip-navigation--content') as HTMLElement;
+    const skipLink = this.document.querySelector('#skip-navigation--content');
     skipLink?.addEventListener('click', () => {
       // Skip to the breadcrumb or the first link in the toolbar or the first link in the content (homescreen)
       const selectors = '.first-breadcrumb-element a, .toolbar-container a:first-of-type, #content a:first-of-type';
-      const visibleLink = jQuery(selectors)
-        .not(':hidden')
-        .first();
+      const visibleLink = Array
+        .from(document.querySelectorAll<HTMLElement>(selectors))
+        .find((link) => isVisible(link));
 
-      if (visibleLink.length) {
-        visibleLink.trigger('focus');
-      }
+      visibleLink?.focus();
     });
   }
 }

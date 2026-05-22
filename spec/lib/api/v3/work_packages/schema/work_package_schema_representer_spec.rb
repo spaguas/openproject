@@ -284,6 +284,26 @@ RSpec.describe API::V3::WorkPackages::Schema::WorkPackageSchemaRepresenter do
         let(:min_length) { 1 }
         let(:max_length) { 255 }
       end
+
+      context "on a work package which's type has an auto-generated subject" do
+        before do
+          allow(wp_type)
+            .to receive(:enabled_patterns)
+                .and_return({ subject: double })
+        end
+
+        it_behaves_like "has basic schema properties" do
+          let(:type) { "String" }
+          let(:name) { I18n.t("attributes.subject") }
+          let(:required) { true }
+          let(:writable) { false }
+          let(:has_default) { true }
+        end
+
+        it_behaves_like "defines the placeholder to display" do
+          let(:placeholder) { I18n.t("placeholders.templated_hint", type: wp_type.name) }
+        end
+      end
     end
 
     describe "description" do
@@ -1039,9 +1059,6 @@ RSpec.describe API::V3::WorkPackages::Schema::WorkPackageSchemaRepresenter do
     end
 
     describe "responsible and assignee" do
-      let(:base_href) { "/api/v3/projects/#{work_package.project.id}" }
-      let(:wp_base_href) { "/api/v3/work_packages/#{work_package.id}" }
-
       describe "assignee" do
         it_behaves_like "has basic schema properties" do
           let(:path) { "assignee" }
@@ -1054,8 +1071,7 @@ RSpec.describe API::V3::WorkPackages::Schema::WorkPackageSchemaRepresenter do
 
         it_behaves_like "links to allowed values via collection link" do
           let(:path) { "assignee" }
-          let(:base_href) { "/api/v3/work_packages/#{work_package.id}" }
-          let(:href) { "#{base_href}/available_assignees" }
+          let(:href) { api_v3_paths.available_assignees_in_work_package(work_package.id) }
         end
 
         context "when not embedded" do
@@ -1092,7 +1108,7 @@ RSpec.describe API::V3::WorkPackages::Schema::WorkPackageSchemaRepresenter do
         context "when the work package is persisted" do
           it_behaves_like "links to allowed values via collection link" do
             let(:path) { "responsible" }
-            let(:href) { "#{wp_base_href}/available_assignees" }
+            let(:href) { api_v3_paths.available_assignees_in_work_package(work_package.id) }
           end
         end
 
@@ -1101,7 +1117,7 @@ RSpec.describe API::V3::WorkPackages::Schema::WorkPackageSchemaRepresenter do
 
           it_behaves_like "links to allowed values via collection link" do
             let(:path) { "responsible" }
-            let(:href) { "#{base_href}/available_assignees" }
+            let(:href) { api_v3_paths.available_assignees_in_workspace(work_package.project_id) }
           end
         end
 
@@ -1221,8 +1237,8 @@ RSpec.describe API::V3::WorkPackages::Schema::WorkPackageSchemaRepresenter do
         call_count = 0
         allow(work_package.type)
           .to receive(:attribute_groups) do
-          call_count += 1
-          []
+            call_count += 1
+            []
         end
 
         # Rendering two times, the Type#attribute_groups

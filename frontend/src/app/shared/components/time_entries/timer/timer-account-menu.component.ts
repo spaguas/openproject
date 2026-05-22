@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  HostBinding,
-  Injector,
-  OnInit,
-  ViewEncapsulation,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostBinding, Injector, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { TimeEntryTimerService } from 'core-app/shared/components/time_entries/services/time-entry-timer.service';
 import { UntilDestroyedMixin } from 'core-app/shared/helpers/angular/until-destroyed.mixin';
 import { TimeEntryResource } from 'core-app/features/hal/resources/time-entry-resource';
@@ -31,6 +22,13 @@ export const timerAccountSelector = 'op-timer-account-menu';
   standalone: false,
 })
 export class TimerAccountMenuComponent extends UntilDestroyedMixin implements OnInit {
+  readonly injector = inject(Injector);
+  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly timeEntryService = inject(TimeEntryTimerService);
+  readonly cdRef = inject(ChangeDetectorRef);
+  readonly I18n = inject(I18nService);
+  readonly toastService = inject(ToastService);
+
   @HostBinding('class.op-timer-account-menu') className = true;
   @InjectField() PathHelper:PathHelperService;
   @InjectField() TurboRequests:TurboRequestsService;
@@ -50,19 +48,8 @@ export class TimerAccountMenuComponent extends UntilDestroyedMixin implements On
     timer_already_stopped: this.I18n.t('js.timer.timer_already_stopped'),
   };
 
-  constructor(
-    readonly injector:Injector,
-    readonly elementRef:ElementRef<HTMLElement>,
-    readonly timeEntryService:TimeEntryTimerService,
-    readonly cdRef:ChangeDetectorRef,
-    readonly I18n:I18nService,
-    readonly toastService:ToastService,
-  ) {
-    super();
-  }
-
   ngOnInit() {
-    const parent = this.elementRef.nativeElement.parentElement as HTMLElement;
+    const parent = this.elementRef.nativeElement.parentElement!;
     parent.hidden = true;
 
     this.timer$
@@ -80,7 +67,6 @@ export class TimerAccountMenuComponent extends UntilDestroyedMixin implements On
     }
 
     return this.TurboRequests.request(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.PathHelper.timeEntryEditDialog(active.id!),
       { method: 'GET' },
     );

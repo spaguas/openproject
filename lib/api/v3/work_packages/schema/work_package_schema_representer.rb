@@ -34,10 +34,10 @@ module API
           extend ::API::V3::Utilities::CustomFieldInjector::RepresenterClass
 
           include API::Caching::CachedRepresenter
+
           cached_representer key_parts: %i[project type],
                              dependencies: -> {
-                               all_permissions_granted_to_user_under_project + [Setting.work_package_done_ratio,
-                                                                                Setting.plugin_openproject_backlogs]
+                               all_permissions_granted_to_user_under_project + [Setting.work_package_done_ratio]
                              }
 
           custom_field_injector type: :schema_representer
@@ -113,7 +113,15 @@ module API
           schema :subject,
                  type: "String",
                  min_length: 1,
-                 max_length: 255
+                 max_length: 255,
+                 has_default: -> {
+                   represented.type&.replacement_pattern_defined_for?(:subject)
+                 },
+                 placeholder: -> {
+                   if represented.type&.replacement_pattern_defined_for?(:subject)
+                     I18n.t("placeholders.templated_hint", type: represented.type.name)
+                   end
+                 }
 
           schema :description,
                  type: "Formattable",
@@ -376,7 +384,7 @@ module API
           end
 
           def form_config_attribute_representation(group)
-            OpenProject::Cache.fetch(*form_config_attribute_cache_key(group)) do
+            OpenProject::Cache.fetch_request_cached(*form_config_attribute_cache_key(group)) do
               ::JSON::parse(::API::V3::WorkPackages::Schema::FormConfigurations::AttributeRepresenter
                               .new(group, current_user:, project: represented.project, embed_links: true)
                               .to_json)
@@ -410,7 +418,7 @@ module API
             if work_package&.persisted?
               api_v3_paths.available_assignees_in_work_package(represented.id)
             elsif work_package&.project
-              api_v3_paths.available_assignees_in_project(represented.project_id)
+              api_v3_paths.available_assignees_in_workspace(represented.project_id)
             end
           end
         end

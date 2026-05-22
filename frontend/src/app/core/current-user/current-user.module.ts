@@ -1,16 +1,16 @@
-import { Injector, NgModule } from '@angular/core';
+import { Injector, NgModule, inject } from '@angular/core';
 
 import { CurrentUserService } from './current-user.service';
 import { CurrentUserStore } from './current-user.store';
 import { CurrentUserQuery } from './current-user.query';
 import { firstValueFrom } from 'rxjs';
+import { getMetaValue } from '../setup/globals/global-helpers';
 
 function loadUserMetadata(currentUserService:CurrentUserService) {
-  const userMeta = document.querySelector<HTMLMetaElement>('meta[name=current_user]');
   currentUserService.setUser({
-    id: userMeta?.dataset.id || null,
-    name: userMeta?.dataset.name || null,
-    loggedIn: userMeta?.dataset.loggedIn === 'true',
+    id: getMetaValue('current_user', 'id', null),
+    name: getMetaValue('current_user', 'name', null),
+    loggedIn: getMetaValue('current_user', 'loggedIn') === 'true'
   });
 }
 
@@ -35,7 +35,9 @@ export function bootstrapModule(injector:Injector):void {
   ],
 })
 export class CurrentUserModule {
-  constructor(injector:Injector) {
+  constructor() {
+    const injector = inject(Injector);
+
     bootstrapModule(injector);
   }
 }

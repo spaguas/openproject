@@ -24,19 +24,6 @@
       end
     end
 
-    header.with_action_button(
-      tag: :a,
-      mobile_icon: :pencil,
-      mobile_label: t("projects.settings.change_identifier"),
-      size: :medium,
-      href: project_identifier_path(@project),
-      aria: { label: t("projects.settings.change_identifier") },
-      title: t("projects.settings.change_identifier")
-    ) do |button|
-      button.with_leading_visual_icon(icon: :pencil)
-      t("projects.settings.change_identifier")
-    end
-
     header.with_action_menu(
       menu_arguments: {
         anchor_align: :end
@@ -79,10 +66,12 @@
         menu.with_item(
           tag: :a,
           label: t(:button_archive),
-          href: project_archive_path(@project, status: "", name: @project.name),
+          href: helpers.dialog_project_archive_path(project),
           content_arguments: {
-            data: { turbo_method: :post, turbo_confirm: t("project.archive.are_you_sure", name: @project.name) },
-            test_selector: "project-settings--archive"
+            data: {
+              turbo_stream: true,
+              test_selector: "project-settings--archive"
+            }
           }
         ) do |item|
           item.with_leading_visual_icon(icon: "lock")

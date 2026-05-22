@@ -32,7 +32,7 @@ module Storages
   module Adapters
     module Providers
       module Nextcloud
-        NextcloudRegistry = Dry::Container::Namespace.new("nextcloud") do
+        NextcloudRegistry = Dry::Core::Container::Namespace.new("nextcloud") do
           namespace("authentication") do
             register(:userless, ->(*) { Input::Strategy.build(key: :basic_auth) })
             register(:user_bound, UserBoundAuthentication)
@@ -46,6 +46,7 @@ module Storages
             register(:remove_user_from_group, Commands::RemoveUserFromGroupCommand)
             register(:rename_file, Commands::RenameFileCommand)
             register(:set_permissions, Commands::SetPermissionsCommand)
+            register(:upload_file, Commands::UploadFileCommand)
           end
 
           namespace("components") do

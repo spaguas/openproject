@@ -42,7 +42,7 @@ module Storages
             let(:auth_strategy) { Registry["sharepoint.authentication.user_bound"].call(user, storage) }
             let(:input_data) { Input::FilesInfo.build(file_ids:).value! }
 
-            it_behaves_like "adapter files_info_query: basic query setup"
+            it_behaves_like "storage adapter: query call signature", "files_info"
 
             context "with an empty array of file ids" do
               let(:file_ids) { [] }
@@ -75,7 +75,7 @@ module Storages
                     owner_id: "5b5a7dc4-4539-41ba-9fa9-100f0a26acb7",
                     last_modified_by_name: "Eric Schubert",
                     last_modified_by_id: "5b5a7dc4-4539-41ba-9fa9-100f0a26acb7",
-                    location: "/Shared%20Documents/Folder"
+                    location: "/Shared Documents/Folder"
                   ),
                   Results::StorageFileInfo.new(
                     status: "ok",
@@ -90,7 +90,7 @@ module Storages
                     owner_id: "5b5a7dc4-4539-41ba-9fa9-100f0a26acb7",
                     last_modified_by_name: "Eric Schubert",
                     last_modified_by_id: "5b5a7dc4-4539-41ba-9fa9-100f0a26acb7",
-                    location: "/Shared%20Documents/Folder/authurl.txt"
+                    location: "/Shared Documents/Folder/authurl.txt"
                   ),
                   Results::StorageFileInfo.new(
                     status: "ok",
@@ -105,7 +105,7 @@ module Storages
                     owner_id: "5b5a7dc4-4539-41ba-9fa9-100f0a26acb7",
                     last_modified_by_name: "Eric Schubert",
                     last_modified_by_id: "5b5a7dc4-4539-41ba-9fa9-100f0a26acb7",
-                    location: "/Shared%20Documents/Folder/Nested%20Folder/release_meme.jpg"
+                    location: "/Shared Documents/Folder/Nested Folder/release_meme.jpg"
                   )
                 ]
               end
@@ -131,7 +131,7 @@ module Storages
                     owner_id: "5b5a7dc4-4539-41ba-9fa9-100f0a26acb7",
                     last_modified_by_name: "Eric Schubert",
                     last_modified_by_id: "5b5a7dc4-4539-41ba-9fa9-100f0a26acb7",
-                    location: "/Shared%20Documents/Folder/authurl.txt"
+                    location: "/Shared Documents/Folder/authurl.txt"
                   ),
                   Results::StorageFileInfo.new(
                     status: :not_found,

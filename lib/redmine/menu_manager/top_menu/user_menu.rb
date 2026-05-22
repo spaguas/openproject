@@ -49,7 +49,12 @@ module Redmine::MenuManager::TopMenu::UserMenu
   end
 
   def render_user_drop_down(items)
-    avatar = avatar(User.current, class: "op-top-menu-user-avatar", hover_card: { active: false })
+    avatar = avatar(
+      User.current,
+      class: "op-top-menu-user-avatar",
+      hover_card: { active: false },
+      avatar_image_alt_text: I18n.t("label_user_menu")
+    )
 
     render Primer::Alpha::Dialog.new(title: I18n.t("label_user_menu"),
                                      visually_hide_title: true,
@@ -136,6 +141,8 @@ module Redmine::MenuManager::TopMenu::UserMenu
 
   def add_lateral_user_menu_items(list, link_items)
     link_items.each do |item|
+      list.with_divider if item.show_divider_before?
+
       list.with_item(
         href: allowed_node_url(item, nil),
         label: item.caption,

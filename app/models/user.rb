@@ -60,6 +60,12 @@ class User < Principal
   has_one :rss_token, class_name: "::Token::RSS", dependent: :destroy
   has_many :api_tokens, class_name: "::Token::API", dependent: :destroy
   has_many :oauth_client_tokens, dependent: :destroy
+  has_many :working_hours, class_name: "UserWorkingHours",
+                           dependent: :destroy,
+                           inverse_of: :user
+  has_many :non_working_times, class_name: "UserNonWorkingTime",
+                               dependent: :destroy,
+                               inverse_of: :user
 
   # The user might have one invitation token
   has_one :invitation_token, class_name: "::Token::Invitation", dependent: :destroy
@@ -90,6 +96,10 @@ class User < Principal
            inverse_of: :user,
            dependent: :destroy
 
+  has_many :recurring_meeting_interim_responses,
+           inverse_of: :user,
+           dependent: :destroy
+
   has_many :notification_settings,
            dependent: :destroy
 
@@ -101,6 +111,18 @@ class User < Principal
   has_many :emoji_reactions, dependent: :destroy
   has_many :reminders, foreign_key: "creator_id", dependent: :destroy, inverse_of: :creator
   has_many :remote_identities, dependent: :destroy
+
+  # Resource allocations assigned to this user. Normal user-deletion goes
+  # through Principals::DeleteJob, which rewrites principal_id to a
+  # DeletedUser placeholder before destroy fires (registered in the
+  # resource_management engine). The `dependent: :nullify` here is a
+  # defensive fallback if a user is destroyed outside that flow — the column
+  # is already nullable for the unassigned/filter-only state.
+  has_many :resource_allocations,
+           class_name: "ResourceAllocation",
+           foreign_key: :principal_id,
+           dependent: :nullify,
+           inverse_of: :principal
 
   # Users blocked via brute force prevention
   # use lambda here, so time is evaluated on each query
@@ -128,9 +150,9 @@ class User < Principal
      blocked_if_login_since]
   end
 
-  acts_as_customizable
+  acts_as_customizable admin_only_allowed: true
 
-  attr_accessor :password, :password_confirmation, :last_before_login_on
+  attr_accessor :password, :password_confirmation, :last_before_login_on, :current_password_input
 
   validates :login,
             :firstname,
@@ -205,6 +227,17 @@ class User < Principal
       scope = CustomField.where(type: "#{name}CustomField").order(:position)
       scope = scope.where(admin_only: false) if !user.admin?
       scope
+    end
+  end
+
+  # Override acts_as_customizable to skip custom field validation for invited users
+  # since custom field values cannot be provided during the invitation process.
+  # We only skip the validation if no custom field changes are present.
+  def custom_values_to_validate
+    if invited? && custom_field_changes.empty?
+      []
+    else
+      super
     end
   end
 
@@ -358,8 +391,8 @@ class User < Principal
 
   # Does the backend storage allow this user to change their password?
   def change_password_allowed?
-    return false if uses_external_authentication? ||
-      OpenProject::Configuration.disable_password_login?
+    return false if OpenProject::Configuration.disable_password_login?
+    return false if uses_external_authentication? && current_password.nil?
 
     ldap_auth_source_id.blank?
   end
@@ -433,7 +466,7 @@ class User < Principal
   end
 
   def self.find_by_api_key(key)
-    return nil unless Setting.rest_api_enabled?
+    return nil unless Setting.api_tokens_enabled?
 
     token = Token::API.find_by_plaintext_value(key)
 
@@ -493,6 +526,10 @@ class User < Principal
     !logged?
   end
 
+  def active_admin?
+    admin? && active?
+  end
+
   def consent_expired?
     # Always if the user has not consented
     return true if consented_at.blank?
@@ -533,6 +570,30 @@ class User < Principal
     User.current = previous_user
   end
 
+  # Temporarily elevates a user's permissions to admin for the duration
+  # of the given block.
+  #
+  # This method ensures that any changes to the user's admin status are
+  # safely reverted after the block is executed, regardless of whether
+  # an exception is raised within the block.
+  #
+  # Saving of the user is attempted to be prevented but this might not be foolproof.
+  # Saving the user within the block should be avoided to prevent undesired side effects.
+  #
+  # @param user [User] The user that requires temporary admin elevation.
+  def self.execute_as_admin(user)
+    previous_user_admin_state = user.admin
+    previous_user_readonly_state = user.readonly?
+    user.admin = true
+    user.reset_permission_caches
+    user.readonly!
+    yield
+  ensure
+    user.admin = previous_user_admin_state
+    user.reset_permission_caches
+    user.instance_variable_set(:@readonly, previous_user_readonly_state)
+  end
+
   ##
   # Returns true if no authentication method has been chosen for this user yet.
   # There are three possible methods currently:
@@ -559,8 +620,8 @@ class User < Principal
   end
 
   def scim_emails=(emails)
-    email = (emails.find { |email| email.primary == true }) ||
-            (emails.find { |email| email.type == "work" }) ||
+    email = emails.find { |email| email.primary == true } ||
+            emails.find { |email| email.type == "work" } ||
             emails.min
 
     self.mail = email&.value
@@ -635,6 +696,29 @@ class User < Principal
 
   include Scimitar::Resources::Mixin
 
+  def non_working_time_entities_for_year(year)
+    NonWorkingDay.for_year(year).to_a + non_working_times.for_year(year).to_a
+  end
+
+  def non_working_days_for_year(year)
+    working_wdays = Setting.working_days.map { |d| d % 7 }
+    all_dates = system_non_working_dates_for_year(year) | user_non_working_dates_for_year(year)
+    all_dates.select { |d| working_wdays.include?(d.wday) }
+  end
+
+  private
+
+  def system_non_working_dates_for_year(year)
+    NonWorkingDay.for_year(year).pluck(:date).to_set
+  end
+
+  def user_non_working_dates_for_year(year)
+    year_range = Date.new(year, 1, 1)..Date.new(year, 12, 31)
+    non_working_times.for_year(year).flat_map do |t|
+      ([t.start_date, year_range.begin].max..[t.end_date, year_range.end].min).to_a
+    end.to_set
+  end
+
   protected
 
   # Login must not be aliased value 'me'
@@ -704,7 +788,7 @@ class User < Principal
 
   def self.register_failed_login_attempt_if_user_exists_for(login)
     user = User.find_by_login(login)
-    user.log_failed_login if user.present?
+    user.presence&.log_failed_login
     nil
   end
 

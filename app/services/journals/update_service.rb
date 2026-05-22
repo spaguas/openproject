@@ -40,7 +40,8 @@ module Journals
 
       OpenProject::Notifications.send(OpenProject::Events::JOURNAL_UPDATED,
                                       journal: call.result,
-                                      send_notification: Journal::NotificationConfiguration.active?)
+                                      send_notification: Journal::NotificationConfiguration.active?,
+                                      trigger_callbacks: Journal::EventConfiguration.active?)
 
       call
     end
@@ -48,7 +49,7 @@ module Journals
     private
 
     def activity_comment?(journal)
-      journal.notes.present?
+      journal.notes.present? || journal.attachments.exists?
     end
 
     def claim_attachments_for(journal)

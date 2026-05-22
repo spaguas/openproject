@@ -124,38 +124,14 @@ module ApplicationHelper
     Project.project_tree(projects, &)
   end
 
-  def project_nested_ul(projects, &)
-    s = +""
-    if projects.any?
-      ancestors = []
-      Project.project_tree(projects) do |project, _level|
-        if ancestors.empty? || project.is_descendant_of?(ancestors.last)
-          s << "<ul>\n"
-        else
-          ancestors.pop
-          s << "</li>"
-          while ancestors.any? && !project.is_descendant_of?(ancestors.last)
-            ancestors.pop
-            s << "</ul></li>\n"
-          end
-        end
-        s << "<li>"
-        s << yield(project).to_s
-        ancestors << project
-      end
-      s << ("</li></ul>\n" * ancestors.size)
-    end
-    s.html_safe
-  end
-
   def principals_check_box_tags(name, principals)
     labeled_check_box_tags(name, principals,
                            title: :user_status_i18n,
                            class: :user_status_class)
   end
 
-  def labeled_check_box_tags(name, collection, options = {})
-    collection.sort.map do |object|
+  def labeled_check_box_tags(name, collection, options = {}) # rubocop:disable Metrics/AbcSize
+    fields = collection.sort.map do |object|
       id = name.gsub(/[\[\]]+/, "_") + object.id.to_s
 
       object_options = options.inject({}) do |h, (k, v)|
@@ -170,30 +146,30 @@ module ApplicationHelper
           styled_check_box_tag(name, object.id, false, id:) + object.to_s
         end
       end
-    end.join.html_safe
-  end
-
-  def html_safe_gsub(string, *gsub_args, &)
-    html_safe = string.html_safe?
-    result = string.gsub(*gsub_args, &)
-
-    # We only mark the string as safe if the previous string was already safe
-    if html_safe
-      result.html_safe # rubocop:disable Rails/OutputSafety
-    else
-      result
     end
+
+    safe_join(fields)
   end
 
   def authoring(created, author, options = {})
     label = options[:label] || :label_added_time_by
-    I18n.t(label, author: link_to_user(author), age: time_tag(created)).html_safe
+    # Ensure we pass inputs here to html_escape
+    # which will respect html_safe?
+    author = ERB::Util.html_escape link_to_user(author)
+    age = ERB::Util.html_escape time_tag(created)
+
+    # OG: html_safe is used here with explicitly escaped inputs except for the translation file
+    I18n.t(label, author:, age:).html_safe
   end
 
   def authoring_at(creation_date, author)
     return if author.nil?
 
-    I18n.t(:label_added_by_on, author: link_to_user(author), date: creation_date).html_safe
+    author = ERB::Util.html_escape link_to_user(author)
+    date = ERB::Util.html_escape creation_date
+
+    # OG: html_safe is used here to avoid having to change this reusable key
+    I18n.t(:label_added_by_on, author:, date:).html_safe
   end
 
   def time_tag(time)
@@ -206,8 +182,11 @@ module ApplicationHelper
               title: format_time(time))
     else
       datetime = time.acts_like?(:time) ? time.xmlschema : time.iso8601
-      content_tag(:time, text, datetime:,
-                               title: format_time(time), class: "timestamp")
+      content_tag(:time,
+                  text,
+                  datetime:,
+                  title: format_time(time),
+                  class: "timestamp")
     end
   end
 
@@ -232,7 +211,8 @@ module ApplicationHelper
     formats = capture(Redmine::Views::OtherFormatsBuilder.new(self), &)
     unless formats.nil? || formats.strip.empty?
       content_tag "p", class: "other-formats" do
-        (I18n.t(:label_export_to) + formats).html_safe
+        concat I18n.t(:label_export_to)
+        concat formats
       end
     end
   end
@@ -265,9 +245,9 @@ module ApplicationHelper
 
   # Same as Rails' simple_format helper without using paragraphs
   def simple_format_without_paragraph(text)
-    html_safe_gsub(text.to_s, /\r\n?/, "\n")
-      .then { |res| html_safe_gsub(res, /\n\n+/, "<br /><br />") }
-      .then { |res| html_safe_gsub(res, /([^\n]\n)(?=[^\n])/, '\1<br />') }
+    text.to_s.html_safe_gsub(/\r\n?/, "\n")
+        .then { it.html_safe_gsub(/\n\n+/, "<br /><br />") }
+        .then { it.html_safe_gsub(/([^\n]\n)(?=[^\n])/, '\1<br />') }
   end
 
   def lang_options_for_select(blank = true)
@@ -287,6 +267,12 @@ module ApplicationHelper
       .sort_by(&:first)
   end
 
+  def blank_select_option
+    content_tag(:option,
+                "--- #{t(:actionview_instancetag_blank_option)} ---",
+                disabled: true)
+  end
+
   def theme_options_for_select
     [
       [I18n.t("themes.light"), "light"],
@@ -302,9 +288,11 @@ module ApplicationHelper
 
   def body_data_attributes(local_assigns)
     {
-      controller: "application auto-theme-switcher hover-card-trigger beforeunload external-links",
+      controller: ["application auto-theme-switcher hover-card-trigger beforeunload external-links highlight-target-element",
+                   stimulus_body_controller].compact.join(" "),
       relative_url_root: root_path,
       overflowing_identifier: ".__overflowing_body",
+      external_links_enabled_value: Setting.capture_external_links?,
       rendered_at: Time.zone.now.iso8601,
       turbo: local_assigns[:turbo_opt_out] ? "false" : nil
     }.merge(user_theme_data_attributes)
@@ -333,16 +321,6 @@ module ApplicationHelper
     theme_options
   end
 
-  def highlight_default_language(lang_options)
-    lang_options.map do |(language_name, code)|
-      if code == Setting.default_language
-        [I18n.t("settings.language_name_being_default", language_name:), code, { disabled: true, checked: true }]
-      else
-        [language_name, code]
-      end
-    end
-  end
-
   def labelled_tabular_form_for(record, options = {}, &)
     options.reverse_merge!(builder: TabularFormBuilder, html: {})
     options[:html][:class] = "form" unless options[:html].has_key?(:class)
@@ -361,21 +339,12 @@ module ApplicationHelper
     hidden_field_tag("back_url", CGI.escape(back_url), id: nil) if back_url.present?
   end
 
-  def back_url_to_current_page_hidden_field_tag
-    back_url = params[:back_url]
-    if back_url.present?
-      back_url = back_url.to_s
-    elsif request.get? and params.present?
-      back_url = request.url
-    end
-
-    hidden_field_tag("back_url", back_url) if back_url.present?
+  def back_url_to_current_page
+    params[:back_url].presence&.to_s
   end
 
-  def check_all_links(form_name)
-    link_to_function(t(:button_check_all), "OpenProject.helpers.checkAll('#{form_name}', true)") +
-      " | " +
-      link_to_function(t(:button_uncheck_all), "OpenProject.helpers.checkAll('#{form_name}', false)")
+  def check_all_links(form_id = nil, &)
+    render(OpenProject::Common::CheckAllComponent.new(checkable_id: form_id), &)
   end
 
   def current_layout
@@ -452,10 +421,10 @@ module ApplicationHelper
     end
   end
 
-  # To avoid the menu flickering, disable it
-  # by default unless we're in test mode
-  def initial_menu_styles(side_displayed)
-    Rails.env.test? || !side_displayed ? "" : "display:none"
+  # To avoid FOUC (menu flickering / dark mode on logout), hide page
+  # wrapper on load except in test environment.
+  def initial_menu_styles
+    Rails.env.test? || "display:none"
   end
 
   def initial_menu_classes(side_displayed, show_decoration)
@@ -471,26 +440,11 @@ module ApplicationHelper
   # @param [optional, String] content the content of the ROBOTS tag.
   #   defaults to no index, follow, and no archive
   def robot_exclusion_tag(content = "NOINDEX,FOLLOW,NOARCHIVE")
-    "<meta name='ROBOTS' content='#{h(content)}' />".html_safe
+    tag(:meta, name: "ROBOTS", content:)
   end
 
   def permitted_params
     PermittedParams.new(params, current_user)
-  end
-
-  # Returns the language name in its own language for a given locale
-  #
-  # @param lang_code [String] the locale for the desired language, like `en`,
-  #   `de`, `fil`, `zh-CN`, and so on.
-  # @return [String] the language name translated in its own language
-  def translate_language(lang_code)
-    # rename in-context translation language name for the language select box
-    if lang_code.to_sym == Redmine::I18n::IN_CONTEXT_TRANSLATION_CODE &&
-      ::I18n.locale != Redmine::I18n::IN_CONTEXT_TRANSLATION_CODE
-      [Redmine::I18n::IN_CONTEXT_TRANSLATION_NAME, lang_code.to_s]
-    else
-      [I18n.t("cldr.language_name", locale: lang_code), lang_code.to_s]
-    end
   end
 
   def link_to_content_update(name, options = {}, html_options = {}, &)
@@ -498,10 +452,38 @@ module ApplicationHelper
   end
 
   def password_complexity_requirements
-    rules = OpenProject::Passwords::Evaluator.rules_description
+    render_password_requirements
+  end
 
-    s = raw "<em>" + OpenProject::Passwords::Evaluator.min_length_description + "</em>"
-    s += raw "<br /><em>" + rules + "</em>" unless rules.empty?
-    s
+  def render_password_requirements
+    evaluator = OpenProject::Passwords::Evaluator
+    content_tag(:ul, class: "op-password-requirements") do
+      concat password_requirement_item(evaluator.min_length_description,
+                                       data: { "requirement-type": "length",
+                                               "min-length": evaluator.min_length })
+      evaluator.active_rules.each do |rule|
+        concat password_requirement_item(I18n.t("label_password_requirement_#{rule}"),
+                                         data: { "requirement-type": "rule", rule: })
+      end
+    end
+  end
+
+  private
+
+  def password_requirement_item(label, data: {})
+    content = safe_join(
+      [
+        content_tag(:span, render(Primer::Beta::Octicon.new(icon: :check)),
+                    class: "op-password-requirements--item-check"),
+        content_tag(:span, render(Primer::Beta::Octicon.new(icon: :x)),
+                    class: "op-password-requirements--item-cross"),
+        label
+      ]
+    )
+
+    content_tag(:li,
+                content,
+                class: "op-password-requirements--item",
+                data: data.merge("password-requirements-target": "requirement"))
   end
 end

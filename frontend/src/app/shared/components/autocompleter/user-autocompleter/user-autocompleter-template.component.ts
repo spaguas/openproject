@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { ChangeDetectionStrategy, Component, Input, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, TemplateRef, ViewChild, inject } from '@angular/core';
 import {
   IAutocompleterTemplateComponent,
 } from 'core-app/shared/components/autocompleter/op-autocompleter/op-autocompleter.component';
@@ -41,11 +41,11 @@ import { hrefFromPrincipal, typeFromHref } from 'core-app/shared/components/prin
   standalone: false,
 })
 export class UserAutocompleterTemplateComponent implements IAutocompleterTemplateComponent {
-  @Input() public inviteUserToProject:string|undefined;
-  @Input() public isOpenedInModal:boolean = false;
-  @Input() public hoverCards:boolean = true;
+  private readonly pathHelperService = inject(PathHelperService);
 
-  constructor(private readonly pathHelperService:PathHelperService) {}
+  @Input() public inviteUserToProject:string|undefined;
+  @Input() public isOpenedInModal = false;
+  @Input() public hoverCards = true;
 
   @ViewChild('optionTemplate') optionTemplate:TemplateRef<Element>;
   @ViewChild('footerTemplate') footerTemplate?:TemplateRef<Element>;

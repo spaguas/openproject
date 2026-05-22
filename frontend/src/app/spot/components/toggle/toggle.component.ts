@@ -1,13 +1,4 @@
-import {
-  ChangeDetectorRef,
-  ChangeDetectionStrategy,
-  Component,
-  EventEmitter,
-  forwardRef,
-  HostBinding,
-  Input,
-  Output,
-} from '@angular/core';
+import { ChangeDetectorRef, ChangeDetectionStrategy, Component, EventEmitter, forwardRef, HostBinding, Input, Output, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 export interface SpotToggleOption<T> {
@@ -27,6 +18,8 @@ export interface SpotToggleOption<T> {
   standalone: false,
 })
 export class SpotToggleComponent<T> implements ControlValueAccessor {
+  private cdRef = inject(ChangeDetectorRef);
+
   // TODO: These old styles will need to be replaced
   @HostBinding('class.form--field-inline-buttons-container') public classNameOld = true;
 
@@ -70,10 +63,6 @@ export class SpotToggleComponent<T> implements ControlValueAccessor {
    */
   @Output() valueChange = new EventEmitter<T>();
 
-  constructor(
-    private cdRef:ChangeDetectorRef,
-  ) {}
-
   writeValue(value:T):void {
     this.value = value;
     this.cdRef.markForCheck();
@@ -87,7 +76,7 @@ export class SpotToggleComponent<T> implements ControlValueAccessor {
 
   onChange = (_:T):void => {};
 
-  onTouched: (t:T) => void = (_:T):void => {};
+  onTouched:(t:T) => void = (_:T):void => {};
 
   registerOnChange(fn:(_:T) => void):void {
     this.onChange = fn;

@@ -30,33 +30,100 @@
 
 require "rails_helper"
 
-RSpec.describe "BlockNote editor rendering", :js do
+RSpec.describe "BlockNote editor rendering", :js, :selenium, with_settings: { real_time_text_collaboration_enabled: true } do
+  include_context "with hocuspocus"
+
   let(:admin) { create(:admin) }
-  let(:project) { create(:project) }
-  let(:category) { create(:document_category, name: "Experimental", project:) }
-  let(:document) { create(:document, category:) }
+  let(:document) { create(:document, :collaborative) }
+  let(:editor) { FormFields::Primerized::BlockNoteEditorInput.new }
 
   before do
     login_as(admin)
   end
 
-  it "renders the blocknote editor when editting a document", with_flag: { block_note_editor: true } do
-    visit edit_document_path(document)
-
-    expect(page).to have_field("Category", required: true)
-    expect(page).to have_field("Title", required: true)
+  it "renders the BlockNote editor in the users locale" do
+    admin.update!(language: "de")
+    visit document_path(document)
 
     expect(page).to have_test_selector("blocknote-document-description")
-    expect(page).to have_css(".block-note-editor-container")
+    expect(editor.content).not_to include("Überschrift")
 
-    description_field = page.find_test_selector("blocknote-document-description")
-    description_field.click
-    description_field.send_keys("Additional text")
+    editor.open_command_dialog
+    expect(editor.content).to include("Überschrift")
+  end
 
-    click_on("Save")
+  it "renders the BlockNote editor in english if the users locale is not available for BlockNote" do
+    admin.update!(language: "af")
+    visit document_path(document)
 
-    visit edit_document_path(document)
+    expect(page).to have_test_selector("blocknote-document-description")
+    expect(editor.content).not_to include("Heading")
 
-    expect(page).to have_test_selector("blocknote-document-description", text: "Additional text")
+    editor.open_command_dialog
+    expect(editor.content).to include("Heading")
+  end
+
+  context "when real time text collaboration is disabled",
+          with_settings: { real_time_text_collaboration_enabled: false } do
+    it "does not render the BlockNote editor" do
+      visit document_path(document)
+
+      expect(page).to have_no_test_selector("blocknote-document-description")
+      expect(page).to have_test_selector(
+        "collaboration-disabled-notice",
+        text: "Unable to open document because real-time text collaboration is disabled. " \
+              "Please contact your administrator to enable real-time text collaboration " \
+              "if you want to access this document."
+      )
+    end
+  end
+
+  describe "with op-blocknote-extensions" do
+    it "renders the BlockNote editor with custom menu entries for work package linking" do
+      visit document_path(document)
+
+      expect(page).to have_test_selector("blocknote-document-description")
+      editor.fill_in("/openproject")
+      expect(editor.content).to have_content("Link existing work package")
+    end
+
+    it "orders results of the work package search by updated at DESC" do
+      create(:work_package, project: document.project, subject: "BBB test", updated_at: 4.hours.ago)
+      create(:work_package, project: document.project, subject: "AAA test", updated_at: 2.hours.ago)
+      create(:work_package, project: document.project, subject: "CCC test", updated_at: 3.hours.ago)
+
+      visit document_path(document)
+      expect(page).to have_test_selector("blocknote-document-description")
+
+      editor.open_add_work_package_dialog
+      editor.search_work_package("test")
+      expect(editor.element).to have_content("AAA test") # wait for dropdown to open
+      expect(editor.element.text).to match(/AAA test.*CCC test.*BBB test/m)
+    end
+
+    it "is possible to add link work package blocks" do
+      pending "will be fixed with https://community.openproject.org/wp/75231"
+
+      status = create(:status, name: "Open")
+      type = create(:type, name: "Life Goals")
+      work_package = create(:work_package,
+                            project: document.project,
+                            subject: "pet a tiger",
+                            status:,
+                            type:)
+
+      visit document_path(document)
+      expect(page).to have_test_selector("blocknote-document-description")
+
+      editor.open_add_work_package_dialog
+      editor.search_and_select_work_package("tiger", "pet a tiger")
+
+      expect(editor.element).to have_no_text("Link existing work package") # search dialog is closed
+      expect(editor.element).to have_no_text("…") # work package is loaded
+      expect(editor.element.text).to match(/#\d+\sLIFE GOALS\sOpen\spet a tiger/)
+
+      # Capybara's have_link seems not to work in a shadow dom, so it's tested via the property
+      expect(editor.element.find_link(text: "pet a tiger").native.property("href")).to end_with("/wp/#{work_package.id}")
+    end
   end
 end

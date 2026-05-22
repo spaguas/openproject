@@ -26,16 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  AfterViewInit,
-  ChangeDetectorRef,
-  Directive,
-  ElementRef,
-  EventEmitter,
-  Input,
-  OnDestroy,
-  Output,
-} from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Directive, ElementRef, EventEmitter, Input, OnDestroy, Output, inject } from '@angular/core';
 import { WorkPackageResource } from 'core-app/features/hal/resources/work-package-resource';
 import { HalResource } from 'core-app/features/hal/resources/hal-resource';
 import { HalEventsService } from 'core-app/features/hal/services/hal-events.service';
@@ -49,6 +40,13 @@ import { ResourceChangeset } from 'core-app/shared/components/fields/changeset/r
   standalone: false,
 })
 export class ModalWithTurboContentDirective implements AfterViewInit, OnDestroy {
+  readonly elementRef = inject(ElementRef);
+  readonly cdRef = inject(ChangeDetectorRef);
+  readonly halEvents = inject(HalEventsService);
+  readonly apiV3Service = inject(ApiV3Service);
+  readonly toastService = inject(ToastService);
+  readonly I18n = inject(I18nService);
+
   @Input() resource:HalResource;
   @Input() change:ResourceChangeset<HalResource>;
 
@@ -59,17 +57,6 @@ export class ModalWithTurboContentDirective implements AfterViewInit, OnDestroy 
   private contextBasedListenerBound = this.contextBasedListener.bind(this);
   private preserveSegmentAttributesBound = this.preserveSegmentAttributes.bind(this);
   private cancelListenerBound = this.cancelListener.bind(this);
-
-  constructor(
-    readonly elementRef:ElementRef,
-    readonly cdRef:ChangeDetectorRef,
-    readonly halEvents:HalEventsService,
-    readonly apiV3Service:ApiV3Service,
-    readonly toastService:ToastService,
-    readonly I18n:I18nService,
-  ) {
-
-  }
 
   ngAfterViewInit() {
     (this.elementRef.nativeElement as HTMLElement)
@@ -92,7 +79,6 @@ export class ModalWithTurboContentDirective implements AfterViewInit, OnDestroy 
   }
 
   private contextBasedListener(event:CustomEvent) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (this.resource.id === 'new') {
       void this.propagateSuccessfulCreate(event);
     } else {
@@ -134,7 +120,7 @@ export class ModalWithTurboContentDirective implements AfterViewInit, OnDestroy 
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (fetchResponse.succeeded) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
       const JSONresponse:unknown = await this.extractJSONFromResponse(fetchResponse.response.body);
 
       this.successfulCreate.emit(JSONresponse);

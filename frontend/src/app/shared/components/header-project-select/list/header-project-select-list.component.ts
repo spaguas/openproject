@@ -1,17 +1,5 @@
 import { I18nService } from 'core-app/core/i18n/i18n.service';
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  EventEmitter,
-  HostBinding,
-  Input,
-  OnChanges,
-  OnInit,
-  Output,
-  SimpleChanges,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, inject } from '@angular/core';
 import {
   SearchableProjectListService,
 } from 'core-app/shared/components/searchable-project-list/searchable-project-list.service';
@@ -19,6 +7,7 @@ import { IProjectData } from 'core-app/shared/components/searchable-project-list
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
 import { ConfigurationService } from 'core-app/core/config/configuration.service';
 import { CurrentProjectService } from 'core-app/core/current-project/current-project.service';
+import { getMetaContent } from 'core-app/core/setup/globals/global-helpers';
 
 @Component({
   selector: '[op-header-project-select-list]',
@@ -28,9 +17,27 @@ import { CurrentProjectService } from 'core-app/core/current-project/current-pro
   standalone: false,
 })
 export class OpHeaderProjectSelectListComponent implements OnInit, OnChanges {
+  readonly I18n = inject(I18nService);
+  readonly pathHelper = inject(PathHelperService);
+  readonly configuration = inject(ConfigurationService);
+  readonly searchableProjectListService = inject(SearchableProjectListService);
+  readonly elementRef = inject(ElementRef);
+  readonly cdRef = inject(ChangeDetectorRef);
+  readonly currentProjectService = inject(CurrentProjectService);
+
   @HostBinding('class.spot-list') classNameList = true;
 
   @HostBinding('class.op-header-project-select-list') className = true;
+
+  @HostBinding('attr.role')
+  get roleAttribute():string {
+    return this.root ? 'listbox' : 'group';
+  }
+
+  @HostBinding('attr.id')
+  get idAttribute():string|null {
+    return this.root ? 'op-header-project-select-listbox' : null;
+  }
 
   @Output() update = new EventEmitter<string[]>();
 
@@ -48,18 +55,10 @@ export class OpHeaderProjectSelectListComponent implements OnInit, OnChanges {
 
   public text = {
     does_not_match_search: this.I18n.t('js.include_projects.tooltip.does_not_match_search'),
-    include_all_selected: this.I18n.t('js.include_projects.tooltip.include_all_selected'),
+    include_all_selected: this.I18n.t('js.include_projects.tooltip.include_all_selected')
   };
 
-  constructor(
-    readonly I18n:I18nService,
-    readonly pathHelper:PathHelperService,
-    readonly configuration:ConfigurationService,
-    readonly searchableProjectListService:SearchableProjectListService,
-    readonly elementRef:ElementRef,
-    readonly cdRef:ChangeDetectorRef,
-    readonly currentProjectService:CurrentProjectService,
-  ) { }
+  public portfolioModelsEnabled = this.configuration.activeFeatureFlags.includes('portfolioModels');
 
   ngOnInit():void {
     if (this.root) {
@@ -68,7 +67,7 @@ export class OpHeaderProjectSelectListComponent implements OnInit, OnChanges {
         // and we can actually find the element and scroll to it.
         requestAnimationFrame(() => {
           const itemAction = (this.elementRef.nativeElement as HTMLElement)
-            .querySelectorAll(`.spot-list--item-action[data-project-id="${selectedItemID || ''}"]`);
+            .querySelectorAll(`.spot-list--item-action[data-project-id="${selectedItemID ?? ''}"]`);
           itemAction[0]?.scrollIntoView();
         });
       });
@@ -78,7 +77,6 @@ export class OpHeaderProjectSelectListComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes:SimpleChanges) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (changes.displayMode || changes.projects || changes.favorited) {
       this.updateProjectFilter();
     }
@@ -107,13 +105,17 @@ export class OpHeaderProjectSelectListComponent implements OnInit, OnChanges {
   }
 
   extendedUrl(projectId:string|null):string {
-    const currentMenuItem = document.querySelector<HTMLMetaElement>('meta[name="current_menu_item"]')!;
+    const currentMenuItem = getMetaContent('current_menu_item');
     const url = projectId === null ? window.appBasePath : this.pathHelper.projectPath(projectId);
 
     if (!currentMenuItem) {
       return url;
     }
 
-    return `${url}?jump=${encodeURIComponent(currentMenuItem.content)}`;
+    return `${url}?jump=${encodeURIComponent(currentMenuItem)}`;
+  }
+
+  optionId(project:IProjectData):string {
+    return `op-header-project-select-option-${project.id}`;
   }
 }

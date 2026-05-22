@@ -49,7 +49,9 @@ module Projects
       ""
     end
 
-    def favorited
+    def favorited # rubocop:disable Metrics/AbcSize
+      return nil if project.archived?
+
       render(Primer::Beta::IconButton.new(
                icon: currently_favorited? ? "star-fill" : "star",
                scheme: :invisible,
@@ -71,35 +73,17 @@ module Projects
     end
 
     def column_value(column)
-      if custom_field_column?(column)
-        custom_field_column(column)
-      elsif project_phase_column?(column)
-        project_phase_column(column)
-      else
-        send(column.attribute)
-      end
+      return custom_field_column(column) if custom_field_column?(column)
+      return custom_comment_column(column) if custom_comment_column?(column)
+      return project_phase_column(column) if project_phase_column?(column)
+
+      send(column.attribute)
     end
 
-    def custom_field_column(column) # rubocop:disable Metrics/AbcSize
-      return nil unless user_can_view_project?
+    def custom_field_column(column)
+      return nil unless user_can_view_project_attributes?
 
-      cf = column.custom_field
-      custom_value = project.formatted_custom_value_for(cf)
-
-      if cf.field_format == "text" && custom_value.present?
-        render OpenProject::Common::AttributeComponent.new(
-          "dialog-#{project.id}-cf-#{cf.id}",
-          cf.name,
-          custom_value,
-          formatted: true
-        )
-      elsif custom_value.is_a?(Array)
-        safe_join(Array(custom_value).compact_blank, ", ")
-      elsif cf.calculated_value?
-        render_calculated_value(cf, custom_value)
-      else
-        custom_value
-      end
+      super
     end
 
     def render_calculated_value(custom_field, custom_value)
@@ -117,6 +101,21 @@ module Projects
       else
         custom_value
       end
+    end
+
+    def custom_comment_column(column)
+      return nil unless user_can_view_project_attributes?
+
+      cf = column.custom_field
+      comment = cf.comment_for(project)&.text
+      return nil if comment.blank?
+
+      render OpenProject::Common::AttributeComponent.new(
+        "dialog-#{project.id}-cfc-#{cf.id}",
+        column.caption,
+        comment,
+        format: false
+      )
     end
 
     def project_phase_column(column)
@@ -152,36 +151,63 @@ module Projects
     end
 
     def name
-      content = content_tag(:i, "", class: "projects-table--hierarchy-icon")
+      content = [
+        hierarchy_icon,
+        name_link_section,
+        archived_label,
+        workspace_type_badge
+      ].compact_blank
 
-      if project.archived?
-        content << " "
-        content << content_tag(:span, I18n.t("project.archive.archived"), class: "archived-label")
+      content_tag(:div, safe_join(content), class: "projects-table--name")
+    end
+
+    def hierarchy_icon
+      content_tag(:i, "", class: "projects-table--hierarchy-icon")
+    end
+
+    def name_link_section
+      content_tag(:span, class: "projects-table--name-text") do
+        helpers.link_to_project(project, {}, { data: { turbo: false } }, false)
       end
+    end
 
-      content << " "
-      content << helpers.link_to_project(project, {}, { data: { turbo: false } }, false)
-      content
+    def workspace_type_badge
+      return unless OpenProject::FeatureDecisions.portfolio_models_active?
+      # Only show icon and type for non-project workspaces
+      return unless project.workspace_type.in?(["portfolio", "program"])
+
+      render(Primer::Beta::Text.new(classes: "projects-table--name-description")) do
+        icon = render(Primer::Beta::Octicon.new(
+                        icon: helpers.workspace_icon(project.workspace_type),
+                        size: :xsmall
+                      ))
+
+        safe_join([icon, " ", I18n.t(:"label_#{project.workspace_type}")])
+      end
+    end
+
+    def archived_label
+      return unless project.archived?
+
+      content_tag(:span, "(#{I18n.t('project.archive.archived')})", class: "archived-label")
     end
 
     def project_status
-      return nil unless user_can_view_project?
-
-      content = "".html_safe
+      return nil unless user_can_view_project_attributes?
 
       status_code = project.status_code
-
       if status_code
         classes = helpers.project_status_css_class(status_code)
-        content << content_tag(:span, "", class: "project-status--bulb -inline #{classes}")
-        content << content_tag(:span, helpers.project_status_name(status_code), class: "project-status--name #{classes}")
-      end
 
-      content
+        capture do
+          concat content_tag(:span, "", class: "project-status--bulb -inline #{classes}")
+          concat content_tag(:span, helpers.project_status_name(status_code), class: "project-status--name #{classes}")
+        end
+      end
     end
 
     def status_explanation
-      return nil unless user_can_view_project?
+      return nil unless user_can_view_project_attributes?
 
       if project.status_explanation.present? && project.status_explanation
         render OpenProject::Common::AttributeComponent.new("dialog-#{project.id}-status-explanation",
@@ -191,7 +217,7 @@ module Projects
     end
 
     def description
-      return nil unless user_can_view_project?
+      return nil unless user_can_view_project_attributes?
 
       if project.description.present?
         render OpenProject::Common::AttributeComponent.new("dialog-#{project.id}-description",
@@ -206,7 +232,7 @@ module Projects
 
     def row_css_class
       classes = %w[basics context-menu--reveal op-project-row-component]
-      classes << project_css_classes
+      classes += project_css_classes
       classes << row_css_level_classes
 
       classes.join(" ")
@@ -225,13 +251,13 @@ module Projects
     end
 
     def project_css_classes
-      s = " project ".html_safe
+      output = ["project"]
 
-      s << " root" if project.root?
-      s << " child" if project.child?
-      s << (project.leaf? ? " leaf" : " parent")
+      output << "root" if project.root?
+      output << "child" if project.child?
+      output << (project.leaf? ? "leaf" : "parent")
 
-      s
+      output
     end
 
     def column_css_class(column)
@@ -241,14 +267,10 @@ module Projects
     def additional_css_class(column)
       if column.attribute == :name
         "project--hierarchy #{'archived' if project.archived?}"
-      elsif %i[status_explanation description].include?(column.attribute)
-        "project-long-text-container"
       elsif column.attribute == :favorited
         "-w-abs-45"
       elsif custom_field_column?(column)
-        cf = column.custom_field
-        formattable = cf.field_format == "text" ? " project-long-text-container" : ""
-        "format-#{cf.field_format}#{formattable}"
+        "format-#{column.custom_field.field_format}"
       end
     end
 
@@ -292,7 +314,7 @@ module Projects
     end
 
     def more_menu_favorite_item
-      return if currently_favorited?
+      return if currently_favorited? || project.archived?
 
       {
         scheme: :default,
@@ -305,7 +327,7 @@ module Projects
     end
 
     def more_menu_unfavorite_item
-      return unless currently_favorited?
+      return if !currently_favorited? || project.archived?
 
       {
         scheme: :default,
@@ -405,7 +427,7 @@ module Projects
       end
     end
 
-    def user_can_view_project?
+    def user_can_view_project_attributes?
       User.current.allowed_in_project?(:view_project_attributes, project)
     end
 
@@ -413,8 +435,31 @@ module Projects
       User.current.allowed_in_project?(:view_project_phases, project)
     end
 
+    def custom_field_column_subject
+      project
+    end
+
+    def format_custom_field_value(cf, custom_value)
+      if cf.field_format == "text" && custom_value.present?
+        render OpenProject::Common::AttributeComponent.new(
+          "dialog-#{project.id}-cf-#{cf.id}",
+          cf.name,
+          custom_value,
+          format: false
+        )
+      elsif cf.calculated_value?
+        render_calculated_value(cf, custom_value)
+      else
+        super
+      end
+    end
+
     def custom_field_column?(column)
       column.is_a?(::Queries::Projects::Selects::CustomField)
+    end
+
+    def custom_comment_column?(column)
+      column.is_a?(::Queries::Projects::Selects::CustomComment)
     end
 
     def project_phase_column?(column)

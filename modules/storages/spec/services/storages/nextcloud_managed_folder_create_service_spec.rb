@@ -31,8 +31,6 @@
 require "spec_helper"
 require_module_spec_helper
 
-RSpec::Matchers.define_negated_matcher :not_change, :change
-
 module Storages
   FakeProject = Data.define(:id, :name)
 
@@ -280,7 +278,7 @@ module Storages
                                      folder_name: project_storage.managed_project_folder_path,
                                      parent_location: "/"))
           ensure
-            delete_folder(already_existing_folder.id)
+            delete_folder(already_existing_folder.id) if already_existing_folder
           end
 
           it "logs the occurrence", vcr: "nextcloud/sync_service_creation_fail" do
@@ -294,7 +292,7 @@ module Storages
                           parent_location: "/",
                           data: { body: String, status: 405 })
           ensure
-            delete_folder(already_existing_folder.id)
+            delete_folder(already_existing_folder.id) if already_existing_folder
           end
         end
       end

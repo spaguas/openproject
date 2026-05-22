@@ -156,9 +156,15 @@ module Exports::PDF::Components::Cover
   end
 
   def write_cover_footer
+    return if cover_page_footer_date.blank?
+
     text_style = styles.cover_footer
     text_style[:color] = cover_text_color if cover_text_color.present?
-    draw_text_left(footer_date, text_style, pdf.bounds.bottom - styles.cover_footer_offset)
+    draw_text_left(cover_page_footer_date, text_style, pdf.bounds.bottom - styles.cover_footer_offset)
+  end
+
+  def cover_page_footer_date
+    footer_date
   end
 
   def write_cover_logo
@@ -179,15 +185,24 @@ module Exports::PDF::Components::Cover
     [image_obj, image_info, image_opts, height]
   end
 
-  def custom_cover_image
+  def custom_cover_image_file
     return unless CustomStyle.current.present? &&
-      CustomStyle.current.export_cover.present? && CustomStyle.current.export_cover.local_file.present?
+                  CustomStyle.current.export_cover.present? && CustomStyle.current.export_cover.local_file.present?
 
-    image_file = CustomStyle.current.export_cover.local_file.path
+    CustomStyle.current.export_cover.local_file.path
+  end
+
+  def custom_cover_image
+    image_file = custom_cover_image_file
+    return unless image_file
+
     content_type = OpenProject::ContentTypeDetector.new(image_file).detect
     return unless pdf_embeddable?(content_type)
 
     image_file
+  rescue StandardError => e
+    Rails.logger.error "Failed to access custom PDF cover file: #{e}"
+    nil # Fallback to default cover
   end
 
   def write_background_image

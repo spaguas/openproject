@@ -1,7 +1,4 @@
-import {
-  ElementRef,
-  Injectable,
-} from '@angular/core';
+import { ElementRef, Injectable, inject } from '@angular/core';
 import { ThirdPartyDraggable } from '@fullcalendar/interaction';
 import { DragMetaInput } from '@fullcalendar/common';
 import dragula, { Drake } from 'dragula';
@@ -15,6 +12,11 @@ import moment from 'moment-timezone';
 
 @Injectable()
 export class CalendarDragDropService {
+  readonly authorisation = inject(AuthorisationService);
+  readonly schemaCache = inject(SchemaCacheService);
+  readonly workPackagesCalendarService = inject(OpWorkPackagesCalendarService);
+  readonly I18n = inject(I18nService);
+
   drake:Drake;
 
   draggableWorkPackages$ = new BehaviorSubject<WorkPackageResource[]>([]);
@@ -27,14 +29,6 @@ export class CalendarDragDropService {
       fallback: this.I18n.t('js.team_planner.modify.errors.fallback'),
     },
   };
-
-  constructor(
-    readonly authorisation:AuthorisationService,
-    readonly schemaCache:SchemaCacheService,
-    readonly workPackagesCalendarService:OpWorkPackagesCalendarService,
-    readonly I18n:I18nService,
-  ) {
-  }
 
   destroyDrake():void {
     if (this.drake) {
@@ -57,11 +51,9 @@ export class CalendarDragDropService {
       this.isDragging$.next(undefined);
     });
 
-    // eslint-disable-next-line no-new
     new ThirdPartyDraggable(container.nativeElement, {
       itemSelector,
       mirrorSelector: '.gu-mirror', // the dragging element that dragula renders
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       eventData: this.eventData.bind(this),
     });
   }
@@ -123,7 +115,7 @@ export class CalendarDragDropService {
     const diff = duration > 0 ? duration : dueDate.diff(startDate, 'days') + 1;
 
     return {
-      id: `${workPackage.href as string}-external`,
+      id: `${workPackage.href!}-external`,
       title: workPackage.subject,
       duration: {
         days: diff || 1,

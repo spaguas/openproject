@@ -44,7 +44,7 @@ See COPYRIGHT and LICENSE files for more details.
       aria: { label: I18n.t("storages.label_delete_storage") },
       tag: :a,
       href: confirm_destroy_admin_settings_storage_path(@storage),
-      data: { "turbo-frame": "_top" },
+      data: { "turbo-frame": "_top", controller: "async-dialog" },
       test_selector: "storage-delete-button"
     ) do |button|
       button.with_leading_visual_icon(icon: :trash)

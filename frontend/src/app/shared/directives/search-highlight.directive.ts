@@ -1,18 +1,13 @@
-import {
-  AfterViewChecked,
-  Directive,
-  ElementRef,
-  Input,
-} from '@angular/core';
+import { AfterViewChecked, Directive, ElementRef, Input, inject } from '@angular/core';
 
 @Directive({
   selector: '[opSearchHighlight]',
   standalone: false,
 })
 export class OpSearchHighlightDirective implements AfterViewChecked {
-  @Input('opSearchHighlight') public query = '';
+  readonly elementRef = inject(ElementRef);
 
-  constructor(readonly elementRef:ElementRef) { }
+  @Input('opSearchHighlight') public query = '';
 
   ngAfterViewChecked():void {
     let el = this.elementRef.nativeElement as HTMLElement;
@@ -51,9 +46,7 @@ export class OpSearchHighlightDirective implements AfterViewChecked {
   private cleanUpOldHighlighting(el:HTMLElement):HTMLElement {
     if (el.children.length > 0) {
       const unifiedLabelText = Array.from(el.children, ({ textContent }) => textContent?.trim()).join('');
-      // eslint-disable-next-line no-param-reassign
       el.innerHTML = '';
-      // eslint-disable-next-line no-param-reassign
       el.innerText = unifiedLabelText;
     }
 

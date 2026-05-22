@@ -26,8 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { OPContextMenuService } from 'core-app/shared/components/op-context-menu/op-context-menu.service';
-import { Directive, ElementRef } from '@angular/core';
+import { Directive, inject } from '@angular/core';
 import { OpContextMenuTrigger } from 'core-app/shared/components/op-context-menu/handlers/op-context-menu-trigger.directive';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { WorkPackageViewCollapsedGroupsService } from 'core-app/features/work-packages/routing/wp-view-base/view-services/wp-view-collapsed-groups.service';
@@ -40,17 +39,13 @@ import { WorkPackageViewHierarchiesService } from 'core-app/features/work-packag
   standalone: false,
 })
 export class WorkPackageGroupToggleDropdownMenuDirective extends OpContextMenuTrigger {
-  constructor(readonly elementRef:ElementRef,
-    readonly opContextMenu:OPContextMenuService,
-    readonly I18n:I18nService,
-    readonly wpViewCollapsedGroups:WorkPackageViewCollapsedGroupsService,
-    readonly querySpace:IsolatedQuerySpace,
-    readonly states:States,
-    readonly wpTableHierarchies:WorkPackageViewHierarchiesService) {
-    super(elementRef, opContextMenu);
-  }
+  readonly I18n = inject(I18nService);
+  readonly wpViewCollapsedGroups = inject(WorkPackageViewCollapsedGroupsService);
+  readonly querySpace = inject(IsolatedQuerySpace);
+  readonly states = inject(States);
+  readonly wpTableHierarchies = inject(WorkPackageViewHierarchiesService);
 
-  protected open(evt:JQuery.TriggeredEvent) {
+  protected open(evt:Event) {
     this.buildItems();
     this.opContextMenu.show(this, evt);
   }
@@ -72,7 +67,7 @@ export class WorkPackageGroupToggleDropdownMenuDirective extends OpContextMenuTr
         disabled: this.wpViewCollapsedGroups.allGroupsAreCollapsed,
         linkText: this.I18n.t('js.button_collapse_all'),
         icon: 'icon-minus2',
-        onClick: (evt:JQuery.TriggeredEvent) => {
+        onClick: () => {
           this.wpViewCollapsedGroups.setAllGroupsCollapseStateTo(true);
 
           return true;
@@ -83,7 +78,7 @@ export class WorkPackageGroupToggleDropdownMenuDirective extends OpContextMenuTr
         disabled: this.wpViewCollapsedGroups.allGroupsAreExpanded,
         linkText: this.I18n.t('js.button_expand_all'),
         icon: 'icon-plus',
-        onClick: (evt:JQuery.TriggeredEvent) => {
+        onClick: () => {
           this.wpViewCollapsedGroups.setAllGroupsCollapseStateTo(false);
 
           return true;
@@ -96,7 +91,7 @@ export class WorkPackageGroupToggleDropdownMenuDirective extends OpContextMenuTr
         disabled: hierarchyParentIds.every((id) => this.wpTableHierarchies.collapsed(id)),
         linkText: this.I18n.t('js.work_packages.hierarchy.collapse_all'),
         icon: 'icon-minus2',
-        onClick: (evt:JQuery.TriggeredEvent) => {
+        onClick: () => {
           this.wpTableHierarchies.setAll(hierarchyParentIds, true);
 
           return true;
@@ -107,7 +102,7 @@ export class WorkPackageGroupToggleDropdownMenuDirective extends OpContextMenuTr
         disabled: hierarchyParentIds.every((id) => !this.wpTableHierarchies.collapsed(id)),
         linkText: this.I18n.t('js.work_packages.hierarchy.expand_all'),
         icon: 'icon-plus',
-        onClick: (evt:JQuery.TriggeredEvent) => {
+        onClick: () => {
           this.wpTableHierarchies.setAll(hierarchyParentIds, false);
 
           return true;

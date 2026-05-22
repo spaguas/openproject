@@ -32,10 +32,25 @@ module OpTurbo
   module ComponentStream
     extend ActiveSupport::Concern
 
+    # Builds a turbo stream response block, supports different ways of building response statuses.
+    # It can take a `result` object that will serve as a base for a status, or a `status` symbol
+    # directly.
+    #
+    # @param status [Symbol, ServiceResult, Dry::Monads[:result]] the response status, if a result
+    # object is provided, it is evaluated based on its state. Defaults to `:ok`.
+    # @yield [format] Optional block to handle additional response formats
+    # @yieldparam format [ActionController::MimeResponds::Collector]
+    #
     def respond_to_with_turbo_streams(status: turbo_status, &format_block)
+      resolved_status = if status.respond_to?(:success?)
+                          status.success? ? :ok : :unprocessable_entity
+                        else
+                          status
+                        end
+
       respond_to do |format|
         format.turbo_stream do
-          render turbo_stream: turbo_streams, status:
+          render turbo_stream: turbo_streams, status: resolved_status
         end
 
         yield(format) if format_block
@@ -50,25 +65,34 @@ module OpTurbo
       respond_to_with_turbo_streams(&format_block)
     end
 
-    def update_via_turbo_stream(component:, status: :ok, method: nil)
-      modify_via_turbo_stream(component:, action: :update, status:, method:)
+    def update_via_turbo_stream(component:, status: :ok, **)
+      modify_via_turbo_stream(component:, action: :update, status:, **)
     end
 
-    def replace_via_turbo_stream(component:, status: :ok, method: nil)
-      modify_via_turbo_stream(component:, action: :replace, status:, method:)
+    def replace_via_turbo_stream(component:, status: :ok, **)
+      modify_via_turbo_stream(component:, action: :replace, status:, **)
     end
 
-    def remove_via_turbo_stream(component:, status: :ok)
-      modify_via_turbo_stream(component:, action: :remove, status:)
+    def remove_via_turbo_stream(component:, status: :ok, **)
+      modify_via_turbo_stream(component:, action: :remove, status:, **)
     end
 
-    def modify_via_turbo_stream(component:, action:, status:, method: nil)
+    def modify_via_turbo_stream(component:, action:, status:, **)
       @turbo_status = status
       turbo_streams << component.render_as_turbo_stream(
         view_context:,
         action:,
-        method:
+        **
       )
+    end
+
+    def insert_via_turbo_stream(action:, component:, target_component:)
+      case action
+      when :append
+        append_via_turbo_stream(component:, target_component:)
+      when :prepend
+        prepend_via_turbo_stream(component:, target_component:)
+      end
     end
 
     def append_via_turbo_stream(component:, target_component:)
@@ -119,6 +143,14 @@ module OpTurbo
     def close_dialog_via_turbo_stream(target, additional: {})
       turbo_streams << OpTurbo::StreamComponent
         .new(action: :closeDialog, target:, additional: additional.to_json)
+        .render_in(view_context)
+    end
+
+    def update_dialog_title_via_turbo_stream(dialog_id, new_title:)
+      turbo_streams << OpTurbo::StreamComponent
+        .new(action: :update,
+             target: "#{dialog_id}-title",
+             template: new_title)
         .render_in(view_context)
     end
 

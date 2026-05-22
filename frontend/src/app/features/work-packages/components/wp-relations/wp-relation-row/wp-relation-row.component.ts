@@ -1,8 +1,6 @@
 import { WorkPackageResource } from 'core-app/features/hal/resources/work-package-resource';
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
-import {
-  ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild, inject } from '@angular/core';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { HalEventsService } from 'core-app/features/hal/services/hal-events.service';
 import { WorkPackageNotificationService } from 'core-app/features/work-packages/services/notifications/work-package-notification.service';
@@ -17,15 +15,27 @@ import { Highlighting } from 'core-app/features/work-packages/components/wp-fast
   selector: 'wp-relation-row',
   templateUrl: './wp-relation-row.template.html',
   standalone: false,
+  // TODO: This component has been partially migrated to be zoneless-compatible.
+  // After testing, this should be updated to ChangeDetectionStrategy.OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class WorkPackageRelationRowComponent extends UntilDestroyedMixin implements OnInit {
+  protected apiV3Service = inject(ApiV3Service);
+  protected notificationService = inject(WorkPackageNotificationService);
+  protected wpRelations = inject(WorkPackageRelationsService);
+  protected halEvents = inject(HalEventsService);
+  protected I18n = inject(I18nService);
+  protected cdRef = inject(ChangeDetectorRef);
+  protected PathHelper = inject(PathHelperService);
+
   @Input() public workPackage:WorkPackageResource;
 
   @Input() public relatedWorkPackage:WorkPackageResource;
 
   @Input() public groupByWorkPackageType:boolean;
 
-  @ViewChild('relationDescriptionTextarea') readonly relationDescriptionTextarea:ElementRef;
+  @ViewChild('relationDescriptionTextarea') readonly relationDescriptionTextarea:ElementRef<HTMLTextAreaElement>;
 
   public relationType:string;
 
@@ -66,18 +76,8 @@ export class WorkPackageRelationRowComponent extends UntilDestroyedMixin impleme
     },
   };
 
-  constructor(protected apiV3Service:ApiV3Service,
-    protected notificationService:WorkPackageNotificationService,
-    protected wpRelations:WorkPackageRelationsService,
-    protected halEvents:HalEventsService,
-    protected I18n:I18nService,
-    protected cdRef:ChangeDetectorRef,
-    protected PathHelper:PathHelperService) {
-    super();
-  }
-
   ngOnInit() {
-    this.relation = this.relatedWorkPackage.relatedBy as RelationResource;
+    this.relation = this.relatedWorkPackage.relatedBy!;
 
     this.userInputs.newRelationText = this.relation.description || '';
     this.availableRelationTypes = RelationResource.LOCALIZED_RELATION_TYPES(false);
@@ -93,6 +93,7 @@ export class WorkPackageRelationRowComponent extends UntilDestroyedMixin impleme
         this.untilDestroyed(),
       ).subscribe((wp) => {
         this.relatedWorkPackage = wp;
+        this.cdRef.markForCheck();
       });
   }
 
@@ -112,18 +113,18 @@ export class WorkPackageRelationRowComponent extends UntilDestroyedMixin impleme
   public startDescriptionEdit() {
     this.userInputs.showDescriptionEditForm = true;
     setTimeout(() => {
-      const textarea = jQuery(this.relationDescriptionTextarea.nativeElement);
-      const textlen = (textarea.val() as string).length;
+      const textarea = this.relationDescriptionTextarea.nativeElement;
+      const textlen = textarea.value.length;
       // Focus and set cursor to end
       textarea.focus();
 
-      textarea.prop('selectionStart', textlen);
-      textarea.prop('selectionEnd', textlen);
+      textarea.selectionStart = textlen;
+      textarea.selectionEnd = textlen;
     });
   }
 
-  public handleDescriptionKey($event:JQuery.TriggeredEvent) {
-    if ($event.key === 'Escape') {
+  public handleDescriptionKey(event:KeyboardEvent) {
+    if (event.key === 'Escape') {
       this.cancelDescriptionEdit();
     }
   }
@@ -157,7 +158,7 @@ export class WorkPackageRelationRowComponent extends UntilDestroyedMixin impleme
     }
   }
 
-  public cancelRelationTypeEditOnEscape(evt:JQuery.TriggeredEvent) {
+  public cancelRelationTypeEditOnEscape(evt:KeyboardEvent) {
     this.userInputs.showRelationTypesForm = false;
   }
 

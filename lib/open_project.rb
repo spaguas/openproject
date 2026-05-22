@@ -59,9 +59,8 @@ module OpenProject
 
   private_class_method def self.httpx_session
     session = HTTPX
-                .plugin(:oauth)
-                .plugin(:persistent)
-                .plugin(:basic_auth)
+                .with(headers: { "User-Agent" => "OpenProject #{OpenProject::VERSION.to_semver} HTTPX Client" })
+                .plugin(:auth)
                 .plugin(:webdav)
                 .with(
                   timeout: {
@@ -73,6 +72,7 @@ module OpenProject
                     keep_alive_timeout: OpenProject::Configuration.httpx_keep_alive_timeout
                   }
                 )
+
     OpenProject::Appsignal.enabled? ? session.plugin(HttpxAppsignal) : session
   end
 end

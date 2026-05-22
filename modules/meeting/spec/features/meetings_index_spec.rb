@@ -32,6 +32,12 @@ require "spec_helper"
 require_relative "../support/pages/meetings/index"
 
 RSpec.describe "Meetings", "Index", :js do
+  shared_let(:business_day_at_noon) { Time.zone.local(2025, 1, 8, 12, 0, 0) }
+
+  after do
+    travel_back
+  end
+
   # The order the Projects are created in is important. By naming `project` alphanumerically
   # after `other_project`, we can ensure that subsequent specs that assert sorting is
   # correct for the right reasons (sorting by Project name and not id)
@@ -55,14 +61,14 @@ RSpec.describe "Meetings", "Index", :js do
            :author_participates,
            project:,
            title: "Awesome meeting today!",
-           start_time: Time.current)
+           start_time: business_day_at_noon - 5.minutes)
   end
   shared_let(:tomorrows_meeting) do
     create(:meeting,
            :author_participates,
            project:,
            title: "Awesome meeting tomorrow!",
-           start_time: 1.day.from_now,
+           start_time: business_day_at_noon + 1.day,
            duration: 2.0,
            location: "no-protocol.com")
   end
@@ -71,7 +77,7 @@ RSpec.describe "Meetings", "Index", :js do
            :author_participates,
            project:,
            title: "Boring meeting without a location!",
-           start_time: 1.day.from_now,
+           start_time: business_day_at_noon + 1.day + 5.minutes,
            location: "")
   end
   shared_let(:meeting_with_malicious_location) do
@@ -79,7 +85,7 @@ RSpec.describe "Meetings", "Index", :js do
            :author_participates,
            project:,
            title: "Sneaky meeting!",
-           start_time: 1.day.from_now,
+           start_time: business_day_at_noon + 1.day + 10.minutes,
            location: "<script>alert('Description');</script>")
   end
   shared_let(:yesterdays_meeting) do
@@ -87,7 +93,7 @@ RSpec.describe "Meetings", "Index", :js do
            :author_participates,
            project:,
            title: "Awesome meeting yesterday!",
-           start_time: 1.day.ago)
+           start_time: business_day_at_noon - 1.day)
   end
 
   shared_let(:other_project_meeting) do
@@ -95,7 +101,7 @@ RSpec.describe "Meetings", "Index", :js do
            :author_participates,
            project: other_project,
            title: "Awesome other project meeting!",
-           start_time: 2.days.from_now,
+           start_time: business_day_at_noon + 2.days,
            duration: 2.0,
            location: "not-a-url")
   end
@@ -104,7 +110,7 @@ RSpec.describe "Meetings", "Index", :js do
            :author_participates,
            project:,
            title: "Awesome ongoing meeting!",
-           start_time: 30.minutes.ago)
+           start_time: business_day_at_noon - 30.minutes)
   end
 
   def setup_meeting_involvement
@@ -120,6 +126,7 @@ RSpec.describe "Meetings", "Index", :js do
   end
 
   before do
+    travel_to(business_day_at_noon)
     login_as user
   end
 
@@ -128,6 +135,7 @@ RSpec.describe "Meetings", "Index", :js do
       it "does not show under My meetings, but in All meetings" do
         meetings_page.visit!
         meetings_page.expect_no_meetings_listed
+        meetings_page.expect_blank_slate_component
 
         meetings_page.set_sidebar_filter "All meetings"
 
@@ -184,30 +192,57 @@ RSpec.describe "Meetings", "Index", :js do
 
           wait_for_network_idle
 
+          sort = [["start_time", "desc"]].to_json
+          time_filters = [{ "time" => { "operator" => "=", "values" => ["past"] } }].to_json
           if context == :global
-            expect(page).to have_current_path(meetings_path(upcoming: false, filters: "[]"))
+            expect(page).to have_current_path(meetings_path(filters: time_filters, sortBy: sort))
           else
-            expect(page).to have_current_path(project_meetings_path(project, upcoming: false, filters: "[]"))
+            expect(page).to have_current_path(project_meetings_path(project, filters: time_filters, sortBy: sort))
           end
         end
       end
 
-      context 'with the "Invitations" filter' do
-        before do
-          meetings_page.set_sidebar_filter "Invitations"
+      context 'when applying the "Past" time filter without sortBy (Bug #75159)' do
+        let(:one_hour_ago_meeting) do
+          create(:meeting,
+                 project:,
+                 title: "One hour ago meeting",
+                 start_time: business_day_at_noon - 1.hour)
+        end
+        let(:three_hours_ago_meeting) do
+          create(:meeting,
+                 project:,
+                 title: "Three hours ago meeting",
+                 start_time: business_day_at_noon - 3.hours)
         end
 
-        it "shows all meetings I've been marked as invited to with a quick filter" do
-          meetings_page.expect_meeting_listed_in_group(tomorrows_meeting, key: :tomorrow)
-          meetings_page.expect_meetings_not_listed(yesterdays_meeting,
-                                                   meeting,
-                                                   ongoing_meeting)
+        before do
+          three_hours_ago_meeting
+          one_hour_ago_meeting
+        end
 
-          meetings_page.set_quick_filter upcoming: false
+        it "shows past meetings sorted by descending start time" do
+          # On mobile the segmented quick filter is hidden, so users apply the past
+          # filter via the all filters form. That form does not add sortBy to the URL.
+          # The backend must apply start_time: :desc as a default in this case
+          time_filters = [{ "time" => { "operator" => "=", "values" => ["past"] } }].to_json
 
-          meetings_page.expect_meetings_listed_in_table(yesterdays_meeting)
+          if context == :global
+            visit meetings_path(filters: time_filters)
+          else
+            visit project_meetings_path(project, filters: time_filters)
+          end
 
-          meetings_page.expect_meetings_not_listed(meeting, tomorrows_meeting)
+          wait_for_network_idle
+
+          meetings_page.expect_meetings_listed_in_order(
+            meeting,
+            ongoing_meeting,
+            one_hour_ago_meeting,
+            three_hours_ago_meeting,
+            yesterdays_meeting
+          )
+          meetings_page.expect_meetings_not_listed(tomorrows_meeting)
         end
       end
 
@@ -353,6 +388,7 @@ RSpec.describe "Meetings", "Index", :js do
         meetings_page.navigate_by_project_menu
 
         meetings_page.expect_no_meetings_listed
+        meetings_page.expect_blank_slate_component
       end
     end
 

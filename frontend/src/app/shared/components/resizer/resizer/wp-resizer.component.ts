@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Input, OnInit, OnDestroy } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Input, OnInit, OnDestroy, inject } from '@angular/core';
 import { debounceTime } from 'rxjs/operators';
 import { TransitionService } from '@uirouter/core';
 import { UntilDestroyedMixin } from 'core-app/shared/helpers/angular/until-destroyed.mixin';
@@ -47,13 +47,16 @@ import { fromEvent } from 'rxjs';
   standalone: false,
 })
 export class WpResizerComponent extends UntilDestroyedMixin implements OnInit, AfterViewInit, OnDestroy {
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly $transitions = inject(TransitionService);
+
   @Input() elementClass:string;
 
   @Input() resizeEvent:string;
 
   @Input() localStorageKey:string;
 
-  @Input() variableName:string = '--split-screen-width';
+  @Input() variableName = '--split-screen-width';
 
   private resizingElement:HTMLElement|null;
 
@@ -69,13 +72,6 @@ export class WpResizerComponent extends UntilDestroyedMixin implements OnInit, A
   public moving = false;
 
   public resizerClass = 'work-packages--resizer icon-resizer-vertical-lines';
-
-  constructor(
-    private elementRef:ElementRef<HTMLElement>,
-    readonly $transitions:TransitionService,
-  ) {
-    super();
-  }
 
   ngOnInit() {
     // Get element
@@ -190,7 +186,7 @@ export class WpResizerComponent extends UntilDestroyedMixin implements OnInit, A
   private applyColumnLayout(checkWidth = 750) {
     const singleView = document.querySelector<HTMLElement>("[data-selector='wp-single-view']");
     if (singleView) {
-      jQuery(singleView).toggleClass('work-package--single-view_with-columns', singleView.offsetWidth > checkWidth);
+      singleView.classList.toggle('work-package--single-view_with-columns', singleView.offsetWidth > checkWidth);
     }
   }
 

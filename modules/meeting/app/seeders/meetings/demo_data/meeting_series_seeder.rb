@@ -48,12 +48,6 @@ module Meetings
       def create_model!(model_data)
         series = super
         create_meeting_template!(series, model_data)
-
-        # Schedule the first occurrence of the series
-        # after the meeting agenda items have been seeded
-        RecurringMeetings::InitNextOccurrenceJob
-          .set(wait_until: 1.minute.from_now)
-          .perform_later(series, series.first_occurrence)
       end
 
       def create_meeting_template!(series, model_data)
@@ -80,6 +74,7 @@ module Meetings
           author: seed_data.find_reference(meeting_data["author"]),
           duration: minutes_to_hours(meeting_data["duration"]),
           start_time: Time.current.next_weekday + 10.hours,
+          current_schedule_start: Time.current.next_weekday + 10.hours,
           frequency: meeting_data["frequency"],
           interval: meeting_data["interval"],
           time_zone: meeting_data["time_zone"],

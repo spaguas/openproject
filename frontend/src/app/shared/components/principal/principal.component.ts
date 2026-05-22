@@ -26,15 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  Input,
-  OnInit,
-  ViewEncapsulation,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
 import { ApiV3Service } from 'core-app/core/apiv3/api-v3.service';
@@ -62,9 +54,20 @@ export interface PrincipalInput {
   standalone: false,
 })
 export class OpPrincipalComponent implements OnInit {
+  readonly elementRef = inject(ElementRef);
+  readonly PathHelper = inject(PathHelperService);
+  readonly principalRenderer = inject(PrincipalRendererService);
+  readonly principalResourceService = inject(PrincipalsResourceService);
+  readonly I18n = inject(I18nService);
+  readonly apiV3Service = inject(ApiV3Service);
+  readonly timezoneService = inject(TimezoneService);
+  readonly cdRef = inject(ChangeDetectorRef);
+
   @Input() principal:PrincipalLike;
 
   @Input() hideAvatar = false;
+
+  @Input() avatarImageAltText?:string;
 
   @Input() hideName = false;
 
@@ -81,16 +84,7 @@ export class OpPrincipalComponent implements OnInit {
 
   @Input() title = '';
 
-  public constructor(
-    readonly elementRef:ElementRef,
-    readonly PathHelper:PathHelperService,
-    readonly principalRenderer:PrincipalRendererService,
-    readonly principalResourceService:PrincipalsResourceService,
-    readonly I18n:I18nService,
-    readonly apiV3Service:ApiV3Service,
-    readonly timezoneService:TimezoneService,
-    readonly cdRef:ChangeDetectorRef,
-  ) {
+  public constructor() {
     populateInputsFromDataset(this);
   }
 
@@ -99,6 +93,7 @@ export class OpPrincipalComponent implements OnInit {
       const avatarOptions:AvatarOptions = {
         hide: this.hideAvatar,
         size: this.size,
+        imageAltText: this.avatarImageAltText,
       };
 
       const hoverCardOptions:HoverCardOptions = {

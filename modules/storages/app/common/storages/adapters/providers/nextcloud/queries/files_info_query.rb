@@ -57,7 +57,7 @@ module Storages
 
               case response
               in { status: 200..299 }
-                verify_successful_response(response.json(symbolize_keys: true), error)
+                fail_on_ocs_error(response.json(symbolize_keys: true), error)
               in { status: 404 }
                 Failure(error.with(code: :not_found))
               in { status: 401 }
@@ -67,16 +67,8 @@ module Storages
               end
             end
 
-            def verify_successful_response(json, error)
-              if json.dig(:ocs, :meta, :status) == "ok"
-                Success(json)
-              else
-                Failure(error.with(code: :error))
-              end
-            end
-
             def create_storage_file_infos(parsed_json)
-              parsed_json.dig(:ocs, :data)&.map do |(key, value)|
+              parsed_json.dig(:ocs, :data)&.filter_map do |(key, value)|
                 if value[:statuscode] == 200
                   build_file_info(value).bind { it }
                 else
@@ -106,7 +98,10 @@ module Storages
                 last_modified_by_id: value[:modifier_id],
                 permissions: value[:dav_permissions],
                 location: location(value[:path], value[:mimetype])
-              )
+              ).or do |error|
+                log_validation_error(error, value)
+                Success(nil)
+              end
             end
             # rubocop:enable Metrics/AbcSize
 

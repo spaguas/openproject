@@ -53,7 +53,7 @@ RSpec.describe RootSeeder,
 
     it "creates the demo data" do # rubocop:disable RSpec/MultipleExpectations
       expect(Project.count).to eq 2
-      expect(EnabledModule.count).to eq 13
+      expect(EnabledModule.count).to eq 19
       expect(WorkPackage.count).to eq 36
       expect(Wiki.count).to eq 2
       expect(Query.having_views.count).to eq 8
@@ -66,10 +66,10 @@ RSpec.describe RootSeeder,
       expect(GlobalRole.count).to eq 2
       expect(Grids::Overview.count).to eq 2
       expect(Version.count).to eq 4
-      expect(VersionSetting.count).to eq 4
       expect(Boards::Grid.count).to eq 5
       expect(Boards::Grid.count { |grid| grid.options.has_key?(:filters) }).to eq 1
       expect(Project::PhaseDefinition.count).to eq 4
+      expect(DocumentType.count).to be >= 3 # at least the 3 default types
     end
 
     it "links work packages to their version" do
@@ -90,22 +90,25 @@ RSpec.describe RootSeeder,
       expect(default_modules).to include("reporting_module")
     end
 
-    it "creates a weekly recurring meeting with one instance" do
+    it "creates a weekly recurring meeting with the first two instances" do
       expect(RecurringMeeting.count).to eq 1
 
-      # The template is created.
+      # The template is created and is no longer in draft state.
       expect(Meeting.templated.count).to eq 1
       template = Meeting.templated.first
+      expect(template).not_to be_draft
       expect(template.duration).to eq 1.0
       expect(template.agenda_items.count).to eq 9
       expect(template.agenda_items.sum(:duration_in_minutes)).to eq 60
 
-      # The first instance from that template is also created with the same data.
-      expect(Meeting.where(template: false).count).to eq 1
-      instance = Meeting.not_templated.first
-      expect(instance.duration).to eq 1.0
-      expect(instance.agenda_items.count).to eq 9
-      expect(instance.agenda_items.sum(:duration_in_minutes)).to eq 60
+      # The first instance is created synchronously by the finalizer seeder,
+      # the second by the chained InitNextOccurrenceJob.
+      expect(Meeting.where(template: false).count).to eq 2
+      Meeting.not_templated.find_each do |instance|
+        expect(instance.duration).to eq 1.0
+        expect(instance.agenda_items.count).to eq 9
+        expect(instance.agenda_items.sum(:duration_in_minutes)).to eq 60
+      end
     end
 
     it "creates different types of queries" do
@@ -130,7 +133,7 @@ RSpec.describe RootSeeder,
       member_role = root_seeder.seed_data.find_reference(:default_role_member)
       expect(member_role.permissions).to include(
         :view_work_packages, # from common basic data
-        :view_taskboards, # from backlogs module
+        :view_sprints, # from backlogs module
         :show_board_views, # from board module
         :view_documents, # from documents module
         :view_budgets, # from costs module
@@ -143,7 +146,7 @@ RSpec.describe RootSeeder,
     end
 
     include_examples "it creates records", model: Color, expected_count: 148
-    include_examples "it creates records", model: DocumentCategory, expected_count: 3
+    include_examples "it creates records", model: DocumentType, expected_count: 6
     include_examples "it creates records", model: GlobalRole, expected_count: 2
     include_examples "it creates records", model: WorkPackageRole, expected_count: 3
     include_examples "it creates records", model: ProjectRole, expected_count: 5
@@ -194,7 +197,6 @@ RSpec.describe RootSeeder,
         expect(GlobalRole.count).to eq 2
         expect(Grids::Overview.count).to eq 2
         expect(Version.count).to eq 4
-        expect(VersionSetting.count).to eq 4
         expect(Boards::Grid.count).to eq 5
         expect(Project::PhaseDefinition.count).to eq 4
       end

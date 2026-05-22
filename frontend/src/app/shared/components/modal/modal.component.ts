@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { ChangeDetectorRef, Directive, ElementRef, EventEmitter, Inject, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Directive, ElementRef, EventEmitter, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { OpModalLocalsMap } from 'core-app/shared/components/modal/modal.types';
 import { UntilDestroyedMixin } from 'core-app/shared/helpers/angular/until-destroyed.mixin';
@@ -35,10 +35,14 @@ import { debounce } from 'lodash';
 
 @Directive()
 export abstract class OpModalComponent extends UntilDestroyedMixin implements OnInit, OnDestroy {
+  locals = inject<OpModalLocalsMap>(OpModalLocalsToken);
+  readonly cdRef = inject(ChangeDetectorRef);
+  readonly elementRef = inject(ElementRef);
+
   /* Reference to service */
   protected service:OpModalService = this.locals.service;
 
-  public $element:HTMLElement;
+  public element:HTMLElement;
 
   /** Closing event called from the service when closing this modal */
   public closingEvent = new EventEmitter<this>();
@@ -51,16 +55,8 @@ export abstract class OpModalComponent extends UntilDestroyedMixin implements On
   /* Data to be return from this modal instance */
   public data:unknown;
 
-  protected constructor(
-    @Inject(OpModalLocalsToken) public locals:OpModalLocalsMap,
-    readonly cdRef:ChangeDetectorRef,
-    readonly elementRef:ElementRef,
-  ) {
-    super();
-  }
-
   ngOnInit():void {
-    this.$element = this.elementRef.nativeElement as HTMLElement;
+    this.element = this.elementRef.nativeElement as HTMLElement;
   }
 
   ngOnDestroy():void {
@@ -100,7 +96,7 @@ export abstract class OpModalComponent extends UntilDestroyedMixin implements On
   }
 
   protected get afterFocusOn():HTMLElement {
-    return this.$element;
+    return this.element;
   }
 
   private onResize = debounce(() => this.updateAppHeight(), 10);

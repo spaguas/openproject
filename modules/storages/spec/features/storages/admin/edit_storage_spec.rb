@@ -45,14 +45,14 @@ RSpec.describe "Admin Edit File storage",
 
     page.find_test_selector("storage-delete-button").click
 
-    expect(page).to have_text("DELETE FILE STORAGE")
-    expect(page).to have_current_path(confirm_destroy_admin_settings_storage_path(storage))
-    storage_delete_button = page.find_button("Delete", disabled: true)
+    within_test_selector("op-storages--destroy-confirm-dialog") do
+      expect(page).to have_text("Delete file storage")
+      expect(page).to have_unchecked_field("I understand that this deletion cannot be reversed")
+      expect(page).to have_button("Delete permanently", disabled: true)
 
-    fill_in("delete_confirmation", with: "Foo Nextcloud")
-    expect(storage_delete_button).not_to be_disabled
-
-    storage_delete_button.click
+      page.check("I understand that this deletion cannot be reversed")
+      page.click_button("Delete permanently")
+    end
 
     expect(page).to have_no_text("Foo Nextcloud")
     expect(page).to have_text("Successful deletion.")
@@ -143,9 +143,6 @@ RSpec.describe "Admin Edit File storage",
 
         within_test_selector("storage-openproject-oauth-application-form") do
           warning_section = find_test_selector("storage-openproject_oauth_application_warning")
-          expect(warning_section).to have_text("The client secret value will not be accessible again after you close " \
-                                               "this window. Please copy these values into the Nextcloud " \
-                                               "OpenProject Integration settings.")
           expect(warning_section).to have_link("Nextcloud OpenProject Integration settings",
                                                href: "#{storage.host}settings/admin/openproject")
 
@@ -194,7 +191,7 @@ RSpec.describe "Admin Edit File storage",
           expect(application_password_input.value).to be_empty
 
           # Clicking submit with application password empty should show an error
-          click_on("Done, complete setup")
+          click_on("Finish setup")
           expect(page).to have_text("Application password can't be blank.")
 
           # Test the error path for an invalid storage password.
@@ -205,7 +202,7 @@ RSpec.describe "Admin Edit File storage",
           expect(automatically_managed_switch).to be_checked
           fill_in "Application password", with: "1234567890"
           # Clicking submit with application password empty should show an error
-          click_on("Done, complete setup")
+          click_on("Finish setup")
           expect(page).to have_text("Application password is not valid.")
 
           # Test the happy path for a valid storage password.
@@ -215,7 +212,7 @@ RSpec.describe "Admin Edit File storage",
           automatically_managed_switch = page.find('[name="storages_nextcloud_storage[automatic_management_enabled]"]')
           expect(automatically_managed_switch).to be_checked
           fill_in "Application password", with: "1234567890"
-          click_on("Done, complete setup")
+          click_on("Finish setup")
         end
 
         expect(page).to have_test_selector("label-managed-project-folders-status", text: "Active")

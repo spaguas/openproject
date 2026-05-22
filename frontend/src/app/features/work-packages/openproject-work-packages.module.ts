@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { CUSTOM_ELEMENTS_SCHEMA, Injector, NgModule } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, Injector, NgModule, inject } from '@angular/core';
 import { OpSharedModule } from 'core-app/shared/shared.module';
 import { OpenprojectFieldsModule } from 'core-app/shared/components/fields/openproject-fields.module';
 import { OpenprojectModalModule } from 'core-app/shared/components/modal/modal.module';
@@ -272,7 +272,6 @@ import {
 import { QuerySharingModalComponent } from 'core-app/shared/components/modals/share-modal/query-sharing.modal';
 import { SaveQueryModalComponent } from 'core-app/shared/components/modals/save-modal/save-query.modal';
 import { QuerySharingFormComponent } from 'core-app/shared/components/modals/share-modal/query-sharing-form.component';
-import { WpDestroyModalComponent } from 'core-app/shared/components/modals/wp-destroy-modal/wp-destroy.modal';
 import {
   WorkPackageTypeStatusComponent,
 } from 'core-app/features/work-packages/components/wp-type-status/wp-type-status.component';
@@ -297,9 +296,6 @@ import {
   GroupDescriptor,
   WorkPackageSingleViewComponent,
 } from 'core-app/features/work-packages/components/wp-single-view/wp-single-view.component';
-import {
-  WorkPackageCopySplitViewComponent,
-} from 'core-app/features/work-packages/components/wp-copy/wp-copy-split-view.component';
 import {
   WorkPackageFormAttributeGroupComponent,
 } from 'core-app/features/work-packages/components/wp-form-group/wp-attribute-group.component';
@@ -407,6 +403,12 @@ import { OpenprojectEnterpriseModule } from 'core-app/features/enterprise/openpr
 import {
   WorkPackageReminderContextMenuDirective,
 } from 'core-app/features/work-packages/components/wp-buttons/wp-reminder-button/wp-reminder-context-menu.directive';
+import { WorkPackageFullCopyEntryComponent } from 'core-app/features/work-packages/routing/wp-full-copy/wp-full-copy-entry.component';
+import { WorkPackageFullCreateEntryComponent } from 'core-app/features/work-packages/routing/wp-full-create/wp-full-create-entry.component';
+import { WorkPackageFullViewEntryComponent } from 'core-app/features/work-packages/routing/wp-full-view/wp-full-view-entry.component';
+import {
+  WorkPackageSplitCreateEntryComponent,
+} from 'core-app/features/work-packages/routing/wp-split-create/wp-split-create-entry.component';
 
 @NgModule({
   imports: [
@@ -491,7 +493,6 @@ import {
 
     // WP Copy
     WorkPackageCopyFullViewComponent,
-    WorkPackageCopySplitViewComponent,
 
     // Embedded table
     WorkPackageEmbeddedTableComponent,
@@ -592,6 +593,7 @@ import {
     WorkPackageDetailsViewButtonComponent,
     WorkPackageSplitViewComponent,
     WorkPackageSplitViewEntryComponent,
+    WorkPackageSplitCreateEntryComponent,
     WorkPackageBreadcrumbComponent,
     WorkPackageSplitViewToolbarComponent,
     WorkPackageWatcherButtonComponent,
@@ -602,6 +604,9 @@ import {
 
     // Full view
     WorkPackagesFullViewComponent,
+    WorkPackageFullViewEntryComponent,
+    WorkPackageFullCopyEntryComponent,
+    WorkPackageFullCreateEntryComponent,
 
     // Modals
     WpTableConfigurationModalComponent,
@@ -615,7 +620,6 @@ import {
     QuerySharingFormComponent,
     QuerySharingModalComponent,
     SaveQueryModalComponent,
-    WpDestroyModalComponent,
     WorkPackageShareModalComponent,
     WorkPackageReminderModalComponent,
 
@@ -679,9 +683,13 @@ import {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class OpenprojectWorkPackagesModule {
+  private injector = inject(Injector);
+
   static bootstrapAttributeGroupsCalled = false;
 
-  constructor(private injector:Injector) {
+  constructor() {
+    const injector = this.injector;
+
     OpenprojectWorkPackagesModule.bootstrapAttributeGroups(injector);
   }
 

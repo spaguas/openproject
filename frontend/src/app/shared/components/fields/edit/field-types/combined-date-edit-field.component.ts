@@ -27,6 +27,7 @@
 //++
 
 import {
+  ChangeDetectionStrategy,
   Component,
   OnInit,
 } from '@angular/core';
@@ -36,6 +37,10 @@ import { WorkPackageResource } from 'core-app/features/hal/resources/work-packag
 @Component({
   templateUrl: './combined-date-edit-field.component.html',
   standalone: false,
+  // TODO: This component has been partially migrated to be zoneless-compatible.
+  // After testing, this should be updated to ChangeDetectionStrategy.OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class CombinedDateEditFieldComponent extends DatePickerEditFieldComponent implements OnInit {
   dates = '';
@@ -108,9 +113,7 @@ export class CombinedDateEditFieldComponent extends DatePickerEditFieldComponent
   }
 
   protected current(dateAttribute:'startDate' | 'dueDate' | 'date'):string {
-    // Since the rework of the datepicker, the milestone date field has the name 'start_date' to match the database
-    const valueReference = dateAttribute === 'date' ? 'startDate' : dateAttribute;
-    const value = (this.resource && (this.resource as WorkPackageResource)[valueReference]) as string|null;
-    return (value || this.text.placeholder[dateAttribute]);
+    const value = (this.resource && (this.resource as WorkPackageResource)[dateAttribute]) as string|null;
+    return (value ?? this.text.placeholder[dateAttribute]);
   }
 }

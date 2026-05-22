@@ -48,28 +48,21 @@ module Overviews
           .controller_actions
           .push(
             "overviews/overviews/show",
-            "overviews/overviews/dashboard",
-            "overviews/widgets/project_statuses/show",
-            "overviews/widgets/subitems/show"
-          )
-
-        OpenProject::AccessControl.permission(:edit_project)
-          .controller_actions
-          .push(
-            "overviews/widgets/project_statuses/update"
+            "overviews/overviews/dashboard"
           )
 
         OpenProject::AccessControl.permission(:view_project_attributes)
           .controller_actions
           .push(
+            "overviews/project_custom_fields/show",
             "overviews/overviews/project_custom_fields_sidebar"
           )
 
         OpenProject::AccessControl.permission(:edit_project_attributes)
           .controller_actions
           .push(
-            "overviews/project_custom_field_sections/show_dialog",
-            "overviews/project_custom_field_sections/update"
+            "overviews/project_custom_fields/edit",
+            "overviews/project_custom_fields/update"
           )
 
         OpenProject::AccessControl.permission(:view_project_phases)
@@ -94,27 +87,12 @@ module Overviews
 
         OpenProject::AccessControl.map do |ac_map|
           ac_map.project_module nil do |map|
-            map.permission :manage_overview,
-                           { "overviews/overviews": %i[show] },
-                           permissible_on: :project,
-                           require: :member
             map.permission :manage_dashboards,
-                           { "overviews/overviews": %i[dashboard] },
+                           { "overviews/overviews": %i[show dashboard] },
                            permissible_on: :project,
                            require: :member
           end
         end
-
-        OpenProject::AccessControl.permission(:view_news)
-                                  .controller_actions
-                                  .push(
-                                    "overviews/widgets/news/show"
-                                  )
-        OpenProject::AccessControl.permission(:view_members)
-                                  .controller_actions
-                                  .push(
-                                    "overviews/widgets/members/show"
-                                  )
       end
     end
 

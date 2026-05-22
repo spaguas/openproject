@@ -29,17 +29,21 @@
  */
 
 import { FetchRequest, FetchResponse, Options } from '@rails/request.js';
+import { hideElement, showElement } from 'core-app/shared/helpers/dom-helpers';
+import invariant from 'tiny-invariant';
 
 export function post(url:string|URL, options?:Options) {
   const request = new FetchRequest('post', url, options);
-  return withAjaxIndicator(request.perform());
+  return withLoadingIndicator(request.perform());
 }
 
-function withAjaxIndicator(request:Promise<FetchResponse>) {
-  jQuery('#ajax-indicator').show();
+function withLoadingIndicator(request:Promise<FetchResponse>) {
+  const loadingIndicator = document.querySelector<HTMLElement>('#global-loading-indicator');
+  invariant(loadingIndicator, 'Expected an Element with id global-loading-indicator to be present');
+  showElement(loadingIndicator);
 
   return request.then((response) => {
-    jQuery('#ajax-indicator').hide();
+    hideElement(loadingIndicator);
     return response;
   });
 }

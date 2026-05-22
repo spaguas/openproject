@@ -43,12 +43,13 @@ module Grids
 
     delegate :wrapper_key, to: :class
 
+    option :tag, default: -> { :div }
     option :current_user, default: -> { User.current }
 
     # @abstract Subclasses must implement this method.
     # @return [String] a title suitable for display to users.
     def title
-      raise NotImplementedError, "#{self.class} must implement #{__method__}"
+      raise SubclassResponsibilityError, "#{self.class} must implement #{__method__}"
     end
 
     def widget_wrapper(**, &)

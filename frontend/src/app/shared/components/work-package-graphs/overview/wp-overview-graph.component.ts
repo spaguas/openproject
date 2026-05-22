@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  Input,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild, inject } from '@angular/core';
 import {
   WorkPackageEmbeddedGraphComponent,
   WorkPackageEmbeddedGraphDataset,
@@ -33,6 +25,11 @@ import {
   standalone: false,
 })
 export class WorkPackageOverviewGraphComponent implements OnInit {
+  readonly elementRef = inject<ElementRef<Element>>(ElementRef);
+  readonly I18n = inject(I18nService);
+  readonly graphConfigurationService = inject(WpGraphConfigurationService);
+  protected readonly cdr = inject(ChangeDetectorRef);
+
   @Input() initialFilters:any;
 
   @Input() globalScope:boolean;
@@ -53,12 +50,9 @@ export class WorkPackageOverviewGraphComponent implements OnInit {
 
   public error:string|null = null;
 
-  constructor(
-    readonly elementRef:ElementRef<Element>,
-    readonly I18n:I18nService,
-    readonly graphConfigurationService:WpGraphConfigurationService,
-    protected readonly cdr:ChangeDetectorRef,
-  ) {
+  constructor() {
+    const I18n = this.I18n;
+
     this.availableGroupBy = [{ label: I18n.t('js.work_packages.properties.category'), key: 'category' },
       { label: I18n.t('js.work_packages.properties.type'), key: 'type' },
       { label: I18n.t('js.work_packages.properties.status'), key: 'status' },
@@ -69,9 +63,20 @@ export class WorkPackageOverviewGraphComponent implements OnInit {
 
   ngOnInit() {
     const element = this.elementRef.nativeElement;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    this.initialFilters = JSON.parse(element.getAttribute('initial-filters') || 'null');
-    this.globalScope = element.getAttribute('global-scope') === 'true';
+
+    const initialFiltersAttr =
+      element.getAttribute('initial-filters') ??
+      element.getAttribute('data-initial-filters');
+
+    this.initialFilters = initialFiltersAttr
+      ? (JSON.parse(initialFiltersAttr) as [])
+      : null;
+
+    const globalScopeAttr =
+      element.getAttribute('global-scope') ??
+      element.getAttribute('data-global-scope');
+
+    this.globalScope = globalScopeAttr === 'true';
 
     this.setQueryProps();
   }

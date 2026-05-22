@@ -32,9 +32,7 @@ class VersionsController < ApplicationController
   menu_item :roadmap, only: %i(index show)
   menu_item :settings_versions
 
-  model_object Version
-  before_action :find_model_object, except: %i[index new create close_completed]
-  before_action :find_project_from_association, except: %i[index new create close_completed]
+  before_action :find_version, except: %i[index new create close_completed]
   before_action :find_project, only: %i[index new create close_completed]
   before_action :authorize
 
@@ -94,10 +92,8 @@ class VersionsController < ApplicationController
   end
 
   def close_completed
-    if request.put?
-      @project.close_completed_versions
-    end
-    redirect_to project_settings_versions_path(@project)
+    @project.close_completed_versions
+    redirect_to project_settings_versions_path(@project), status: :see_other
   end
 
   def destroy
@@ -109,12 +105,19 @@ class VersionsController < ApplicationController
     unless call.success?
       flash[:error] = call.errors.full_messages
       flash[:error] << archived_project_mesage if archived_projects.any?
+    else
+      flash[:notice] = I18n.t :notice_successful_delete
     end
 
     redirect_to project_settings_versions_path(@project), status: :see_other
   end
 
   private
+
+  def find_version
+    @version = Version.visible.find(params[:id])
+    @project = @version.project
+  end
 
   def archived_project_mesage
     if current_user.admin?
@@ -137,7 +140,7 @@ class VersionsController < ApplicationController
   end
 
   def find_project
-    @project = Project.find(params[:project_id])
+    @project = Project.visible.find(params[:project_id])
   end
 
   def retrieve_selected_type_ids(selectable_types, default_types = nil)

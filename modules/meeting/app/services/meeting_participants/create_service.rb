@@ -29,20 +29,23 @@
 #++
 module MeetingParticipants
   class CreateService < BaseServices::Create
+    def initialize(user:, model: nil, contract_class: nil, contract_options: {}, notify: true)
+      @notify = notify
+      super(user:, model:, contract_class:, contract_options:)
+    end
+
     protected
 
     def after_perform(call)
-      send_notification call.result
+      meeting = call.result.meeting
+      meeting.touch_and_save_journals
+
+      if @notify
+        since_invited_ids = meeting.participants.where(invited: true).where.not(id: call.result.id).pluck(:user_id)
+        Meetings::NotificationDebounceJob.debounce(meeting, since_invited_ids:)
+      end
 
       call
-    end
-
-    def send_notification(meeting_participant)
-      meeting = meeting_participant.meeting
-
-      if Journal::NotificationConfiguration.active? && !meeting.templated? && meeting.notify?
-        MeetingMailer.invited(meeting, meeting_participant.user, user).deliver_later
-      end
     end
   end
 end

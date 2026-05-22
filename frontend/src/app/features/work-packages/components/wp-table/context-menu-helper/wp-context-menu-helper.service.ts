@@ -27,7 +27,7 @@
 //++
 import { WorkPackageResource } from 'core-app/features/hal/resources/work-package-resource';
 import { HalLink } from 'core-app/features/hal/hal-link/hal-link';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
 import { UrlParamsHelperService } from 'core-app/features/work-packages/components/wp-query/url-params-helper';
 import { HookService } from 'core-app/features/plugins/hook-service';
@@ -35,7 +35,7 @@ import { WorkPackageViewTimelineService } from 'core-app/features/work-packages/
 import { WorkPackageViewHierarchyIdentationService } from 'core-app/features/work-packages/routing/wp-view-base/view-services/wp-view-hierarchy-indentation.service';
 import { WorkPackageViewDisplayRepresentationService } from 'core-app/features/work-packages/routing/wp-view-base/view-services/wp-view-display-representation.service';
 
-export type WorkPackageAction = {
+export interface WorkPackageAction {
   text?:string;
   key:string;
   icon?:string;
@@ -43,10 +43,17 @@ export type WorkPackageAction = {
   link?:string;
   href?:string;
   hidden?:boolean;
-};
+}
 
 @Injectable()
 export class WorkPackageContextMenuHelperService {
+  private HookService = inject(HookService);
+  private UrlParamsHelper = inject(UrlParamsHelperService);
+  private wpViewRepresentation = inject(WorkPackageViewDisplayRepresentationService);
+  private wpViewTimeline = inject(WorkPackageViewTimelineService);
+  private wpViewIndent = inject(WorkPackageViewHierarchyIdentationService);
+  private PathHelper = inject(PathHelperService);
+
   private BULK_ACTIONS = [
     {
       text: I18n.t('js.work_packages.bulk_actions.edit'),
@@ -73,14 +80,6 @@ export class WorkPackageContextMenuHelperService {
       href: this.PathHelper.workPackagesBulkDeletePath(),
     },
   ];
-
-  constructor(private HookService:HookService,
-    private UrlParamsHelper:UrlParamsHelperService,
-    private wpViewRepresentation:WorkPackageViewDisplayRepresentationService,
-    private wpViewTimeline:WorkPackageViewTimelineService,
-    private wpViewIndent:WorkPackageViewHierarchyIdentationService,
-    private PathHelper:PathHelperService) {
-  }
 
   public getPermittedActionLinks(workPackage:WorkPackageResource, permittedActionConstants:any, allowSplitScreenActions:boolean):WorkPackageAction[] {
     const singularPermittedActions:any[] = [];
@@ -115,10 +114,10 @@ export class WorkPackageContextMenuHelperService {
     let link:string|undefined;
     switch (action.key) {
       case 'copy_link_to_clipboard':
-        link = this.PathHelper.workPackageShortPath(workPackage.id as string);
+        link = this.PathHelper.workPackageShortPath(workPackage.displayId);
         break;
       default:
-        link = action.link ? (workPackage[action.link] as HalLink).href as string : undefined;
+        link = action.link ? (workPackage[action.link] as HalLink).href! : undefined;
     }
 
     return link;
@@ -169,7 +168,7 @@ export class WorkPackageContextMenuHelperService {
     });
 
     _.each(this.HookService.call('workPackageTableContextMenu'), (action:WorkPackageAction) => {
-      if (workPackage[action.link as string] !== undefined) {
+      if (workPackage[action.link!] !== undefined) {
         const index = action.indexBy ? action.indexBy(allowedActions) : allowedActions.length;
         allowedActions.splice(index, 0, action);
       }

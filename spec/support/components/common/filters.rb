@@ -43,12 +43,12 @@ module Components
         if filter_name == "name_and_identifier"
           expect(page.find_by_id(filter_name).value).not_to be_empty
         elsif value
-          within("li[data-filter-name='#{filter_name}']:not(.hidden)", visible: :hidden) do
+          within("li[data-filter-name='#{filter_name}']") do
             expect(page).to have_css(".advanced-filters--filter-value", text: value, visible: :all)
           end
         else
           expect(page)
-            .to have_css("li[data-filter-name='#{filter_name}']:not(.hidden)", visible: :hidden)
+            .to have_css("li[data-filter-name='#{filter_name}']")
         end
       end
 
@@ -198,6 +198,8 @@ module Components
       end
 
       def open_filters
+        return if filters_expanded?
+
         retry_block do
           toggle_filters_section
           expect(page).to have_css(".op-filters-form.-expanded")
@@ -211,6 +213,13 @@ module Components
 
       def toggle_filters_section
         filters_toggle.click
+      end
+
+      def filters_expanded?
+        # wait for widgets to be loaded (filters button should be visible)
+        filters_toggle
+
+        page.has_css?(".op-filters-form.-expanded", wait: 0)
       end
 
       def autocomplete_filter?(filter)

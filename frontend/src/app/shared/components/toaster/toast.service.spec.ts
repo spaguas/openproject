@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { TestBed, waitForAsync } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { ToastService } from 'core-app/shared/components/toaster/toast.service';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ConfigurationService } from 'core-app/core/config/configuration.service';
@@ -38,9 +38,8 @@ import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/c
 describe('ToastService', () => {
   let toastService:ToastService;
 
-  beforeEach(waitForAsync(() => {
-    // noinspection JSIgnoredPromiseFromCall
-    TestBed.configureTestingModule({
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
     imports: [OpenprojectHalModule],
     providers: [
         { provide: ConfigurationService, useValue: { autoHidePopups: () => true } },
@@ -49,12 +48,9 @@ describe('ToastService', () => {
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
     ]
-})
-      .compileComponents()
-      .then(() => {
-        toastService = TestBed.inject(ToastService);
-      });
-  }));
+}).compileComponents();
+    toastService = TestBed.inject(ToastService);
+  });
 
   it('should be able to create warnings', () => {
     const toaster = toastService.addWarning('warning!');
@@ -64,6 +60,7 @@ describe('ToastService', () => {
 
   it('should be able to create error messages with errors', () => {
     const toaster = toastService.addError('a super cereal error', ['fooo', 'baarr']);
+
     expect(toaster).toEqual({
       message: 'a super cereal error',
       data: ['fooo', 'baarr'],
@@ -73,6 +70,7 @@ describe('ToastService', () => {
 
   it('should be able to create error messages with only a message', () => {
     const toaster = toastService.addError('a super cereal error');
+
     expect(toaster).toEqual({
       message: 'a super cereal error',
       data: [],
@@ -87,6 +85,7 @@ describe('ToastService', () => {
       [new File([], '3'), of()],
     ];
     const toaster = toastService.addUpload('uploading...', uploadData);
+
     expect(toaster).toEqual({
       message: 'uploading...',
       type: 'upload',
@@ -103,9 +102,11 @@ describe('ToastService', () => {
   it('sends a broadcast to remove the first toaster upon adding a second success toaster',
     () => {
       const firstToast = toastService.addSuccess('blubs');
+
       expect(toastService.current.value!.length).toEqual(1);
 
       toastService.addSuccess('blubs2');
+
       expect(toastService.current.value!.length).toEqual(1);
     });
 

@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Injector, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Injector, ViewChild, inject } from '@angular/core';
 import { InjectField } from 'core-app/shared/helpers/angular/inject-field.decorator';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { ToastService } from 'core-app/shared/components/toaster/toast.service';
@@ -43,6 +43,13 @@ import { JobStatusModalService } from 'core-app/features/job-status/job-status-m
   standalone: false,
 })
 export class BackupComponent implements AfterViewInit {
+  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  injector = inject(Injector);
+  protected i18n = inject(I18nService);
+  protected toastService = inject(ToastService);
+  protected pathHelper = inject(PathHelperService);
+  protected jobStatusModalService = inject(JobStatusModalService);
+
   public text = {
     info: this.i18n.t('js.backup.info'),
     note: this.i18n.t('js.backup.note'),
@@ -56,11 +63,11 @@ export class BackupComponent implements AfterViewInit {
     attachmentsDisabled: this.i18n.t('js.backup.attachments_disabled'),
   };
 
-  public jobStatusId = this.elementRef.nativeElement.dataset.jobStatusId as string;
+  public jobStatusId = this.elementRef.nativeElement.dataset.jobStatusId!;
 
-  public lastBackupDate = this.elementRef.nativeElement.dataset.lastBackupDate as string;
+  public lastBackupDate = this.elementRef.nativeElement.dataset.lastBackupDate!;
 
-  public lastBackupAttachmentId = this.elementRef.nativeElement.dataset.lastBackupAttachmentId as string;
+  public lastBackupAttachmentId = this.elementRef.nativeElement.dataset.lastBackupAttachmentId!;
 
   public mayIncludeAttachments = this.elementRef.nativeElement.dataset.mayIncludeAttachments !== 'false';
 
@@ -72,19 +79,11 @@ export class BackupComponent implements AfterViewInit {
 
   @ViewChild('backupTokenInput') backupTokenInput:ElementRef<HTMLInputElement>;
 
-  constructor(
-    readonly elementRef:ElementRef<HTMLElement>,
-    public injector:Injector,
-    protected i18n:I18nService,
-    protected toastService:ToastService,
-    protected pathHelper:PathHelperService,
-    protected jobStatusModalService:JobStatusModalService,
-  ) {
+  constructor() {
     this.includeAttachments = this.mayIncludeAttachments;
   }
 
   ngAfterViewInit():void {
-    /* eslint-disable-next-line @typescript-eslint/no-unsafe-call */
     this.backupTokenInput.nativeElement.focus();
   }
 
@@ -97,11 +96,7 @@ export class BackupComponent implements AfterViewInit {
     return this.pathHelper.attachmentDownloadPath(this.lastBackupAttachmentId, undefined);
   }
 
-  public includeAttachmentsTitle():string {
-    return this.mayIncludeAttachments ? '' : this.text.attachmentsDisabled;
-  }
-
-  public triggerBackup(event?:JQuery.TriggeredEvent) {
+  public triggerBackup(event?:Event) {
     if (event) {
       event.stopPropagation();
       event.preventDefault();

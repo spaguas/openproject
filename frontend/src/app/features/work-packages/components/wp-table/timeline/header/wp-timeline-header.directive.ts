@@ -26,7 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { Component, ElementRef, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnInit, inject } from '@angular/core';
 import { WorkPackageTimelineTableController } from 'core-app/features/work-packages/components/wp-table/timeline/container/wp-timeline-container.directive';
 import moment, { Moment } from 'moment';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
@@ -44,19 +44,26 @@ import {
   selector: timelineHeaderSelector,
   templateUrl: './wp-timeline-header.html',
   standalone: false,
+  // TODO: This component has been partially migrated to be zoneless-compatible.
+  // After testing, this should be updated to ChangeDetectionStrategy.OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class WorkPackageTimelineHeaderController implements OnInit {
-  public $element:JQuery;
+  readonly I18n = inject(I18nService);
+  readonly wpTimelineService = inject(WorkPackageViewTimelineService);
+  readonly workPackageTimelineTableController = inject(WorkPackageTimelineTableController);
+
+  public element:HTMLElement;
 
   private activeZoomLevel:TimelineZoomLevel;
 
-  private innerHeader:JQuery;
+  private innerHeader:HTMLElement;
 
-  constructor(elementRef:ElementRef,
-    readonly I18n:I18nService,
-    readonly wpTimelineService:WorkPackageViewTimelineService,
-    readonly workPackageTimelineTableController:WorkPackageTimelineTableController) {
-    this.$element = jQuery(elementRef.nativeElement);
+  constructor() {
+    const elementRef = inject(ElementRef);
+
+    this.element = elementRef.nativeElement;
   }
 
   ngOnInit() {
@@ -65,13 +72,13 @@ export class WorkPackageTimelineHeaderController implements OnInit {
   }
 
   refreshView(vp:TimelineViewParameters) {
-    this.innerHeader = this.$element.find('.wp-table-timeline--header-inner');
+    this.innerHeader = this.element.querySelector('.wp-table-timeline--header-inner')!;
     this.renderLabels(vp);
   }
 
   private renderLabels(vp:TimelineViewParameters):void {
-    this.innerHeader.empty();
-    this.innerHeader.attr('data-current-zoom-level', this.wpTimelineService.zoomLevel);
+    this.innerHeader.innerHTML = '';
+    this.innerHeader.setAttribute('data-current-zoom-level', this.wpTimelineService.zoomLevel);
 
     switch (vp.settings.zoomLevel) {
       case 'days':

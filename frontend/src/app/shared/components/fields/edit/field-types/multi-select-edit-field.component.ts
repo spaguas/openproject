@@ -36,6 +36,7 @@ import { NgSelectComponent } from '@ng-select/ng-select';
 import { InjectField } from 'core-app/shared/helpers/angular/inject-field.decorator';
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
 import { UserResource } from 'core-app/features/hal/resources/user-resource';
+import { repositionDropdownBugfix } from 'core-app/shared/components/autocompleter/op-autocompleter/autocompleter.helper';
 
 @Component({
   templateUrl: './multi-select-edit-field.component.html',
@@ -131,7 +132,7 @@ export class MultiSelectEditFieldComponent extends EditFieldComponent implements
 
       // Special case 'null' value, which angular
       // only understands in ng-options as an empty string.
-      if (option && option.href === '') {
+      if (option?.href === '') {
         option.href = null;
       }
 
@@ -142,9 +143,9 @@ export class MultiSelectEditFieldComponent extends EditFieldComponent implements
   }
 
   public onOpen() {
-    jQuery(this.hiddenOverflowContainer).one('scroll', () => {
+    document.querySelector(this.hiddenOverflowContainer)?.addEventListener('scroll', () => {
       this.ngSelectComponent.close();
-    });
+    }, { once: true });
   }
 
   public onClose() {
@@ -152,9 +153,7 @@ export class MultiSelectEditFieldComponent extends EditFieldComponent implements
   }
 
   public repositionDropdown() {
-    if (this.ngSelectComponent && this.ngSelectComponent.dropdownPanel) {
-      setTimeout(() => this.ngSelectComponent.dropdownPanel.adjustPosition(), 0);
-    }
+    repositionDropdownBugfix(this.ngSelectComponent);
   }
 
   private openAutocompleteSelectField() {
@@ -204,12 +203,18 @@ export class MultiSelectEditFieldComponent extends EditFieldComponent implements
     if (Array.isArray(allowedValues)) {
       this.setValues(allowedValues);
     } else if (this.schema.allowedValues) {
-      return this.schema.allowedValues.$load().then((values:CollectionResource) => {
+      return (this.schema.allowedValues.$load() as Promise<CollectionResource>).then((values:CollectionResource) => {
         // The select options of the project shall be sorted
         if (values.count > 0 && (values.elements[0] as any)._type === 'Project') {
           this.setValues(values.elements, true);
         } else {
           this.setValues(values.elements);
+        }
+
+        if (this.requestFocus) {
+          // Focus and open the field once the values are loaded
+          this.ngSelectComponent.focus();
+          this.openAutocompleteSelectField();
         }
       });
     } else {

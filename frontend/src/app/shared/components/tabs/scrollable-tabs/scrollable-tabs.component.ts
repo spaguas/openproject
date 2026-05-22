@@ -1,17 +1,4 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  EventEmitter,
-  Input,
-  Injector,
-  OnChanges,
-  Output,
-  SimpleChanges,
-  ViewChild,
-} from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, Injector, OnChanges, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { TabDefinition } from 'core-app/shared/components/tabs/tab.interface';
 import {
   RawParams,
@@ -31,6 +18,10 @@ import { InjectField } from 'core-app/shared/helpers/angular/inject-field.decora
   standalone: false,
 })
 export class ScrollableTabsComponent extends UntilDestroyedMixin implements AfterViewInit, OnChanges {
+  protected readonly $state = inject(StateService);
+  private cdRef = inject(ChangeDetectorRef);
+  injector = inject(Injector);
+
   @ViewChild('scrollContainer', { static: true }) scrollContainer:ElementRef;
 
   @ViewChild('scrollPane', { static: true }) scrollPane:ElementRef;
@@ -59,23 +50,19 @@ export class ScrollableTabsComponent extends UntilDestroyedMixin implements Afte
 
   private pane:Element;
 
+  private resizeObserver:ResizeObserver;
+
   private debouncedTabActivationTimeout:ReturnType<typeof setTimeout>|null;
 
   private dragTargetStack = 0;
-
-  constructor(
-    protected readonly $state:StateService,
-    private cdRef:ChangeDetectorRef,
-    public injector:Injector,
-  ) {
-    super();
-  }
 
   ngAfterViewInit():void {
     this.container = this.scrollContainer.nativeElement as HTMLElement;
     this.pane = this.scrollPane.nativeElement as HTMLElement;
 
-    this.updateScrollableArea();
+    this.resizeObserver = new ResizeObserver(() => this.updateScrollableArea());
+    this.resizeObserver.observe(this.container);
+
     this
       .uiRouterGlobals
       .params$
@@ -87,6 +74,11 @@ export class ScrollableTabsComponent extends UntilDestroyedMixin implements Afte
           this.currentTabId = params.tabIdentifier as string;
         }
       });
+  }
+
+  override ngOnDestroy():void {
+    this.resizeObserver?.disconnect();
+    super.ngOnDestroy();
   }
 
   ngOnChanges(_changes:SimpleChanges):void {
@@ -107,7 +99,11 @@ export class ScrollableTabsComponent extends UntilDestroyedMixin implements Afte
     return this.counters[tab.id];
   }
 
-  private updateScrollableArea() {
+  private updateScrollableArea():void {
+    if (!this.pane || !this.container) {
+      return;
+    }
+
     this.determineScrollButtonVisibility();
     if (this.currentTabId != null) {
       this.scrollIntoVisibleArea(this.currentTabId);
@@ -118,10 +114,12 @@ export class ScrollableTabsComponent extends UntilDestroyedMixin implements Afte
     this.currentTabId = tab.id;
     this.tabSelected.emit(tab);
 
-    // If the tab does not provide its own link,
-    // avoid propagation
-    if (!tab.path) {
-      event.preventDefault();
+    event.preventDefault();
+
+    // Override history to avoid that browser back leads you to a different tab instead of the page you originated from
+    if (tab.path) {
+      const historyMethod = document.referrer !== '' ? 'replaceState' : 'pushState';
+      history[historyMethod](null, '', tab.path);
     }
   }
 
@@ -191,13 +189,27 @@ export class ScrollableTabsComponent extends UntilDestroyedMixin implements Afte
   }
 
   private scrollIntoVisibleArea(tabId:string) {
-    const tab:JQuery<Element> = jQuery(this.pane).find(`[data-tab-id=${tabId}]`);
-    const position:JQueryCoordinates = tab.position();
+    const tab = this.pane.querySelector<HTMLElement>(`[data-tab-id=${tabId}]`);
+    if (!tab) {
+      return;
+    }
 
-    const tabRightBorderAt:number = position.left + Number(tab.outerWidth());
+    const position = getPosition(tab);
+    const tabRightBorderAt = position.left + tab.offsetWidth;
 
     if (this.pane.scrollLeft + this.container.clientWidth < tabRightBorderAt) {
       this.pane.scrollLeft = tabRightBorderAt - this.container.clientWidth + 40; // 40px to not overlap by buttons
     }
   }
+}
+
+function getPosition(el:HTMLElement) {
+  const offsetParent = el.offsetParent || document.body;
+  const elRect = el.getBoundingClientRect();
+  const parentRect = offsetParent.getBoundingClientRect();
+
+  return {
+    top: elRect.top - parentRect.top - parseFloat(getComputedStyle(offsetParent).borderTopWidth),
+    left: elRect.left - parentRect.left - parseFloat(getComputedStyle(offsetParent).borderLeftWidth)
+  };
 }

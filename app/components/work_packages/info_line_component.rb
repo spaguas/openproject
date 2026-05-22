@@ -31,10 +31,22 @@
 class WorkPackages::InfoLineComponent < ApplicationComponent
   include OpPrimer::ComponentHelpers
 
-  def initialize(work_package:, font_size: :small)
+  def initialize(work_package:,
+                 show_project: false,
+                 show_subject: false,
+                 show_status: true,
+                 status_scheme: :default,
+                 font_size: :small,
+                 **system_arguments)
     super
 
     @work_package = work_package
     @font_size = font_size
+    @show_project = show_project
+    @show_subject = show_subject
+    @show_status = show_status
+    @status_scheme = status_scheme
+
+    @system_arguments = system_arguments
   end
 end

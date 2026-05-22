@@ -5,6 +5,8 @@ module Primer
     module Forms
       module Dsl
         module InputMethods
+          include AttributeHelpTextsHelper
+
           def multi(**, &)
             super(**decorate_options(**), &)
           end
@@ -17,8 +19,17 @@ module Primer
             super(**decorate_options(**), &)
           end
 
-          def check_box_group(**, &)
+          def check_box_group(include_hidden: false, **, &)
+            add_input Primer::Forms::Dsl::HiddenInput.new(builder:, form:, multiple: true, value: "", **) if include_hidden
             super(**decorate_options(**), &)
+          end
+
+          def advanced_radio_button_group(**, &)
+            add_input AdvancedRadioButtonGroupInput.new(builder:, form:, **decorate_options(**), &)
+          end
+
+          def advanced_check_box_group(**, &)
+            add_input AdvancedCheckBoxGroupInput.new(builder:, form:, **decorate_options(**), &)
           end
 
           def autocompleter(**, &)
@@ -65,20 +76,31 @@ module Primer
             add_input WorkPackageAutocompleterInput.new(builder:, form:, **decorate_options(**), &)
           end
 
+          def select_panel(**, &)
+            add_input SelectPanelInput.new(builder:, form:, **decorate_options(**), &)
+          end
+
           def decorate_options(include_help_text: true, help_text_options: {}, **options)
             if include_help_text && supports_help_texts?(form.model)
               attribute_name = help_text_options[:attribute_name] || options[:name]
               options[:label] = form.wrap_attribute_label_with_help_text(options[:label], attribute_name)
+              options[:caption] ||= help_text_caption_for(attribute_name)
             end
             options
           end
 
           private
 
+          def help_text_caption_for(attribute_name)
+            help_text = help_text_for(form.model, attribute_name)
+            help_text&.caption
+          end
+
           def supports_help_texts?(model)
             return @supports_help_texts if defined?(@supports_help_texts)
 
-            @supports_help_texts = model && ::AttributeHelpText.available_types.include?(model.model_name)
+            @supports_help_texts = model.respond_to?(:model_name) &&
+              ::AttributeHelpText.available_types.include?(model.model_name)
           end
         end
       end

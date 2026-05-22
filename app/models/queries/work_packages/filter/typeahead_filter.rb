@@ -34,12 +34,19 @@ class Queries::WorkPackages::Filter::TypeaheadFilter <
     :search
   end
 
+  def joins
+    %i[type status]
+  end
+
   def where
     parts = values.map(&:split).flatten
 
     parts.map do |part|
       conditions = [subject_condition(part),
-                    project_name_condition(part)]
+                    project_name_condition(part),
+                    work_package_identifier_condition(part),
+                    type_name_condition(part),
+                    status_condition(part)]
 
       if (match = part.match(/^#?(\d+)$/))
         conditions << id_condition(match[1])
@@ -55,6 +62,36 @@ class Queries::WorkPackages::Filter::TypeaheadFilter <
 
   def project_name_condition(string)
     Queries::Operators::Contains.sql_for_field([string], Project.table_name, "name")
+  end
+
+  def work_package_identifier_condition(string)
+    alias_condition = Queries::Operators::StartsWith.sql_for_field(
+      [string], WorkPackageSemanticAlias.table_name, "identifier"
+    )
+    "#{WorkPackage.table_name}.id IN " \
+      "(SELECT work_package_id FROM #{WorkPackageSemanticAlias.table_name} WHERE #{alias_condition})"
+  end
+
+  def type_name_condition(string)
+    Queries::Operators::Contains.sql_for_field([string], Type.table_name, "name")
+  end
+
+  def status_condition(string)
+    # Check if the search string matches translated "open" or "closed" meta statuses
+    open_term = I18n.t("label_open").downcase
+    closed_term = I18n.t("label_closed").downcase
+    search_term = string.downcase
+
+    if search_term == open_term
+      # Match meta statuses that are not closed (open statuses)
+      "#{Status.table_name}.is_closed = false"
+    elsif search_term == closed_term
+      # Match meta statuses that are closed
+      "#{Status.table_name}.is_closed = true"
+    else
+      # Match statuses by name
+      Queries::Operators::Contains.sql_for_field([string], Status.table_name, "name")
+    end
   end
 
   def id_condition(string)

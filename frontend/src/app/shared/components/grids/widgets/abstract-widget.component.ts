@@ -49,14 +49,11 @@ export abstract class AbstractWidgetComponent extends UntilDestroyedMixin {
     return true;
   }
 
-  /** Inserted by Angular inject() migration for backwards compatibility */
-  constructor(...args: unknown[]);
-
   constructor() {
     super();
   }
 
-  protected setChangesetOptions(values:{ [key:string]:unknown; }) {
+  protected setChangesetOptions(values:Record<string, unknown>) {
     const changeset = new WidgetChangeset(this.resource);
 
     changeset.setValue('options', { ...this.resource.options, ...values });

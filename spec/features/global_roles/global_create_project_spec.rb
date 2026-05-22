@@ -74,6 +74,7 @@ RSpec.describe "Global role: Global Create project",
   describe "for a user with the global permission to add projects" do
     let!(:global_role) { create(:global_role, name: "Global", permissions: %i[add_project]) }
     let!(:member_role) { create(:project_role, name: "Member", permissions: %i[view_project]) }
+    let!(:default_project_role) { create(:project_creator_role) }
 
     let!(:global_member) do
       create(:global_member,
@@ -83,13 +84,21 @@ RSpec.describe "Global role: Global Create project",
 
     current_user { user }
 
+    before do
+      allow(Setting).to receive(:new_project_user_role_id).and_return(default_project_role.id.to_s)
+    end
+
     it 'allows creating projects via the "+ Project" button' do
       projects_page.visit!
       projects_page.create_new_workspace
 
+      # Step 1: Select workspace type (blank project)
+      click_on "Continue"
+
+      # Step 2: Fill in project details
       fill_in "Name", with: "New project name"
 
-      click_on "Create"
+      click_on "Complete"
 
       expect(page).to have_current_path "/projects/new-project-name"
     end

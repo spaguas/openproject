@@ -26,14 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  ChangeDetectionStrategy,
-  Component,
-  EventEmitter,
-  HostBinding,
-  Input,
-  Output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Input, Output, inject } from '@angular/core';
 
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { CurrentProjectService } from 'core-app/core/current-project/current-project.service';
@@ -43,6 +36,7 @@ import { PathHelperService } from 'core-app/core/path-helper/path-helper.service
 import {
   SearchableProjectListService,
 } from 'core-app/shared/components/searchable-project-list/searchable-project-list.service';
+import { getMetaContent } from 'core-app/core/setup/globals/global-helpers';
 
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
@@ -53,6 +47,11 @@ import {
   standalone: false,
 })
 export class OpProjectIncludeListComponent {
+  readonly I18n = inject(I18nService);
+  readonly currentProjectService = inject(CurrentProjectService);
+  readonly pathHelper = inject(PathHelperService);
+  readonly searchableProjectListService = inject(SearchableProjectListService);
+
   @HostBinding('class.spot-list') classNameList = true;
 
   @HostBinding('class.op-project-include-list') className = true;
@@ -71,22 +70,13 @@ export class OpProjectIncludeListComponent {
 
   @Input() parentChecked = false;
 
-  public get currentProjectHref():string|null {
-    return this.currentProjectService.apiv3Path;
-  }
+  @Input() queryWorkspaceHref:string|null = null;
 
   public text = {
     does_not_match_search: this.I18n.t('js.include_projects.tooltip.does_not_match_search'),
     include_all_selected: this.I18n.t('js.include_projects.tooltip.include_all_selected'),
     current_project: this.I18n.t('js.include_projects.tooltip.current_project'),
   };
-
-  constructor(
-    readonly I18n:I18nService,
-    readonly currentProjectService:CurrentProjectService,
-    readonly pathHelper:PathHelperService,
-    readonly searchableProjectListService:SearchableProjectListService,
-  ) { }
 
   public updateList(selected:string[]):void {
     this.update.emit(selected);
@@ -123,13 +113,13 @@ export class OpProjectIncludeListComponent {
   }
 
   extendedProjectUrl(projectId:string):string {
-    const currentMenuItem = document.querySelector('meta[name="current_menu_item"]') as HTMLMetaElement;
+    const currentMenuItem = getMetaContent('current_menu_item');
     const url = this.pathHelper.projectPath(projectId);
 
     if (!currentMenuItem) {
       return url;
     }
 
-    return `${url}?jump=${encodeURIComponent(currentMenuItem.content)}`;
+    return `${url}?jump=${encodeURIComponent(currentMenuItem)}`;
   }
 }

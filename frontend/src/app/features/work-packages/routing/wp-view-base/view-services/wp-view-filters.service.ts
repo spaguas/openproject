@@ -26,8 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import { Injectable } from '@angular/core';
-import { IsolatedQuerySpace } from 'core-app/features/work-packages/directives/query-space/isolated-query-space';
+import { Injectable, inject } from '@angular/core';
 import { combine, input, InputState } from '@openproject/reactivestates';
 import { States } from 'core-app/core/states/states.service';
 import { HalResource } from 'core-app/features/hal/resources/hal-resource';
@@ -43,6 +42,8 @@ import { map } from 'rxjs/operators';
 
 @Injectable()
 export class WorkPackageViewFiltersService extends WorkPackageQueryStateService<QueryFilterInstanceResource[]> {
+  protected readonly states = inject(States);
+
   public hidden:string[] = [
     'datesInterval',
     'precedes',
@@ -67,13 +68,6 @@ export class WorkPackageViewFiltersService extends WorkPackageQueryStateService<
 
   /** Flag state to determine whether the filters are incomplete */
   private incomplete = input<boolean>(false);
-
-  constructor(
-    protected readonly states:States,
-    readonly querySpace:IsolatedQuerySpace,
-  ) {
-    super(querySpace);
-  }
 
   /**
    * Load all schemas for the current filters and fill respective states
@@ -146,7 +140,7 @@ export class WorkPackageViewFiltersService extends WorkPackageQueryStateService<
     }
 
     const filters = [...this.rawFilters];
-    modifier(filters[index]!);
+    modifier(filters[index]);
     this.update(filters);
 
     return true;
@@ -187,7 +181,7 @@ export class WorkPackageViewFiltersService extends WorkPackageQueryStateService<
   public remainingVisibleFilters(filters = this.current) {
     return this
       .remainingFilters(filters)
-      .filter((filter) => this.hidden.indexOf(filter.id) === -1);
+      .filter((filter) => !this.hidden.includes(filter.id));
   }
 
   /**

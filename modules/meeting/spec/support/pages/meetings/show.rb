@@ -122,11 +122,11 @@ module Pages::Meetings
         yield
         created_id = click_save_and_wait_for_agenda_item_creation if save
       end
-      expect(page).to have_css("#meeting-agenda-items-item-component-#{created_id}") if created_id
+      expect(page).to have_css("#meeting-agenda-item-#{created_id}") if created_id
     end
 
     def expect_modal(...)
-      expect(page).to have_modal(...)
+      Components::Common::Modal.new.expect_modal(...)
     end
 
     def expect_no_add_form
@@ -142,7 +142,7 @@ module Pages::Meetings
           yield
           created_id = click_save_and_wait_for_agenda_item_creation if save
         end
-        expect(page).to have_css("#meeting-agenda-items-item-component-#{created_id}") if created_id
+        expect(page).to have_css("#meeting-agenda-item-#{created_id}") if created_id
       end
     end
 
@@ -154,7 +154,7 @@ module Pages::Meetings
     end
 
     def in_edit_form(item, &)
-      page.within("#meeting-agenda-items-item-component-#{item.id}", &)
+      page.within("#meeting-agenda-item-#{item.id}", &)
     end
 
     def in_agenda_form(&)
@@ -162,6 +162,8 @@ module Pages::Meetings
     end
 
     def assert_agenda_order!(*titles)
+      wait_for_network_idle
+
       retry_block do
         found = page.all(:test_id, "op-meeting-agenda-title").map(&:text)
         raise "Expected order of agenda items #{titles.inspect}, but found #{found.inspect}" if titles != found
@@ -196,7 +198,7 @@ module Pages::Meetings
       if item.is_a?(WorkPackage)
         expect(page).to have_css("[id^='meeting-agenda-items-item-component-']", text: item.subject)
       else
-        expect(page).to have_css("#meeting-agenda-items-item-component-#{item.id}", text: item.work_package.subject)
+        expect(page).to have_css("#meeting-agenda-item-#{item.id}", text: item.work_package.subject)
       end
     end
 
@@ -205,7 +207,7 @@ module Pages::Meetings
     end
 
     def expect_undisclosed_agenda_link(item)
-      expect(page).to have_css("#meeting-agenda-items-item-component-#{item.id}",
+      expect(page).to have_css("#meeting-agenda-item-#{item.id}",
                                text: I18n.t(:label_agenda_item_undisclosed_wp, id: item.work_package_id))
     end
 
@@ -213,18 +215,29 @@ module Pages::Meetings
       expect(page).not_to have_test_selector("op-meeting-agenda-title", text: title)
     end
 
+    def expect_no_agenda_item_in_section(title:, section:)
+      within("#meeting-sections-show-component-#{section.id}") do
+        expect_no_agenda_item(title:)
+      end
+    end
+
     def expect_agenda_action_menu(item)
       expect(page)
-        .to have_css("#meeting-agenda-items-item-component-#{item.id} #{test_selector('op-meeting-agenda-actions')}")
+        .to have_css("#meeting-agenda-item-#{item.id} #{test_selector('op-meeting-agenda-actions')}")
     end
 
     def expect_no_agenda_action_menu(item)
       expect(page)
-        .to have_no_css("#meeting-agenda-items-item-component-#{item.id} #{test_selector('op-meeting-agenda-actions')}")
+        .to have_no_css("#meeting-agenda-item-#{item.id} #{test_selector('op-meeting-agenda-actions')}")
     end
 
     def select_action(item, action)
       open_menu(item) do
+        if action.downcase.include?("move")
+          click_on "Move"
+        elsif action.downcase.include?("outcome")
+          click_on "Add outcome"
+        end
         click_on action
       end
     end
@@ -240,9 +253,23 @@ module Pages::Meetings
       end
     end
 
+    def duplicate_item_in_next_meeting(item)
+      open_menu(item) do
+        click_on "Duplicate"
+        click_on "Duplicate in next meeting"
+      end
+      expect_modal("Duplicate in next meeting?")
+
+      retry_block do
+        page.within_modal "Duplicate in next meeting?" do
+          click_on "Duplicate"
+        end
+      end
+    end
+
     def open_menu(item, &)
       retry_block do
-        page.within("#meeting-agenda-items-item-component-#{item.id}") do
+        page.within("#meeting-agenda-item-#{item.id}") do
           page.find_test_selector("op-meeting-agenda-actions").click
         end
         page.find(".Overlay")
@@ -267,7 +294,7 @@ module Pages::Meetings
 
     def expect_no_outcome_action(item)
       retry_block do
-        page.within("#meeting-agenda-items-item-component-#{item.id}") do
+        page.within("#meeting-agenda-item-#{item.id}") do
           page.find_test_selector("op-meeting-agenda-actions").trigger("click")
         end
         page.find(".Overlay")
@@ -296,19 +323,25 @@ module Pages::Meetings
     end
 
     def in_outcome_component(item, &)
-      page.within("#meeting-agenda-items-outcomes-base-component-#{item.id}", &)
+      page.within("#meeting-agenda-items-outcomes-wrapper-component-#{item.id}", &)
     end
 
     def add_outcome(item, &)
-      page.within("#meeting-agenda-items-outcomes-base-component-#{item.id}") do
-        click_link_or_button "Outcome"
+      page.within("#meeting-agenda-items-outcomes-new-button-component-#{item.id}") do
+        click_on "Outcome"
       end
+      expect(page).to have_text("Write outcome", wait: 2)
+      page.find("a", text: "Write outcome").click
       expect_outcome_form(item)
       page.within("#meeting-agenda-items-outcomes-input-component-#{item.id}", &)
     end
 
     def add_outcome_from_menu(item, &)
-      select_action item, "Add outcome"
+      open_menu(item) do
+        click_on "Add outcome"
+        expect(page).to have_text("Write outcome", wait: 2)
+        click_on "Write outcome"
+      end
       expect_outcome_form(item)
       page.within("#meeting-agenda-items-outcomes-input-component-#{item.id}", &)
     end
@@ -319,11 +352,11 @@ module Pages::Meetings
     end
 
     def expect_outcome(text)
-      expect(page).to have_css("#meeting-agenda-items-outcomes-show-notes-component", text:)
+      expect(page).to have_css(".op-meeting-outcome-notes--content", text:)
     end
 
     def expect_no_outcome(text)
-      expect(page).to have_no_css("#meeting-agenda-items-outcomes-show-notes-component", text:)
+      expect(page).to have_no_css(".op-meeting-outcome-notes--content", text:)
     end
 
     def expect_no_outcome_button
@@ -366,8 +399,10 @@ module Pages::Meetings
 
     def expect_empty_backlog
       within_backlog do
-        expect(page).to have_text("Drag items here or create a new one")
-        expect(page).to have_button("Add")
+        retry_block do
+          expect(page).to have_text("Drag items here or create a new one")
+          expect(page).to have_button("Add")
+        end
       end
     end
 
@@ -380,7 +415,7 @@ module Pages::Meetings
           yield
           created_id = click_save_and_wait_for_agenda_item_creation
         end
-        expect(page).to have_css("#meeting-agenda-items-item-component-#{created_id}")
+        expect(page).to have_css("#meeting-agenda-item-#{created_id}")
       end
     end
 
@@ -443,7 +478,7 @@ module Pages::Meetings
     end
 
     def edit_agenda_item(item, save: true, wait_for_reference_update: false, &)
-      select_action item, "Edit"
+      wait_for_turbo_stream { select_action item, "Edit" }
       expect_item_edit_form(item)
       reference_value = meeting_reference_value
       page.within("#meeting-agenda-items-form-component-#{item.id}") do
@@ -487,7 +522,9 @@ module Pages::Meetings
 
     def open_participant_form
       page.find_test_selector("manage-participants-button").click
-      expect_modal("Manage participants")
+      retry_block do
+        expect_modal("Manage participants")
+      end
     end
 
     def in_participant_form(&)
@@ -538,13 +575,31 @@ module Pages::Meetings
       click_on "Add"
     end
 
+    def uncheck_apply_to_upcoming
+      page.find('input[type="checkbox"][name="meeting_participant[apply_to_upcoming]"]').set(false)
+    end
+
+    def expect_apply_to_upcoming_checked
+      expect(page).to have_checked_field("meeting_participant[apply_to_upcoming]")
+    end
+
+    def expect_apply_to_upcoming_unchecked
+      expect(page).to have_unchecked_field("meeting_participant[apply_to_upcoming]")
+    end
+
+    def expect_no_participant(participant)
+      autocomplete = page.find('[data-test-selector="participants-dialog-autocomplete"]')
+      search_autocomplete(autocomplete, query: participant.lastname, results_selector: "body")
+      expect_no_ng_option(autocomplete, participant.name, results_selector: "body")
+    end
+
     def remove_participant(participant)
       expect(page).to have_text(participant.name)
       click_link_or_button("remove_button_#{participant.id}")
     end
 
     def expect_available_participants(count:)
-      expect(page).to have_link(class: "op-principal--name", count:)
+      expect(page).to have_link(class: "meeting-participant-user-link", count:)
     end
 
     def close_meeting
@@ -565,9 +620,36 @@ module Pages::Meetings
       end
     end
 
+    def open_meeting
+      page.within("#meetings-side-panel-state-component") do
+        click_on("Open meeting")
+      end
+
+      expect(page).to have_dialog(I18n.t("text_exit_draft_mode_dialog_title"))
+      page.within_dialog(I18n.t("text_exit_draft_mode_dialog_title")) do
+        click_on "Open meeting"
+      end
+
+      page.within("#meetings-side-panel-state-component") do
+        expect(page).to have_link("Start meeting")
+      end
+    end
+
+    def open_first_meeting
+      page.within("#meetings-side-panel-state-component") do
+        click_on("Open first meeting")
+      end
+
+      expect(page).to have_dialog(I18n.t("text_exit_draft_mode_dialog_template_title"))
+      page.within_dialog(I18n.t("text_exit_draft_mode_dialog_template_title")) do
+        click_on "Open meeting"
+      end
+    end
+
     def start_meeting
       page.within("#meetings-side-panel-state-component") do
         click_on("Start meeting")
+        expect(page).to have_link("Close meeting")
       end
     end
 
@@ -637,13 +719,15 @@ module Pages::Meetings
           add_section_link = find_link("Section")
           url = add_section_link[:href]
 
-          expect(URI.parse(url).path).to eq(meeting_sections_path(meeting))
+          expect(URI.parse(url).path).to eq(project_meeting_sections_path(meeting.project, meeting))
         end
       end
     end
 
     def expect_backlog_actions(item, series: false)
       open_menu(item) do
+        click_on "Move"
+
         expect(page).to have_css(".ActionListItem-label", text: "Edit")
         expect(page).to have_css(".ActionListItem-label", text: "Add notes")
         expect(page).to have_css(".ActionListItem-label", text: "Move to current meeting")
@@ -651,26 +735,30 @@ module Pages::Meetings
 
         expect(page).to have_no_css(".ActionListItem-label", text: "Move to backlog")
         expect(page).to have_no_css(".ActionListItem-label", text: "Add outcome")
+
         if series
           expect(page).to have_no_css(".ActionListItem-label", text: "Move to next meeting")
         end
       end
 
-      page.within("#meeting-agenda-items-item-component-#{item.id}") do
+      page.within("#meeting-agenda-item-#{item.id}") do
         page.find_test_selector("op-meeting-agenda-actions").click
       end
     end
 
     def expect_non_backlog_actions(item, series: false)
       open_menu(item) do
+        click_on "Move"
+
         expect(page).to have_css(".ActionListItem-label", text: "Move to backlog")
         expect(page).to have_no_css(".ActionListItem-label", text: "Move to current meeting")
+
         if series
           expect(page).to have_css(".ActionListItem-label", text: "Move to next meeting")
         end
       end
 
-      page.within("#meeting-agenda-items-item-component-#{item.id}") do
+      page.within("#meeting-agenda-item-#{item.id}") do
         page.find_test_selector("op-meeting-agenda-actions").click
       end
     end
@@ -717,6 +805,11 @@ module Pages::Meetings
       expect(page).to have_css("#meetings-header-component page-header") do |element|
         element["data-reference-value"] != old_reference_value
       end
+    end
+
+    def section_headers
+      page.all(".op-meeting-section-container[data-test-selector^='meeting-section-header-container-']")
+          .map(&:text)
     end
   end
 end

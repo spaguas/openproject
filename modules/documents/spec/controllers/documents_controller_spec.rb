@@ -35,15 +35,14 @@ RSpec.describe DocumentsController do
 
   let(:admin) { create(:admin) }
   let(:project) { create(:project, name: "Test Project") }
-  let(:user) { create(:user) }
-  let(:role) { create(:project_role, permissions: [:view_documents]) }
+  let(:user) { create(:user, member_with_permissions: { project => [:view_documents] }) }
 
-  let(:default_category) do
-    create(:document_category, project:, name: "Default Category")
+  let(:document_type) do
+    create(:document_type, name: "Default Type")
   end
 
   let!(:document) do
-    create(:document, title: "Sample Document", project:, category: default_category)
+    create(:document, title: "Sample Document", project:, type: document_type)
   end
 
   current_user { admin }
@@ -56,11 +55,6 @@ RSpec.describe DocumentsController do
     it "renders the index-template successfully" do
       expect(response).to be_successful
       expect(response).to render_template("index")
-    end
-
-    it "group documents by category, if no other sorting is given" do
-      expect(assigns(:grouped)).not_to be_nil
-      expect(assigns(:grouped).keys.map(&:name)).to eql [default_category.name]
     end
   end
 
@@ -75,12 +69,38 @@ RSpec.describe DocumentsController do
     end
   end
 
+  describe "edit" do
+    context "with a classic document" do
+      before do
+        document.update(kind: :classic)
+        get :edit, params: { id: document.id }
+      end
+
+      it "renders the edit-template successfully" do
+        expect(response).to be_successful
+        expect(response).to render_template("edit")
+      end
+    end
+
+    context "with a collaborative document" do
+      before do
+        document.update(kind: :collaborative)
+        get :edit, params: { id: document.id }
+      end
+
+      it "responds with a bad request" do
+        expect(response).to have_http_status(:bad_request)
+      end
+    end
+  end
+
   describe "create" do
     let(:document_attributes) do
       attributes_for(:document,
                      title: "New Document",
                      project_id: project.id,
-                     category_id: default_category.id)
+                     type_id: document_type.id,
+                     kind: "classic")
     end
 
     before do
@@ -92,14 +112,10 @@ RSpec.describe DocumentsController do
         post :create,
              params: {
                project_id: project.identifier,
-               document: attributes_for(
-                 :document,
-                 title: "New Document",
-                 project_id: project.id,
-                 category_id: default_category.id
-               )
+               document: document_attributes
              }
-      end.to change(Document, :count).by 1
+      end.to change(Document, :count).by(1)
+      expect(Document.last.attributes).to include(document_attributes.stringify_keys)
     end
 
     it "does trigger a workflow job for the document" do
@@ -112,16 +128,14 @@ RSpec.describe DocumentsController do
       let(:uncontainered) { create(:attachment, container: nil, author: admin) }
 
       before do
-        notify_project = project
-        create(:member, project: notify_project, user:, roles: [role])
-
         post :create,
              params: {
-               project_id: notify_project.identifier,
+               project_id: project.identifier,
                document: attributes_for(:document,
                                         title: "New Document",
-                                        project_id: notify_project.id,
-                                        category_id: default_category.id),
+                                        project_id: project.id,
+                                        type_id: document_type.id,
+                                        kind: "classic"),
                attachments: { "1" => { id: uncontainered.id } }
              }
       end
@@ -142,7 +156,7 @@ RSpec.describe DocumentsController do
 
   describe "show" do
     before do
-      document
+      document.update(kind: :classic)
       get :show, params: { id: document.id }
     end
 
@@ -165,6 +179,63 @@ RSpec.describe DocumentsController do
       expect(response).to have_http_status(:see_other)
       expect(response).to redirect_to project_documents_path(project)
       expect { Document.find(document.id) }.to raise_error ActiveRecord::RecordNotFound
+    end
+  end
+
+  describe "setup_collaboration_context",
+           with_settings: {
+             real_time_text_collaboration_enabled: true,
+             collaborative_editing_hocuspocus_url: "wss://hocuspocus.example.com",
+             collaborative_editing_hocuspocus_secret: "secret1234"
+           } do
+    let(:user_with_manage) { create(:user, member_with_permissions: { project => %i[view_documents manage_documents] }) }
+    let(:user_without_manage) { create(:user, member_with_permissions: { project => [:view_documents] }) }
+
+    before do
+      document.update(kind: :collaborative)
+    end
+
+    context "when user has manage_documents permission" do
+      current_user { user_with_manage }
+
+      it "generates a token payload for show action" do
+        get :show, params: { id: document.id }
+        expect(assigns(:token_payload)).to be_present
+      end
+    end
+
+    context "when user does not have manage_documents permission" do
+      current_user { user_without_manage }
+
+      it "generates a token payload for show action" do
+        get :show, params: { id: document.id }
+        expect(assigns(:token_payload)).to be_present
+      end
+    end
+  end
+
+  describe "#render_avatars" do
+    let(:user) { create(:user, member_with_permissions: { project => [:view_documents] }) }
+    let!(:non_member) { create(:user) }
+
+    current_user { user }
+
+    it "only renders avatars of users that are visible" do
+      get :render_avatars, params: { project_id: project.id, id: document.id, user_ids: [user.id, non_member.id] },
+                           format: :turbo_stream
+
+      expect(assigns(:users)).to contain_exactly(user)
+    end
+
+    context "with an admin user, that can see all users" do
+      current_user { create(:admin) }
+
+      it "renders avatars of all users" do
+        get :render_avatars, params: { project_id: project.id, id: document.id, user_ids: [user.id, non_member.id] },
+                             format: :turbo_stream
+
+        expect(assigns(:users)).to include(user, non_member)
+      end
     end
   end
 

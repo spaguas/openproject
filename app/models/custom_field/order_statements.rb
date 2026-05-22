@@ -36,7 +36,7 @@ module CustomField::OrderStatements
     "list" => :join_for_order_by_list_sql,
     "user" => :join_for_order_by_user_sql,
     "version" => :join_for_order_by_version_sql,
-    %w[hierarchy scored_list] => :join_for_order_by_hierarchy_sql
+    %w[hierarchy weighted_item_list] => :join_for_order_by_hierarchy_sql
   ).freeze
 
   # Returns the expression to use in ORDER BY clause to sort objects by their
@@ -70,7 +70,7 @@ module CustomField::OrderStatements
   # Returns the expression to use in SELECT clause if it differs from one used
   # to group by
   def group_by_select_statement
-    return unless %w[list hierarchy scored_list].include?(field_format)
+    return unless %w[list hierarchy weighted_item_list].include?(field_format)
 
     # MIN needed to not add this column to group by, ANY_VALUE can be used when
     # minimum required PostgreSQL becomes 16
@@ -113,16 +113,16 @@ module CustomField::OrderStatements
   #   ) cf_order_NNN ON cf_order_NNN.customized_id = …
   #
   def join_for_order_sql(value:, add_select: nil, join: nil, multi_value: false)
-    <<-SQL.squish
+    <<~SQL.squish
       LEFT OUTER JOIN (
         SELECT
-          #{multi_value ? '' : 'DISTINCT ON (cv.customized_id)'}
+          #{'DISTINCT ON (cv.customized_id)' unless multi_value}
             cv.customized_id
             , #{value} "value"
             #{", #{add_select}" if add_select}
           FROM #{CustomValue.quoted_table_name} cv
           #{join}
-          WHERE cv.customized_type = #{CustomValue.connection.quote(self.class.customized_class.name)}
+          WHERE cv.customized_type = #{CustomValue.connection.quote(self.class.customized_class.base_class.name)}
             AND cv.custom_field_id = #{id}
             AND cv.value IS NOT NULL
             AND cv.value != ''

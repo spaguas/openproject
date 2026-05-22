@@ -1,7 +1,7 @@
 import { EditFieldHandler } from 'core-app/shared/components/fields/edit/editing-portal/edit-field-handler';
-import { ElementRef, Injectable, Injector } from '@angular/core';
+import { ElementRef, Injectable, Injector, inject } from '@angular/core';
 import { IFieldSchema } from 'core-app/shared/components/fields/field.base';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { GridWidgetResource } from 'core-app/features/hal/resources/grid-widget-resource';
 import { SchemaResource } from 'core-app/features/hal/resources/schema-resource';
 import { HalResourceService } from 'core-app/features/hal/services/hal-resource.service';
@@ -9,25 +9,24 @@ import { ResourceChangeset } from 'core-app/shared/components/fields/changeset/r
 import { SchemaCacheService } from 'core-app/core/schemas/schema-cache.service';
 import { ICKEditorContext } from 'core-app/shared/components/editor/components/ckeditor/ckeditor.types';
 import { GridResource } from 'core-app/features/hal/resources/grid-resource';
+import { HalSource } from 'core-app/features/hal/interfaces';
 
 @Injectable()
 export class CustomTextEditFieldService extends EditFieldHandler {
+  protected elementRef = inject(ElementRef);
+  protected injector = inject(Injector);
+  protected halResource = inject(HalResourceService);
+  protected schemaCache = inject(SchemaCacheService);
+
   public fieldName = 'text';
 
   public valueChanged$:BehaviorSubject<string>;
 
+  public readonly stateChanged$ = new Subject<void>();
+
   public changeset:ResourceChangeset;
 
   public active:boolean;
-
-  constructor(
-    protected elementRef:ElementRef,
-    protected injector:Injector,
-    protected halResource:HalResourceService,
-    protected schemaCache:SchemaCacheService,
-  ) {
-    super();
-  }
 
   public initialize(value:GridWidgetResource) {
     this.initializeChangeset(value);
@@ -92,10 +91,12 @@ export class CustomTextEditFieldService extends EditFieldHandler {
   deactivate():void {
     this.changeset.clear();
     this.active = false;
+    this.stateChanged$.next();
   }
 
   activate() {
     this.active = true;
+    this.stateChanged$.next();
   }
 
   get inEditMode():boolean {
@@ -154,7 +155,7 @@ export class CustomTextEditFieldService extends EditFieldHandler {
     };
 
     if (grid.prepareAttachment as { href?:string }) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       resourceSource._links.prepareAttachment = grid.prepareAttachment;
     }
 

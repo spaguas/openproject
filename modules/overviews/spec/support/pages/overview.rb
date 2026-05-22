@@ -30,6 +30,8 @@
 
 require "support/pages/page"
 
+require_relative "../../../../grids/spec/support/pages/grid"
+
 module Pages
   class Overview < ::Pages::Page
     attr_accessor :project

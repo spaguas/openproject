@@ -26,20 +26,7 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
-import {
-  AfterContentInit,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  EventEmitter,
-  forwardRef,
-  Injector,
-  Input,
-  OnInit,
-  Output,
-  ViewChild,
-  ViewEncapsulation,
-} from '@angular/core';
+import { AfterContentInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, forwardRef, Injector, Input, OnInit, Output, ViewChild, ViewEncapsulation, inject } from '@angular/core';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { onDayCreate, parseDate, setDates } from 'core-app/shared/components/datepicker/helpers/date-modal.helpers';
@@ -53,7 +40,6 @@ import {
   SpotDropModalTeleportationService,
 } from 'core-app/spot/components/drop-modal/drop-modal-teleportation.service';
 
-// eslint-disable-next-line change-detection-strategy/on-push
 @Component({
   selector: 'op-modal-single-date-picker',
   templateUrl: './modal-single-date-picker.component.html',
@@ -67,11 +53,22 @@ import {
     },
   ],
   standalone: false,
+  // TODO: This component has been partially migrated to be zoneless-compatible.
+  // After testing, this should be updated to ChangeDetectionStrategy.OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class OpModalSingleDatePickerComponent implements ControlValueAccessor, OnInit, AfterContentInit {
-  @Output('closed') closed = new EventEmitter();
+  readonly I18n = inject(I18nService);
+  readonly timezoneService = inject(TimezoneService);
+  readonly injector = inject(Injector);
+  readonly cdRef = inject(ChangeDetectorRef);
+  readonly elementRef = inject(ElementRef);
+  readonly spotDropModalTeleportationService = inject(SpotDropModalTeleportationService);
 
-  @Output('valueChange') valueChange = new EventEmitter();
+  @Output() closed = new EventEmitter();
+
+  @Output() valueChange = new EventEmitter();
 
   private _value = '';
 
@@ -141,14 +138,7 @@ export class OpModalSingleDatePickerComponent implements ControlValueAccessor, O
     },
   };
 
-  constructor(
-    readonly I18n:I18nService,
-    readonly timezoneService:TimezoneService,
-    readonly injector:Injector,
-    readonly cdRef:ChangeDetectorRef,
-    readonly elementRef:ElementRef,
-    readonly spotDropModalTeleportationService:SpotDropModalTeleportationService,
-  ) {
+  constructor() {
     populateInputsFromDataset(this);
   }
 

@@ -46,15 +46,24 @@ RSpec.describe "Meeting notifications", :js do
     login_as(user)
   end
 
+  def perform_debounced_meeting_notification_jobs
+    perform_enqueued_jobs(only: Meetings::NotificationDebounceJob, at: 2.minutes.from_now)
+    perform_enqueued_jobs
+  end
+
   shared_examples "notification checkbox behaviour" do
     it "shows checkbox checked initially" do
-      within "#meeting-form" do
+      page.find_by_id("open-meeting-button").click
+
+      within "#exit-draft-mode-dialog" do
         expect(page).to have_field(I18n.t("label_meeting_send_updates"), type: "checkbox", checked: true)
       end
     end
 
     it "toggles banner on checkbox change" do
-      within "#meeting-form" do
+      page.find_by_id("open-meeting-button").click
+
+      within "#exit-draft-mode-dialog" do
         # toggle between checkbox states
         checkbox = find_field(I18n.t("label_meeting_send_updates"))
         expect(page).to have_css(".Banner", text: enabled_text.strip)
@@ -81,23 +90,28 @@ RSpec.describe "Meeting notifications", :js do
       meetings_page.visit!
       meetings_page.click_on "add-meeting-button"
       meetings_page.click_on "One-time"
+      meetings_page.set_title "Some title"
+      meetings_page.click_create
     end
 
     include_examples "notification checkbox behaviour"
 
-    it "sets and toggle the calendar updates state" do
-      meetings_page.set_title "Some title"
-      meetings_page.click_create
-
-      # check if notify is set correct
-      expect(meeting.notify).to be true
-
-      # send initial mail to meeting creator
-      perform_enqueued_jobs
-      expect(ActionMailer::Base.deliveries.size).to eq 1
-      ActionMailer::Base.deliveries.clear
+    it "sets and toggles the calendar updates state" do
+      # check if the default is set correctly
+      expect(meeting.notify).to be false
 
       show_page.visit!
+
+      # check if notify is set to true when opening a meeting without unchecking
+      show_page.open_meeting
+      expect(meeting.reload.notify).to be true
+
+      wait_for_network_idle
+
+      # check if mail is sent on opening meeting (Bug #70109)
+      perform_debounced_meeting_notification_jobs
+      expect(ActionMailer::Base.deliveries.size).to eq 1
+      ActionMailer::Base.deliveries.clear
 
       # check calendar updates sidepanel component
       page.within("[data-test-selector='email-updates-mode-selector']") do
@@ -121,7 +135,7 @@ RSpec.describe "Meeting notifications", :js do
 
       wait_for_network_idle
 
-      perform_enqueued_jobs
+      perform_debounced_meeting_notification_jobs
       expect(ActionMailer::Base.deliveries.size).to eq 1
       ActionMailer::Base.deliveries.clear
 
@@ -174,7 +188,7 @@ RSpec.describe "Meeting notifications", :js do
 
       expect_flash(message: "Email calendar update sent to all participants")
 
-      perform_enqueued_jobs
+      perform_debounced_meeting_notification_jobs
       expect(ActionMailer::Base.deliveries.size).to eq 1
       ActionMailer::Base.deliveries.clear
 
@@ -190,7 +204,7 @@ RSpec.describe "Meeting notifications", :js do
 
       wait_for_network_idle
 
-      perform_enqueued_jobs
+      perform_debounced_meeting_notification_jobs
       expect(ActionMailer::Base.deliveries.size).to eq 0
 
       show_page.trigger_dropdown_menu_item "Delete meeting"
@@ -202,7 +216,7 @@ RSpec.describe "Meeting notifications", :js do
 
       wait_for_network_idle
 
-      perform_enqueued_jobs
+      perform_debounced_meeting_notification_jobs
       expect(ActionMailer::Base.deliveries.size).to eq 0
     end
   end
@@ -220,6 +234,8 @@ RSpec.describe "Meeting notifications", :js do
       page.within(".Overlay") do
         meetings_page.click_on "Recurring"
       end
+      meetings_page.set_title "Some title"
+      meetings_page.click_create
     end
 
     include_examples "notification checkbox behaviour"
@@ -227,33 +243,32 @@ RSpec.describe "Meeting notifications", :js do
 
   context "for a recurring meeting" do
     let(:current_user) { user }
-    let(:meeting) do
-      create :recurring_meeting,
-             :skip_validations,
-             project:,
-             start_time: 1.day.from_now.to_date,
-             duration: 1.5,
-             frequency: "weekly",
-             end_after: "specific_date",
-             end_date: 1.year.from_now.to_date,
-             author: current_user
-    end
+    let(:meetings_page) { Pages::Meetings::Index.new(project:) }
+    let(:meeting) { RecurringMeeting.last }
     let(:show_page) { Pages::RecurringMeeting::Show.new(meeting) }
     let(:template_page) { Pages::Meetings::Show.new(meeting.template) }
     let(:occurrence_page) { Pages::Meetings::Show.new(meeting.meetings.where(template: false).first) }
 
+    before do
+      meetings_page.visit!
+      meetings_page.click_on "add-meeting-button"
+      page.within(".Overlay") do
+        meetings_page.click_on "Recurring"
+      end
+      meetings_page.set_title "Some title"
+      meetings_page.click_create
+    end
+
     it "can set and toggle the calendar updates state for the template and occurrences" do
       template_page.visit!
 
-      expect(meeting.template.notify).to be true
-      page.within("#meetings-header-component") do
-        click_on "Open first meeting"
-      end
+      expect(meeting.template.notify).to be false
+      template_page.open_first_meeting
 
       wait_for_network_idle
 
       # check if mail is sent on opening first meeting
-      perform_enqueued_jobs
+      perform_debounced_meeting_notification_jobs
       expect(ActionMailer::Base.deliveries.size).to eq 1
       ActionMailer::Base.deliveries.clear
 
@@ -283,7 +298,7 @@ RSpec.describe "Meeting notifications", :js do
 
       wait_for_network_idle
 
-      perform_enqueued_jobs
+      perform_debounced_meeting_notification_jobs
       expect(ActionMailer::Base.deliveries.size).to eq 1
       ActionMailer::Base.deliveries.clear
 
@@ -314,7 +329,7 @@ RSpec.describe "Meeting notifications", :js do
 
       wait_for_network_idle
 
-      perform_enqueued_jobs
+      perform_debounced_meeting_notification_jobs
       expect(ActionMailer::Base.deliveries.size).to eq 1
       ActionMailer::Base.deliveries.clear
 
@@ -359,14 +374,71 @@ RSpec.describe "Meeting notifications", :js do
       wait_for_network_idle
       expect_flash(type: :success, message: "Successful deletion.")
 
-      perform_enqueued_jobs
+      perform_debounced_meeting_notification_jobs
       expect(ActionMailer::Base.deliveries.size).to eq 0
+    end
+
+    it "sends out an invite notification when enabling notifications on a series template (Bug #70178)" do
+      template_page.visit!
+
+      template_page.open_first_meeting
+      wait_for_network_idle
+
+      # check for initial invitation mail
+      perform_debounced_meeting_notification_jobs
+      expect(ActionMailer::Base.deliveries.size).to eq 1
+      ActionMailer::Base.deliveries.clear
+
+      template_page.visit!
+      expect(meeting.template.reload.notify).to be true
+
+      page.within("[data-test-selector='email-updates-mode-selector']") do
+        click_on "Disable"
+      end
+
+      template_page.expect_modal "Disable email calendar updates?"
+      template_page.within_modal "Disable email calendar updates?" do
+        click_on "Disable email updates"
+      end
+
+      wait_for_network_idle
+      expect(meeting.template.reload.notify).to be false
+
+      page.within("[data-test-selector='email-updates-mode-selector']") do
+        click_on "Enable"
+      end
+
+      template_page.expect_modal "Enable email calendar updates?"
+      template_page.within_modal "Enable email calendar updates?" do
+        click_on "Enable email updates"
+      end
+
+      wait_for_network_idle
+
+      expect_flash(message: "Email calendar update sent to all participants")
+      expect(meeting.template.reload.notify).to be true
+
+      # check for invitation mail on re-enabling notifications
+      perform_debounced_meeting_notification_jobs
+      expect(ActionMailer::Base.deliveries.size).to eq 1
     end
   end
 
   context "when a meeting is closed" do
     let(:current_user) { user }
     let(:meeting) { create(:meeting, project:, author: current_user, notify: true, state: :closed) }
+    let(:show_page) { Pages::Meetings::Show.new(meeting) }
+
+    it "does not show the sidebar component" do
+      show_page.visit!
+
+      expect(page).to have_no_css("[data-test-selector='email-updates-mode-selector']")
+    end
+  end
+
+  context "when a meeting is in draft state" do
+    let(:current_user) { user }
+    let(:meeting) { create(:meeting, project:, author: current_user, notify: true, state: :draft) }
     let(:show_page) { Pages::Meetings::Show.new(meeting) }
 
     it "does not show the sidebar component" do
@@ -394,6 +466,151 @@ RSpec.describe "Meeting notifications", :js do
       show_page.visit!
 
       expect(page).to have_no_css("[data-test-selector='email-updates-mode-selector']")
+    end
+  end
+
+  context "when managing participants" do
+    let(:current_user) { user }
+    let(:other_user) do
+      create(:user,
+             lastname: "Second",
+             member_with_permissions: { project => %i[view_meetings] })
+    end
+    let(:third_user) do
+      create(:user,
+             lastname: "Third",
+             member_with_permissions: { project => %i[view_meetings] })
+    end
+    let(:meeting) do
+      create(:meeting, project:, author: user, notify: true, state: :in_progress).tap do |m|
+        create(:meeting_participant, meeting: m, user:, invited: true)
+        create(:meeting_participant, meeting: m, user: other_user, invited: true)
+      end
+    end
+    let(:show_page) { Pages::Meetings::Show.new(meeting) }
+
+    before do
+      third_user
+    end
+
+    it "notifies all existing participants when a new participant is added" do
+      show_page.visit!
+
+      show_page.open_participant_form
+      show_page.in_participant_form do
+        show_page.select_participant(third_user)
+        wait_for_network_idle
+        show_page.expect_participant(third_user)
+      end
+
+      perform_debounced_meeting_notification_jobs
+
+      # 1 to the invited user + 2 to the existing participants
+      expect(ActionMailer::Base.deliveries.size).to eq 3
+
+      expect(ActionMailer::Base.deliveries.map(&:to).flatten)
+        .to contain_exactly user.mail, other_user.mail, third_user.mail
+    end
+
+    it "notifies all remaining participants when a participant is removed" do
+      create(:meeting_participant, meeting:, user: third_user, invited: true)
+
+      show_page.visit!
+      ActionMailer::Base.deliveries.clear
+
+      show_page.open_participant_form
+      show_page.in_participant_form do
+        show_page.remove_participant(third_user)
+      end
+
+      wait_for_network_idle
+
+      perform_debounced_meeting_notification_jobs
+
+      # 1 to the removed user + 2 to the existing participants
+      expect(ActionMailer::Base.deliveries.size).to eq 3
+
+      expect(ActionMailer::Base.deliveries.map(&:to).flatten)
+        .to contain_exactly user.mail, other_user.mail, third_user.mail
+    end
+  end
+
+  context "when managing participants for a meeting series template" do
+    let(:current_user) { user }
+    let(:other_user) do
+      create(:user,
+             lastname: "Second",
+             member_with_permissions: { project => %i[view_meetings] })
+    end
+    let(:third_user) do
+      create(:user,
+             lastname: "Third",
+             member_with_permissions: { project => %i[view_meetings] })
+    end
+    let(:recurring_meeting) { create(:recurring_meeting, project:, author: user) }
+    let(:template_meeting) { recurring_meeting.template }
+    let(:show_page) { Pages::Meetings::Show.new(template_meeting) }
+
+    before do
+      template_meeting.update!(notify: true)
+      # After the scheduled_meetings refactor, InitNextOccurrenceJob creates a real Meeting
+      # occurrence record. Both tests require this occurrence to exist:
+      # send_emails? returns false for a series template that has no
+      # non-cancelled occurrence Meeting records. The "add participant" test additionally relies
+      # on it so that add_to_upcoming_occurrences can propagate the new participant to the occurrence,
+      # which is why that test now expects 5 emails instead of the previous 3.
+      RecurringMeetings::InitNextOccurrenceJob.perform_now(recurring_meeting, recurring_meeting.first_occurrence.to_time)
+      create(:meeting_participant, meeting: template_meeting, user: other_user, invited: true)
+      third_user
+    end
+
+    it "notifies all existing participants when a new participant is added" do
+      show_page.visit!
+      ActionMailer::Base.deliveries.clear
+
+      show_page.open_participant_form
+      show_page.in_participant_form do
+        show_page.select_participant(third_user)
+        wait_for_network_idle
+        show_page.expect_participant(third_user, editable: false)
+      end
+
+      perform_debounced_meeting_notification_jobs
+
+      # apply_to_upcoming is enabled by default on templates, but occurrence propagation
+      # runs with notify: false. Only the template sends mails:
+      # 1 invite to the new participant + 2 updates to existing participants.
+      expect(ActionMailer::Base.deliveries.size).to eq 3
+
+      recipients = ActionMailer::Base.deliveries.map(&:to).flatten
+      expect(recipients.tally)
+        .to eq({
+                 user.mail => 1,
+                 other_user.mail => 1,
+                 third_user.mail => 1
+               })
+    end
+
+    it "notifies all remaining participants when a participant is removed" do
+      create(:meeting_participant, meeting: template_meeting, user: third_user, invited: true)
+
+      show_page.visit!
+      ActionMailer::Base.deliveries.clear
+
+      show_page.open_participant_form
+      show_page.in_participant_form do
+        show_page.remove_participant(third_user)
+      end
+
+      wait_for_network_idle
+
+      perform_debounced_meeting_notification_jobs
+
+      # 1 to the removed user + 2 to the existing participants
+      expect(ActionMailer::Base.deliveries.size).to eq 3
+
+      expect(ActionMailer::Base.deliveries.map(&:to).flatten)
+        .to contain_exactly user.mail, other_user.mail, third_user.mail
     end
   end
 end

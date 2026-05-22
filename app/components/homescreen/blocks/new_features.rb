@@ -31,12 +31,28 @@
 module Homescreen
   module Blocks
     class NewFeatures < Grids::WidgetComponent
+      ALLOWED_FILE_TYPES = %w[jpg png jpeg svg].freeze
+
       def title
         I18n.t(:label_new_features)
       end
 
       def feature_teaser_image
-        "#{feature_version}_features.svg"
+        defined?(@feature_teaser_image) || begin
+          @feature_teaser_image = ALLOWED_FILE_TYPES
+            .map { |extension| feature_teaser_image_name(extension:) }
+            .detect { |name| helpers.has_rails_asset?(name) }
+        end
+
+        @feature_teaser_image
+      end
+
+      def feature_teaser_image_name(extension:)
+        "#{feature_version}_features.#{extension}"
+      end
+
+      def has_image?
+        feature_teaser_image.present?
       end
 
       def new_features_header
@@ -53,7 +69,7 @@ module Homescreen
       end
 
       def new_features
-        I18n.t("#{base_i18n_key}.new_features_list")
+        I18n.t("#{base_i18n_key}.new_features_list").values
       end
 
       def teaser_exists?

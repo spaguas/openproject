@@ -19,8 +19,7 @@ Change your personal settings under Account settings (earlier called My account)
 | [Two-factor authentication](#two-factor-authentication)   | How to set up a two-factor authentication                    |
 | [Access tokens](#access-tokens)                           | How to set up access tokens in OpenProject                   |
 | [Session management](#sessions-management)                | How to manage your OpenProject sessions                      |
-| [Notifications settings](#notifications-settings)         | How to change in-app notifications in OpenProject            |
-| [Email reminders](#email-reminders)                       | How to change email reminders sent by OpenProject            |
+| [Notification and email](#notification-and-email)         | How to change in-app notifications and email reminders in OpenProject |
 | [Set an Avatar](#set-an-avatar)                           | How to set an avatar in OpenProject and change the profile picture |
 | [Delete account](#delete-account)                         | How to delete my own account                                 |
 
@@ -36,16 +35,28 @@ Choose **Account settings**.
 
 To change your email address or your name, navigate to **Profile** on the left side menu of **Account settings** page.
 
-Here you can update the information and **save** your changes. If you're changing the email address of your account, you will be requested to confirm your account password before you can continue. 
+Here you can **update** or delete your profile. If you're changing the email address of your account, you will be requested to confirm your account password before you can continue. 
 
 > [!NOTE] 
->
 > This applies only to internal accounts where OpenProject can verify the password.
 
 > [!TIP]
 > Please note that 'Hide my email' checkbox was removed from account settings with OpenProject 15.0.  The function was replaced by [the new Standard global role](../../system-admin-guide/users-permissions/roles-permissions/#standard), which regulates this permission on an instance level. 
 
 ![Profile settings in OpenProject](openproject_account_settings_profile.png)
+
+## Delete account
+
+You can delete your own account in **Account settings**.
+
+To delete your account, navigate to *Account settings* -> *Account* and click the **Delete** button in the top right corner.  You will be asked to confirm that you understand that this deletion is permanent. 
+
+![Confirmation dialog to delete account under OpenProject account settings](openproject_account_settings_delete_account.png)
+
+> [!WARNING]
+> Deleting a user account is permanent and cannot be reversed.
+
+If you cannot see the entry **Delete** button under your **Account settings**, make sure the option "Users allowed to delete their account" is [activated in the administration](../../system-admin-guide/users-permissions/settings/#user-deletion).
 
 ## Language and region settings
 
@@ -88,15 +99,15 @@ Click **Update look and feel** to save your changes.
 
 #### Select the high contrast color mode
 
-In the dropdown menu **Color mode** you can pick the color mode. The default setting is the **Light mode**. You can also select the **Light high contrast mode**, which will significantly increase the contrast and override the color theme of the OpenProject instance for you.
+In the dropdown menu **Color mode** you can pick the color mode. The default setting is the **Light mode**. You can increase the contrast by activating the **Increase contrast** setting, which will significantly increase the contrast and override the color theme of the OpenProject instance for you.
 
 This mode is recommended for users with visuals impairment.
 
-![High contrast mode in OpenProject account settings](openproject_account_settings_settings_light_high_contrast_mode.png)
+![Light mode with increased contrast selected in OpenProject account settings](openproject_account_settings_settings_light_high_contrast_mode.png)
 
 #### Select the dark mode
 
-In the dropdown menu **Color mode** you can pick the color mode. The default setting is **Light mode**. You can also alternatively select **Dark** or **Dark high contrast** modes.
+In the dropdown menu **Color mode** you can pick the color mode. The default setting is **Light mode**. You can also alternatively select **Dark** mode and activate the **Increase contrast** setting for the **Dark high contrast** mode.
 
 > [!NOTE]
 > Custom colors and themes are only supported in Light mode and changing color modes may override most or all custom configuration. Only some colors (accent and primary button color) are kept but adapted for appropriate contrast in certain modes like dark mode.
@@ -105,11 +116,11 @@ In the dropdown menu **Color mode** you can pick the color mode. The default set
 
 #### Select automatic color mode
 
-In the dropdown menu Color mode, you can now also select the **Automatic option, which will match the color mode of your operating system**.
+In the dropdown menu Color mode, you can now also select the **Automatic option, which will match the color mode of your operating system**. 
 
 ![Automatic color mode in OpenProject account settings](openproject_account_settings_automatic_os_mode.png)
 
-If this option is selected, OpenProject will automatically match your operating system’s light or dark theme.
+If this option is selected, OpenProject will automatically match your operating system’s light or dark theme, including the system's contrast settings. You will also see additional settings to force high-contrast when Light or Dark mode is selected — this would ensure that OpenProject always increases contrast in automatic mode, regardless of the system contrast settings.
 
 If your operating system is set to high contrast mode, OpenProject will also automatically switch to the corresponding high contrast mode (light or dark).
 
@@ -135,9 +146,7 @@ Additionally, you can activate to **auto-hide success notifications** from the s
 
 ### Backlogs settings
 
-There are two personal settings available for the [Backlogs module](../../user-guide/backlogs-scrum/):
-
-**Task color**: Here you can enter the color in which your tasks on the task board (on the Backlogs page) are displayed. Tasks on the task board are color-coded based on who they are assigned to. Every user has a default color assigned but if you prefer a different color, you can change it.
+There is a personal settings available for the [Backlogs module](../../user-guide/backlogs-scrum/):
 
 **Show versions folded**: When you navigate to the "Backlogs" module in a project, the available versions (e.g. Product backlog, Sprints) are displayed. By default they are expanded, i.e. all work packages included in those versions are shown right away. If you have a large number of versions that are shown on the "Backlogs" page, you may opt to collapse them by default. This way you see all the versions on a page and can then choose to expand those versions for which you want to see details.
 
@@ -147,11 +156,13 @@ There are two personal settings available for the [Backlogs module](../../user-g
 
 In order to reset your password, navigate to  **Account settings** and choose **Change password** in the menu.
 
-![Change password under account settings in OpenProject](openproject_account_settings_change_password.png)
+![Change password under account settings in OpenProject](openproject_account_settings_change_new_password.png)
 
 Enter your current password.
 
-Enter your new password and confirm it a second time.
+Enter your new password and ensure all password requirements are met.
+
+Confirm it a second time.
 
 Press the **Save** button in order to confirm the password changes.
 
@@ -212,23 +223,43 @@ If you have created backup codes before, they will be invalidated and will no lo
 
 ## Access tokens
 
-To view and manage your OpenProject access tokens navigate to **Account settings** and choose **Access tokens** from the menu.
-Access tokens allow you to grant external applications access to resources in OpenProject.
+To view and manage your OpenProject access tokens navigate to **Account settings** and choose **Access tokens** from the menu. Access tokens allow you to grant external applications access to resources in OpenProject. 
 
-### API
+![Access tokens overview in OpenProject account settings](openproject_account_settings_access_tokens.png)
 
-API tokens allow third-party applications to communicate with this OpenProject instance via REST APIs. If you have not yet created an API token, this list will be empty. You may need admin privileges to be able to create an API token.
+Access tokens are organized into two tabs: Provider tokens and Client tokens. Provider tokens are generated by OpenProject and enable other applications to connect to it. Client tokens are generated by external applications and allow OpenProject to connect to them.
 
-You can enable an API token under [*Administration -> API and webhooks*](../../system-admin-guide/api-and-webhooks/).
+### Provider tokens
+
+Provider tokens are created in OpenProject and allow external applications to access OpenProject. They include API, iCalendar, iCalendar for meetings, OAuth, and RSS tokens.
+
+#### API
+
+API tokens allow third-party applications to communicate with this OpenProject instance via REST APIs. If no API tokens were created yet, this list will be empty. You can enable API REST web service and CORS under [*Administration -> API and webhooks*](../../system-admin-guide/api-and-webhooks/).
 
 ![Access tokens in OpenProject account settings](openproject_account_settings_access_tokens_api.png)
 
-### iCalendar
+To create a new API Token, click the **+ API Token**, name the token in the form that opens and click *Create* button. 
+
+![Name and create a new API token in OpenProject](openproject_account_settings_access_tokens_api_create_new.png)
+
+A new API token will be generated and displayed. Please keep in mind that each token will only be displayed once when it is created, so it's important to copy and safely save it. Should you lose this information, you CAN delete old tokens and generate new ones. 
+
+> [!TIP]
+> We recommend using each token only for one purpose (e.g. a single application), so that you know exactly what needs to be replaced, should you need to delete it. 
+
+![A message confirming successful generation of a new API storage in OpenProject](openproject_account_settings_access_tokens_api_generated.png)
+
+#### iCalendar
 
 iCalendar tokens allow users to subscribe to OpenProject calendars and view up-to-date work package information from external clients.
-This list will be empty if you have no calendar subscriptions yet. Once you [subscribe to a calendar](../../user-guide/calendar/#subscribe-to-a-calendar), a list of all the calendars that you have subscribed to will appear here. The name of the calendar is clickable and will lead you directly to the respective calendar in OpenProject.
+This list will be empty if you have no calendar subscriptions yet. 
 
-![OpenProject calendar list under account settings](openproject_account_settings_access_tokens_calendar_list.png)
+![OpenProject calendar list under account settings showing no calendars were subscribed to yet](openproject_account_settings_access_tokens_calendar_list.png)
+
+Once you [subscribe to a calendar](../../user-guide/calendar/#subscribe-to-a-calendar), a list of all the calendars that you have subscribed to will appear here. The name of the calendar is clickable and will lead you directly to the respective calendar in OpenProject.
+
+![OpenProject calendar list under account settings showing calendar tokens](openproject_account_settings_access_tokens_calendar_list_with_content.png)
 
 You can delete an entry in the iCalendar list by clicking on the **Delete** icon. This will trigger a warning message asking you to confirm the decision to delete.  By deleting this token you will no longer have access to OpenProject information in all the linked clients using this token.
 
@@ -238,28 +269,69 @@ You will then see a message informing you that the the token und the iCal URL ar
 
 ![OpenProject calendar access token is invalid](openproject_account_settings_access_tokens_calendar_invalid.png)
 
-### OAUTH
+#### iCalendar for meetings
+iCalendar meeting tokens allow users to subscribe to all their meetings and view up-to-date meeting information in external clients. 
 
-OAuth tokens allow third-party applications to connect with this OpenProject instance, for example Nextcloud (see [here](../../user-guide/file-management/nextcloud-integration/) how to set up Nextcloud integration).  OAuth tokens can be created under [*Administration-> Authentication*](../../system-admin-guide/authentication/).
+This list will be empty if you have no calendar subscriptions yet. Once you subscribe to a meetings calendar, a list of all the iCalendar meeting tokens will appear here. 
 
-If no third-party application integration has been activated yet, this list will be empty. Please contact your administrator to help you set it up. Once an integration has been set up, you will see the details here and will be able to delete any OAuth tokens by clicking on the **Delete** icon.
+To subscribe click the **Subscribe to calendar** button directly in your account settings or in the [meetings module](../meetings/#subscribe-to-meetings). 
+
+![A "subscribe to calendar" button to subscribe to OpenProject meetings under account settings](openproject_account_settings_access_tokens_subscribe_button.png)
+
+You can then name the subscription meeting token and click **Create subscription**.
+
+![Form to create a new iCal subscription token for meetings in OpenProject account settings](openproject_account_settings_access_tokens_subscribe_meetings_form.png)
+
+You will then see the newly generated token. 
+
+> [!IMPORTANT]
+> This is the only time that it will be displayed. Make sure that you copy it and safely save it. 
+
+![A newly generated iCal meeting subscription token in OpenProject account settings](openproject_account_settings_access_tokens_subscribe_meetings_form_confirmation.png)
+
+To delete an iCal meeting token under Account settings click the *Delete* icon next to the respective token name. 
+
+![Delete icon to remove a meeting iCal token under OpenProject account settings](openproject_account_settings_access_tokens_meetings_delete.png)
+
+#### OAuth
+
+OAuth tokens allow third-party applications to connect with this OpenProject instance, for example Nextcloud (see [here](../../user-guide/file-management/nextcloud-integration/) how to set up Nextcloud integration).  OAuth applications can be created under [*Administration-> Authentication*](../../system-admin-guide/authentication/).
+
+OAuth tokens are not created directly in OpenProject. Instead, the authorization process is started from the external application. During setup, you will be redirected to OpenProject to confirm access and then returned to the external application to complete the connection.
+
+If no third-party application integration has been activated yet, this list will be empty. Please contact your administrator to help you set it up. 
+
+Once integrations exist, their tokens will appear here. You can revoke access at any time by selecting the **Delete** icon. Removing a token immediately removes the external application’s permission to act on your behalf, meaning it can no longer make API calls in your name. If you want to use the integration again, you will need to authorize it again.
 
 ![OpenProject OAuth tokens under My Account](openproject_account_settings_access_tokens_oauth.png)
 
-### RSS
+#### RSS
 
 RSS tokens allow users to keep up with the latest changes in this OpenProject instance via an external RSS reader.  You can only have one active RSS token.
 
-Create a new token by clicking the **+RSS token** button. This will create your token and trigger a message showing you the access token.
+Create a new token by clicking the **RSS token** button. 
+
+![OpenProject RSS token under account settings](openproject_account_settings_access_tokens_rss.png)
+This will create your token and trigger a message showing you the access token.
 
 > [!IMPORTANT]
 > You will only be able to see the RSS access token once, directly after you create it. Make sure to copy it.
 
-![OpenProject RSS token](openproject_account_settings_access_tokens_rss.png)
+![New RSS token created in OpenProject](openproject_account_settings_access_tokens_rss_new.png)
 
-### File storages
+Once an  RSS token was created, you will see the details here and will be able to delete it by clicking the **Delete** icon.
 
-File Storage tokens connect your OpenProject instance with an external File Storage. If you have not yet logged into any of the file storages activated for your instance, this list will be empty. You can delete tokens by clicking on the **Delete** icon.
+![Delete RSS token icon under OpenProject account settings](openproject_account_settings_access_tokens_rss_delete.png)
+
+### Client tokens 
+
+Client tokens are generated by external applications and enable OpenProject to connect to them.
+
+#### OAuth
+
+OAuth client tokens allow this OpenProject instance to connect with external applications.
+
+If you have not yet linked your account to any of the integrations activated for your instance, this list will be empty. You can delete tokens by clicking the **Delete** icon.
 
 ![File storages access tokens under Account settings in OpenProject](openproject_account_settings_access_tokens_file_storages.png)
 
@@ -270,18 +342,20 @@ To view and manage your OpenProject sessions navigate to **Account settings** an
 
 ![Sessions management in OpenProject account settings](openproject_account_settings_sessions_management.png)
 
-Here you can view and manage all of your active and remembered sessions in one place. Each row shows the browser, device, expiry date and last connection timestamp. For your current session the “Last connection” column displays **“Current (this device)”**.
+Here you can view and manage all of your active and remembered sessions in one place. Each row shows the browser, device, expiration date and last connection timestamp. For your current session the “Last connection” column displays **“Current (this device)”**.
 
 You can revoke a session at any time by clicking the **×** icon at the end of the row. Hover over the icon to see the **“Revoke”** tooltip. When you click, a confirmation message appears.
 
-Sessions expire automatically according to your instance’s authentication settings. Remembered sessions show their expiry in relative time (for example “in 5 days”).
+Sessions expire automatically according to your instance’s authentication settings. Remembered sessions show their expiration in relative time (for example “in 5 days”).
 
 > [!NOTE]
 > Closing a browser does not necessarily terminate the session. It might still be displayed in the list and will be reactivated if you open the browser. This depends on both your browser's and the OpenProject instance's settings.
 
-## Notifications settings
+## Notification and email
 
-To configure the notification settings which you receive from the system, navigate to **Account settings** and choose **Notifications settings** in the menu.
+To configure the notification settings which you receive from the system, navigate to **Account settings** and choose **Notification and email** from the menu.
+
+### Notification settings
 
 ![Notification settings in OpenProject account settings](openproject_account_settings_notification_settings.png)
 
@@ -289,9 +363,11 @@ In-app notifications can be configured and customized various ways. For a detail
 
 Please also see our detailed [in-app notifications](../../user-guide/notifications/) guide to gain a general understanding.
 
-## Email reminders
+### Email reminders
 
-To configure the email reminders which you receive from the system, navigate to **Account settings** and choose **Email reminders** in the menu. Your system administrator can also set them for you or change the global default settings.
+To configure the email reminders which you receive from the system, switch to the **email reminders tab.** Your system administrator can also set them for you or change the global default settings.
+
+![Email reminders in OpenProject account settings](openproject_account_settings_email_reminders1.png)
 
 ![Email reminders in OpenProject account settings](openproject_account_settings_email_reminders.png)
 
@@ -326,17 +402,4 @@ OpenProject uses Gravatar as default profile image. It displays a preview of you
 Also, you can upload a **Custom Avatar** by choosing a Avatar to be uploaded from a file. Press the blue **Update** button to change your profile picture.
 
 > [!TIP]
-> The optimum size to upload a new profile picture is 128 by 128 pixel. Larger files will be cropped.
-
-## Delete account
-
-You can delete your own account in **Account settings**.
-
-To delete your account, select **Delete account** from the side menu and enter your login to confirm the deletion.
-
-![Delete account under OpenProject account settings](openproject_account_settings_delete_account.png)
-
-> [!WARNING]
-> Deleting a user account is permanent and cannot be reversed.
-
-If you cannot see the entry **Delete account** in the **Account settings** side menu, make sure the option "Users allowed to delete their account" is [activated in the administration](../../system-admin-guide/users-permissions/settings/#user-deletion).
+> The optimum size to upload a new profile picture is 128 by 128 pixels. Larger files will be cropped.

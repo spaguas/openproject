@@ -34,15 +34,10 @@ RSpec.describe Projects::StatusController do
   shared_let(:user) { create(:admin) }
   current_user { user }
 
-  let(:project) { build_stubbed(:project) }
+  let(:project) { create(:project) }
   let(:service_result) { ServiceResult.failure }
 
   before do
-    allow(Project)
-      .to receive(:find)
-            .with(project.identifier)
-            .and_return(project)
-
     update_service = instance_double(Projects::UpdateService, call: service_result)
 
     allow(Projects::UpdateService)
@@ -67,7 +62,7 @@ RSpec.describe Projects::StatusController do
       it "renders turbo streams updating Projects::StatusButtonComponent and flash action", :aggregate_failures do
         expect(response).to be_successful
         expect(assigns(:project)).to eq project
-        expect(response).to have_turbo_stream action: "update", target: "projects-status-button-component"
+        expect(response).to have_turbo_stream action: "update", target: "projects-status-button-component-#{project.id}"
         expect(response).to have_turbo_stream action: "flash", target: "op-primer-flash-component"
       end
     end
@@ -109,6 +104,24 @@ RSpec.describe Projects::StatusController do
         let(:service_result) { ServiceResult.success(result: project) }
 
         it_behaves_like "successful update"
+
+        context "when updating a status via turbo stream" do
+          let(:format) { :turbo_stream }
+
+          it "includes the default size of medium in the response by default" do
+            parsed_response = Nokogiri::HTML.fragment(response.body)
+            expect(parsed_response.css(".op-status-button .Button--medium")).to be_present
+          end
+
+          context "when a size parameter is given" do
+            let(:params) { { status_code: :foo, status_size: "small" } }
+
+            it "keeps the given size for the turbo stream update" do
+              parsed_response = Nokogiri::HTML.fragment(response.body)
+              expect(parsed_response.css(".op-status-button .Button--small")).to be_present
+            end
+          end
+        end
       end
 
       context "when service call fails" do

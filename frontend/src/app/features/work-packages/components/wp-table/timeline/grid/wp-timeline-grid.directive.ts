@@ -25,11 +25,7 @@
 //
 // See COPYRIGHT and LICENSE files for more details.
 //++
-import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-} from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject } from '@angular/core';
 import moment, { Moment } from 'moment';
 import { TimelineZoomLevel } from 'core-app/features/hal/resources/query-resource';
 import { WorkPackageTimelineTableController } from '../container/wp-timeline-container.directive';
@@ -46,21 +42,23 @@ import { WeekdayService } from 'core-app/core/days/weekday.service';
   selector: 'wp-timeline-grid',
   template: '<div class="wp-table-timeline--grid"></div>',
   standalone: false,
+  // TODO: This component has been partially migrated to be zoneless-compatible.
+  // After testing, this should be updated to ChangeDetectionStrategy.OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class WorkPackageTableTimelineGrid implements AfterViewInit {
+  private elementRef = inject(ElementRef);
+  wpTimeline = inject(WorkPackageTimelineTableController);
+  private weekdaysService = inject(WeekdayService);
+
   private activeZoomLevel:TimelineZoomLevel;
 
-  private gridContainer:JQuery;
-
-  constructor(
-    private elementRef:ElementRef,
-    public wpTimeline:WorkPackageTimelineTableController,
-    private weekdaysService:WeekdayService,
-  ) {}
+  private gridContainer:HTMLElement;
 
   ngAfterViewInit():void {
-    const $element = jQuery(this.elementRef.nativeElement);
-    this.gridContainer = $element.find('.wp-table-timeline--grid');
+    const element = this.elementRef.nativeElement;
+    this.gridContainer = element.querySelector('.wp-table-timeline--grid');
     this.wpTimeline.onRefreshRequested('grid', (vp:TimelineViewParameters) => this.refreshView(vp));
   }
 
@@ -69,7 +67,7 @@ export class WorkPackageTableTimelineGrid implements AfterViewInit {
   }
 
   private renderLabels(vp:TimelineViewParameters):void {
-    this.gridContainer.empty();
+    this.gridContainer.innerHTML = '';
 
     switch (vp.settings.zoomLevel) {
       case 'days':
@@ -170,7 +168,7 @@ export class WorkPackageTableTimelineGrid implements AfterViewInit {
       cell.classList.add(timelineElementCssClass, timelineGridElementCssClass);
       cell.style.left = calculatePositionValueForDayCount(vp, start.diff(startView, 'days'));
       cell.style.width = calculatePositionValueForDayCount(vp, end.diff(start, 'days') + 1);
-      this.gridContainer[0].appendChild(cell);
+      this.gridContainer.appendChild(cell);
       cellCallback(start, cell);
     }
     setTimeout(() => {
@@ -179,7 +177,7 @@ export class WorkPackageTableTimelineGrid implements AfterViewInit {
         cell.classList.add(timelineElementCssClass, timelineGridElementCssClass);
         cell.style.left = calculatePositionValueForDayCount(vp, start.diff(startView, 'days'));
         cell.style.width = calculatePositionValueForDayCount(vp, end.diff(start, 'days') + 1);
-        this.gridContainer[0].appendChild(cell);
+        this.gridContainer.appendChild(cell);
         cellCallback(start, cell);
       }
     }, 0);

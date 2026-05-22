@@ -34,18 +34,24 @@ class Projects::StatusButtonComponent < ApplicationComponent
   include OpPrimer::ComponentHelpers
   include ProjectStatusHelper
 
-  attr_reader :project, :user, :hide_help_text
+  attr_reader :project, :user, :hide_help_text, :hide_help_text_caption
   alias :hide_help_text? :hide_help_text
+  alias :hide_help_text_caption? :hide_help_text_caption
 
-  def initialize(project:, user:, size: :medium, hide_help_text: false)
+  def initialize(project:, user:, size: :medium, hide_help_text: false, hide_help_text_caption: false)
     super
 
     @project = project
     @user = user
     @size = size
     @hide_help_text = hide_help_text
+    @hide_help_text_caption = hide_help_text_caption
 
     @status = find_status(project.status_code)
+  end
+
+  def wrapper_uniq_by
+    project
   end
 
   private
@@ -70,7 +76,7 @@ class Projects::StatusButtonComponent < ApplicationComponent
       icon: status.icon,
       item_id: status.id,
       tag: :a,
-      href: project_status_path(project, status_code: status.value),
+      href: project_status_path(project, status_code: status.value, status_size: @size),
       content_arguments: {
         data: { turbo_method: status.value ? :put : :delete },
         aria: { current: (true if status == @status) }

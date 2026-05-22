@@ -39,6 +39,7 @@ import { OpSharedModule } from 'core-app/shared/shared.module';
 import { OpSpotModule } from 'core-app/spot/spot.module';
 import { OpDragScrollDirective } from 'core-app/shared/directives/op-drag-scroll/op-drag-scroll.directive';
 import { OpenprojectWorkPackagesModule } from 'core-app/features/work-packages/openproject-work-packages.module';
+import { OpenprojectBoardsModule } from 'core-app/features/boards/openproject-boards.module';
 import { OpenprojectAttachmentsModule } from 'core-app/shared/components/attachments/openproject-attachments.module';
 import { OpenprojectEditorModule } from 'core-app/shared/components/editor/openproject-editor.module';
 import { OpenprojectGridsModule } from 'core-app/shared/components/grids/openproject-grids.module';
@@ -59,7 +60,6 @@ import {
   OpenprojectMembersModule,
 } from 'core-app/shared/components/autocompleter/members-autocompleter/members.module';
 import { OpenprojectAugmentingModule } from 'core-app/core/augmenting/openproject-augmenting.module';
-import { OpenprojectInviteUserModalModule } from 'core-app/features/invite-user-modal/invite-user-modal.module';
 import { OpenprojectModalModule } from 'core-app/shared/components/modal/modal.module';
 import {
   RevitAddInSettingsButtonService,
@@ -68,9 +68,6 @@ import { OpenprojectEnterpriseModule } from 'core-app/features/enterprise/openpr
 import { ConfirmDialogService } from 'core-app/shared/components/modals/confirm-dialog/confirm-dialog.service';
 import { ConfirmDialogModalComponent } from 'core-app/shared/components/modals/confirm-dialog/confirm-dialog.modal';
 import { DynamicContentModalComponent } from 'core-app/shared/components/modals/modal-wrapper/dynamic-content.modal';
-import {
-  PasswordConfirmationModalComponent,
-} from 'core-app/shared/components/modals/request-for-confirmation/password-confirmation.modal';
 import {
   OpHeaderProjectSelectComponent,
 } from 'core-app/shared/components/header-project-select/header-project-select.component';
@@ -139,12 +136,6 @@ import {
 } from 'core-app/shared/components/autocompleter/draggable-autocomplete/draggable-autocomplete.component';
 import { OpExclusionInfoComponent } from 'core-app/shared/components/fields/display/info/op-exclusion-info.component';
 import { OpenProjectJobStatusModule } from 'core-app/features/job-status/openproject-job-status.module';
-import {
-  NotificationsSettingsPageComponent,
-} from 'core-app/features/user-preferences/notifications-settings/page/notifications-settings-page.component';
-import {
-  ReminderSettingsPageComponent,
-} from 'core-app/features/user-preferences/reminder-settings/page/reminder-settings-page.component';
 import { OpenProjectMyAccountModule } from 'core-app/features/user-preferences/user-preferences.module';
 import { OpAttachmentsComponent } from 'core-app/shared/components/attachments/attachments.component';
 import {
@@ -153,6 +144,15 @@ import {
 import {
   WorkPackageSplitViewEntryComponent,
 } from 'core-app/features/work-packages/routing/wp-split-view/wp-split-view-entry.component';
+import {
+  WorkPackageSplitCreateEntryComponent,
+} from 'core-app/features/work-packages/routing/wp-split-create/wp-split-create-entry.component';
+import {
+  BoardEntryComponent,
+} from 'core-app/features/boards/board/board-partitioned-page/board-entry.component';
+import { CalendarEntryComponent } from 'core-app/features/calendar/calendar-entry.component';
+import { TeamPlannerEntryComponent } from 'core-app/features/team-planner/team-planner/team-planner-entry.component';
+import { TeamPlannerModule } from 'core-app/features/team-planner/team-planner/team-planner.module';
 import {
   StorageLoginButtonComponent,
 } from 'core-app/shared/components/storages/storage-login-button/storage-login-button.component';
@@ -181,7 +181,6 @@ import {
   OpNonWorkingDaysListComponent,
 } from 'core-app/shared/components/op-non-working-days-list/op-non-working-days-list.component';
 import { PersistentToggleComponent } from 'core-app/shared/components/persistent-toggle/persistent-toggle.component';
-import { TypeFormConfigurationComponent } from 'core-app/features/admin/types/type-form-configuration.component';
 import { ToastsContainerComponent } from 'core-app/shared/components/toaster/toasts-container.component';
 import { GlobalSearchWorkPackagesComponent } from 'core-app/core/global_search/global-search-work-packages.component';
 import {
@@ -204,10 +203,15 @@ import {
 import {
   OpWpDatePickerInstanceComponent,
 } from 'core-app/shared/components/datepicker/wp-date-picker-modal/wp-date-picker-instance.component';
-import { OpInviteUserModalAugmentService } from 'core-app/features/invite-user-modal/invite-user-modal-augment.service';
 import { TimeEntryTimerService } from 'core-app/shared/components/time_entries/services/time-entry-timer.service';
+import { WorkPackageFullCopyEntryComponent } from 'core-app/features/work-packages/routing/wp-full-copy/wp-full-copy-entry.component';
+import { WorkPackageFullCreateEntryComponent } from 'core-app/features/work-packages/routing/wp-full-create/wp-full-create-entry.component';
+import { WorkPackageFullViewEntryComponent } from 'core-app/features/work-packages/routing/wp-full-view/wp-full-view-entry.component';
 import { MyPageComponent } from './features/my-page/my-page.component';
 import { DashboardComponent } from './features/overview/dashboard.component';
+import { BurndownChartComponent } from './features/backlogs/burndown-chart.component';
+import { BudgetByCostTypeComponent } from './shared/components/budget-graphs/overview/budget-by-cost-type.component';
+import { ActualCostsComponent } from './shared/components/budget-graphs/overview/actual-costs.component';
 
 export function initializeServices(injector:Injector) {
   return () => {
@@ -215,7 +219,6 @@ export function initializeServices(injector:Injector) {
     const keyboardShortcuts = injector.get(KeyboardShortcutService);
     const contextMenu = injector.get(OPContextMenuService);
     const currentProject = injector.get(CurrentProjectService);
-    const inviteUserAugmentService = injector.get(OpInviteUserModalAugmentService);
     const timeEntryTimerService = injector.get(TimeEntryTimerService);
 
     // Conditionally add the Revit Add-In settings button
@@ -224,7 +227,6 @@ export function initializeServices(injector:Injector) {
     const runOnRenderAndLoad = () => {
       topMenuService.register();
       contextMenu.register();
-      inviteUserAugmentService.setupListener();
       timeEntryTimerService.initialize();
       currentProject.detect();
     };
@@ -257,7 +259,6 @@ export function runBootstrap(appRef:ApplicationRef) {
     // Modals
     ConfirmDialogModalComponent,
     DynamicContentModalComponent,
-    PasswordConfirmationModalComponent,
 
     // Main menu
     MainMenuResizerComponent,
@@ -297,10 +298,15 @@ export function runBootstrap(appRef:ApplicationRef) {
     OpenprojectWorkPackagesModule,
     OpenprojectWorkPackageRoutesModule,
 
+    // Boards
+    OpenprojectBoardsModule,
+
     // Work packages in graph representation
     OpenprojectWorkPackageGraphsModule,
     // Calendar module
     OpenprojectCalendarModule,
+    // Team Planner module
+    TeamPlannerModule,
 
     // MyPage
     OpenprojectMyPageModule,
@@ -328,9 +334,6 @@ export function runBootstrap(appRef:ApplicationRef) {
 
     // Modals
     OpenprojectModalModule,
-
-    // Invite user modal
-    OpenprojectInviteUserModalModule,
 
     // Tabs
     OpenprojectTabsModule,
@@ -394,11 +397,15 @@ export class OpenProjectModule implements DoBootstrap {
     registerCustomElement('opce-storage-login-button', StorageLoginButtonComponent, { injector });
     registerCustomElement('opce-custom-modal-overlay', OpCustomModalOverlayComponent, { injector });
 
-    // TODO: These elements are now registered custom elements, but are actually single-use components. They should be removed when we move these pages to Rails.
-    registerCustomElement('opce-notification-settings', NotificationsSettingsPageComponent, { injector });
-    registerCustomElement('opce-reminder-settings', ReminderSettingsPageComponent, { injector });
     registerCustomElement('opce-notification-center', InAppNotificationCenterComponent, { injector });
     registerCustomElement('opce-wp-split-view', WorkPackageSplitViewEntryComponent, { injector });
+    registerCustomElement('opce-wp-split-create', WorkPackageSplitCreateEntryComponent, { injector });
+    registerCustomElement('opce-board-view', BoardEntryComponent, { injector });
+    registerCustomElement('opce-calendar-view', CalendarEntryComponent, { injector });
+    registerCustomElement('opce-team-planner-view', TeamPlannerEntryComponent, { injector });
+    registerCustomElement('opce-wp-full-view', WorkPackageFullViewEntryComponent, { injector });
+    registerCustomElement('opce-wp-full-create', WorkPackageFullCreateEntryComponent, { injector });
+    registerCustomElement('opce-wp-full-copy', WorkPackageFullCopyEntryComponent, { injector });
     registerCustomElement('opce-timer-account-menu', TimerAccountMenuComponent, { injector });
     registerCustomElement('opce-remote-field-updater', RemoteFieldUpdaterComponent, { injector });
     registerCustomElement('opce-wp-date-picker-instance', OpWpDatePickerInstanceComponent, { injector });
@@ -415,7 +422,6 @@ export class OpenProjectModule implements DoBootstrap {
     registerCustomElement('opce-non-working-days-list', OpNonWorkingDaysListComponent, { injector });
     registerCustomElement('opce-main-menu-resizer', MainMenuResizerComponent, { injector });
     registerCustomElement('opce-persistent-toggle', PersistentToggleComponent, { injector });
-    registerCustomElement('opce-admin-type-form-configuration', TypeFormConfigurationComponent, { injector });
     registerCustomElement('opce-toasts-container', ToastsContainerComponent, { injector });
     registerCustomElement('opce-global-search-work-packages', GlobalSearchWorkPackagesComponent, { injector });
     registerCustomElement('opce-custom-date-action-admin', CustomDateActionAdminComponent, { injector });
@@ -424,5 +430,8 @@ export class OpenProjectModule implements DoBootstrap {
 
     registerCustomElement('opce-my-page', MyPageComponent, { injector });
     registerCustomElement('opce-dashboard', DashboardComponent, { injector });
+    registerCustomElement('opce-burndown-chart', BurndownChartComponent, { injector });
+    registerCustomElement('opce-budget-by-cost-type', BudgetByCostTypeComponent, { injector });
+    registerCustomElement('opce-actual-costs', ActualCostsComponent, { injector });
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { CurrentProjectService } from 'core-app/core/current-project/current-project.service';
 import { PathHelperService } from 'core-app/core/path-helper/path-helper.service';
 import { QueryResource } from 'core-app/features/hal/resources/query-resource';
@@ -15,20 +15,18 @@ import {
   switchMap,
 } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import { IOPFieldSchema } from 'core-app/features/hal/interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class BoardListsService {
+  private readonly CurrentProject = inject(CurrentProjectService);
+  private readonly pathHelper = inject(PathHelperService);
+  private readonly apiV3Service = inject(ApiV3Service);
+  private readonly halResourceService = inject(HalResourceService);
+  private readonly toastService = inject(ToastService);
+  private readonly I18n = inject(I18nService);
+
   private v3 = this.pathHelper.api.v3;
-
-  constructor(
-    private readonly CurrentProject:CurrentProjectService,
-    private readonly pathHelper:PathHelperService,
-    private readonly apiV3Service:ApiV3Service,
-    private readonly halResourceService:HalResourceService,
-    private readonly toastService:ToastService,
-    private readonly I18n:I18nService) {
-
-  }
 
   private create(params:object, filters:ApiV3Filter[]):Observable<QueryResource> {
     const filterJson = JSON.stringify(filters);
@@ -103,7 +101,7 @@ export class BoardListsService {
     return board;
   }
 
-  private buildQueryRequest(params:Object) {
+  private buildQueryRequest(params:object) {
     return {
       public: true,
       _links: {

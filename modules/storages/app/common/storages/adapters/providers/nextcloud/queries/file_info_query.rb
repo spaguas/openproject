@@ -55,7 +55,7 @@ module Storages
 
               case response
               in { status: 200..299 }
-                Success(response.json(symbolize_keys: true))
+                fail_on_ocs_error(response.json(symbolize_keys: true), error)
               in { status: 404 }
                 Failure(error.with(code: :not_found))
               in { status: 401 }
@@ -82,6 +82,7 @@ module Storages
 
             def create_storage_file_info(json) # rubocop:disable Metrics/AbcSize
               data = json.dig(:ocs, :data)
+              error = Results::Error.new(source: self.class, code: :invalid_file_info)
               Results::StorageFileInfo.build(
                 status: data[:status]&.downcase,
                 status_code: data[:statuscode],
@@ -97,7 +98,7 @@ module Storages
                 last_modified_by_id: data[:modifier_id],
                 permissions: data[:dav_permissions],
                 location: location(data[:path])
-              )
+              ).or { Failure(error.with(payload: it.errors.messages)) }
             end
 
             def location(file_path)
@@ -107,7 +108,7 @@ module Storages
 
               idx += prefix.length - 1
 
-              UrlBuilder.path(file_path[idx..])
+              file_path[idx..].chomp("/")
             end
           end
         end

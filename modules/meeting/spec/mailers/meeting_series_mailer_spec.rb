@@ -63,13 +63,13 @@ RSpec.describe MeetingSeriesMailer do
   end
 
   describe "template_completed" do
-    let(:mail) { described_class.template_completed(series, recipient, author) }
+    let(:mail) { described_class.invited(series, recipient, author) }
 
     it "renders the headers" do
       expect(mail.subject).to include(series.project.name)
       expect(mail.subject).to include(series.title)
       expect(mail.to).to contain_exactly(recipient.mail)
-      expect(mail.from).to eq([Setting.mail_from])
+      expect(mail.from).to eq([ApplicationMailer.reply_to_address])
     end
 
     it "renders the text body" do
@@ -97,7 +97,7 @@ RSpec.describe MeetingSeriesMailer do
       expect(mail.subject).to include(series.project.name)
       expect(mail.subject).to include(series.title)
       expect(mail.to).to contain_exactly(recipient.mail)
-      expect(mail.from).to eq([Setting.mail_from])
+      expect(mail.from).to eq([ApplicationMailer.reply_to_address])
     end
 
     it "renders the text body" do
@@ -128,7 +128,7 @@ RSpec.describe MeetingSeriesMailer do
   end
 
   describe "icalendar attachment" do
-    let(:mail) { described_class.template_completed(series, recipient, author) }
+    let(:mail) { described_class.invited(series, recipient, author) }
     let(:ical) { mail.parts.detect { |x| !x.multipart? } }
     let(:parsed) { Icalendar::Event.parse(ical.body.raw_source) }
     let(:entry) { parsed.first }
@@ -145,13 +145,44 @@ RSpec.describe MeetingSeriesMailer do
 
   context "with a recipient with another time zone" do
     let!(:preference) { recipient.pref.update(time_zone: "Asia/Tokyo") }
-    let(:mail) { described_class.template_completed(series, recipient, author) }
+    let(:mail) { described_class.invited(series, recipient, author) }
 
     it "renders the mail with the correct locale" do
       expect(mail.text_part.body).to include(tokyo_offset)
       expect(mail.html_part.body).to include(tokyo_offset)
 
       expect(mail.to).to contain_exactly(recipient.mail)
+    end
+  end
+
+  describe "updated with participant changes" do
+    let(:changes) { { old_schedule: "some old schedule", old_location: "some old location" } }
+    let(:added_names) { ["Added Person"] }
+    let(:removed_names) { ["Removed Person"] }
+    let(:mail) do
+      described_class.updated(series, recipient, author,
+                              changes:,
+                              added_participants: added_names,
+                              removed_participants: removed_names)
+    end
+
+    it "renders added participants bold in the html body" do
+      User.execute_as(recipient) do
+        expect(mail.html_part.body).to include(added_names.first)
+      end
+    end
+
+    it "renders removed participants with strikethrough in the html body" do
+      User.execute_as(recipient) do
+        expect(mail.html_part.body).to include("<s>#{removed_names.first}</s>")
+      end
+    end
+
+    it "renders added and removed participants in the text body" do
+      User.execute_as(recipient) do
+        expect(mail.text_part.body).to include(added_names.first)
+        expect(mail.text_part.body).to include(removed_names.first)
+      end
     end
   end
 

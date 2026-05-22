@@ -41,11 +41,15 @@ class AttributeHelpTextsController < ApplicationController
   authorization_checked! :show_dialog
 
   def index
-    @texts_by_type = AttributeHelpText.all_by_scope
+    @attribute_help_texts = AttributeHelpText
+      .where(type: @attribute_scope)
+      .to_a
+      .sort_by(&:attribute_field_name)
   end
 
   def show_dialog
     @attribute_help_text = AttributeHelpText.visible(current_user).find(params[:id])
+
     respond_with_dialog(
       AttributeHelpTexts::ShowDialogComponent.new(attribute_help_text: @attribute_help_text)
     )
@@ -55,7 +59,9 @@ class AttributeHelpTextsController < ApplicationController
     @attribute_help_text = AttributeHelpText.new type: @attribute_scope
   end
 
-  def edit; end
+  def edit
+    @back_url = params[:back_url] || request.referer
+  end
 
   def create # rubocop:disable Metrics/AbcSize
     call = ::AttributeHelpTexts::CreateService
@@ -79,7 +85,7 @@ class AttributeHelpTextsController < ApplicationController
 
     if call.success?
       flash[:notice] = t(:notice_successful_update)
-      redirect_to attribute_help_texts_path(tab: @attribute_help_text.attribute_scope)
+      redirect_back_or_default(attribute_help_texts_path(tab: @attribute_help_text.attribute_scope))
     else
       flash.now[:error] = call.message || I18n.t("notice_internal_server_error")
       render action: :edit, status: :unprocessable_entity
@@ -102,7 +108,9 @@ class AttributeHelpTextsController < ApplicationController
   private
 
   def permitted_params_with_attachments
-    permitted_params.attribute_help_text.merge(attachment_params)
+    permitted_params
+      .attribute_help_text
+      .merge(attachment_params)
   end
 
   def attachment_params
@@ -120,13 +128,13 @@ class AttributeHelpTextsController < ApplicationController
   end
 
   def find_type_scope
-    name = params.fetch(:name, "WorkPackage")
+    name = params[:tab] || params[:name] || "WorkPackage"
     submodule = AttributeHelpText.available_types.find { |mod| mod == name }
 
     if submodule.nil?
       render_404
     end
 
-    @attribute_scope = AttributeHelpText.const_get(submodule)
+    @attribute_scope = AttributeHelpText.const_get(submodule).to_s
   end
 end

@@ -26,64 +26,102 @@
 // See COPYRIGHT and LICENSE files for more details.
 //++
 
+import { attributeTokenList } from 'core-app/shared/helpers/dom-helpers';
 import { ApplicationController } from 'stimulus-use';
 import { useMutation } from 'stimulus-use';
+import { buildExternalRedirectUrl, isExternalLinkCandidate, isLinkBlank, isLinkExternal } from '../helpers/external-link-helpers';
 
-const BLANK_LINK_QUERY = 'a[target="_blank"]';
 const BLANK_LINK_DESCRIPTION_ID = 'open-blank-target-link-description';
+const LINK_QUERY = 'a[target="_blank"], a[href^="http://"], a[href^="https://"]';
 
 const isElement = (node:Node):node is Element => node.nodeType === Node.ELEMENT_NODE;
-const isBlankLink = (elem:Element):elem is HTMLAnchorElement => elem.matches(BLANK_LINK_QUERY);
+const isLink = (elem:Element):elem is HTMLAnchorElement => elem.matches(LINK_QUERY);
 
 /**
- * Observes all external links and sets their ARIA `describedby` attribute to
- * {BLANK_LINK_DESCRIPTION_ID} - this element should exist in the DOM and
- * provide localized text content along the lines of "Open link in a new tab".
+ * Dynamically observes and processes all links on the page, including those added later via Turbo
+ * frames or DOM mutations.
  *
- * The goal is to make users of Assistive Technology aware that they may have to
- * switch tabs on clicking a link.
+ * Part A) for links with `target="_blank"`
+ *   - Adds `aria-describedby` pointing to a description element (`BLANK_LINK_DESCRIPTION_ID`) to
+ *     inform users of assistive technologies that the link opens in a new tab.
  *
- * We consider links with a `target` attribute set to "_blank" as "external".
+ * Part B) for external links (pointing to a different domain than the current page):
+ *   - Sets `target="_blank"` to open in a new tab.
+ *   - Sets `rel="noopener noreferrer"` for security and performance.
+ *   - Rewrites the href to go through `/external_redirect` for link capture functionality.
+ *   - and by virtue of setting `target="_blank"`, should be processed as in Part A.
+ *
+ * This ensures accessibility, security, and consistent behavior for all links, including
+ * dynamically loaded content.
  */
 export default class ExternalLinksController extends ApplicationController {
-  connect() {
-    useMutation(this, { attributes: true, childList: true, subtree: true, attributeFilter: ['target'] });
+  static values = {
+    enabled: Boolean
+  };
 
-    // initial pass
-    document.querySelectorAll(BLANK_LINK_QUERY).forEach(applyLinkDescription);
+  declare readonly enabledValue:boolean;
+
+  connect() {
+    useMutation(this, { attributes: true, childList: true, subtree: true, attributeFilter: ['target', 'href'] });
+
+    // Initial pass: handle existing external links (accessibility)
+    this.element.querySelectorAll<HTMLAnchorElement>(LINK_QUERY).forEach((link)=>{
+      if (!isExternalLinkCandidate(link)) return;
+
+      if (isLinkBlank(link)) this.updateBlankLink(link);
+
+      if (isLinkExternal(link)) this.updateExternalLink(link);
+    });
   }
 
   mutate(mutations:MutationRecord[]) {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (isElement(node)) {
-          // added element itself is a blank link
-          if (isBlankLink(node)) {
-            applyLinkDescription(node);
+          // Added element itself is an external link
+          if (isLink(node) && isExternalLinkCandidate(node)) {
+            if (isLinkBlank(node)) this.updateBlankLink(node);
+            if (isLinkExternal(node)) this.updateExternalLink(node);
           }
-          // added sub-trees
-          node.querySelectorAll(BLANK_LINK_QUERY).forEach(applyLinkDescription);
+
+          node.querySelectorAll<HTMLAnchorElement>(LINK_QUERY).forEach((link)=>{
+            if (!isExternalLinkCandidate(link)) return;
+
+            if (isLinkBlank(link)) this.updateBlankLink(link);
+
+            if (isLinkExternal(link)) this.updateExternalLink(link);
+          });
         }
       });
 
-      // attribute changes
+      // Attribute changes
       if (
         mutation.type === 'attributes' &&
-        mutation.attributeName === 'target' &&
         isElement(mutation.target) &&
-        isBlankLink(mutation.target)
+        isLink(mutation.target) &&
+        isExternalLinkCandidate(mutation.target)
       ) {
-        applyLinkDescription(mutation.target);
+        if (mutation.attributeName === 'target' && isLinkBlank(mutation.target)) this.updateBlankLink(mutation.target);
+        if (mutation.attributeName === 'href' && isLinkExternal(mutation.target)) this.updateExternalLink(mutation.target);
       }
     });
   }
-}
 
-function applyLinkDescription(link:HTMLAnchorElement) {
-  const existingValue = link.getAttribute('aria-describedby');
-  if (!existingValue) {
-    link.setAttribute('aria-describedby', BLANK_LINK_DESCRIPTION_ID);
-  } else if (!existingValue.split(/\s+/).includes(BLANK_LINK_DESCRIPTION_ID)) {
-    link.setAttribute('aria-describedby', existingValue + ' ' + BLANK_LINK_DESCRIPTION_ID);
+  private updateBlankLink(link:HTMLAnchorElement) {
+    attributeTokenList(link, 'aria-describedby').add(BLANK_LINK_DESCRIPTION_ID);
   }
+
+  private updateExternalLink(link:HTMLAnchorElement) {
+    if (!link.dataset.skipExternalLinkBlank) {
+      link.target = '_blank';
+    }
+    attributeTokenList(link, 'rel').add('noopener', 'noreferrer');
+
+    // Capture external links through redirect page
+    // The backend controller will redirect directly if the feature is disabled
+    if (this.enabledValue && !link.dataset.allowExternalLink) {
+      link.href = buildExternalRedirectUrl(link.href);
+    }
+  }
+
 }

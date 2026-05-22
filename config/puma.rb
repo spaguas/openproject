@@ -119,3 +119,25 @@ if metrics_enabled
     start_metrics_server!
   end
 end
+
+# Open app in default browser by pressing Ctrl+T
+if Rails.env.development?
+  siginfo_supported = begin
+    Signal.trap("INFO", "IGNORE")
+  rescue ArgumentError
+    # Ignore unsupported signal `SIGINFO' on Linux
+  end
+
+  if siginfo_supported
+    after_booted do
+      Signal.trap("INFO") do
+        system "open", Rails.application.root_url
+      end
+    end
+
+    # Remove handling of INFO signal in forked workers
+    on_worker_boot do
+      Signal.trap("INFO", "IGNORE")
+    end
+  end
+end

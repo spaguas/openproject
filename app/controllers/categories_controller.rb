@@ -30,9 +30,8 @@
 
 class CategoriesController < ApplicationController
   menu_item :settings_categories
-  model_object Category
-  before_action :find_model_object, except: %i[new create]
-  before_action :find_project_from_association, except: %i[new create]
+
+  before_action :find_category_and_project, except: %i[new create]
   before_action :find_project, only: %i[new create]
   before_action :authorize
 
@@ -40,29 +39,15 @@ class CategoriesController < ApplicationController
     @category = @project.categories.build
   end
 
-  def create # rubocop:disable Metrics/AbcSize
+  def create
     @category = @project.categories.build
     @category.attributes = permitted_params.category
 
     if @category.save
-      respond_to do |format|
-        format.html do
-          flash[:notice] = I18n.t(:notice_successful_create)
-          redirect_to project_settings_categories_path(@project)
-        end
-        format.js do
-          render locals: { project: @project, category: @category }
-        end
-      end
+      flash[:notice] = I18n.t(:notice_successful_create)
+      redirect_to project_settings_categories_path(@project)
     else
-      respond_to do |format|
-        format.html do
-          render action: :new, status: :unprocessable_entity
-        end
-        format.js do
-          render(:update) { |page| page.alert(@category.errors.full_messages.join('\n')) }
-        end
-      end
+      render action: :new, status: :unprocessable_entity
     end
   end
 
@@ -95,14 +80,12 @@ class CategoriesController < ApplicationController
 
   private
 
-  # Wrap ApplicationController's find_model_object method to set
-  # @category instead of just @category
-  def find_model_object
-    super
-    @category = @object
+  def find_category_and_project
+    @category = Category.find(params[:id])
+    @project = @category.project
   end
 
   def find_project
-    @project = Project.find(params[:project_id])
+    @project = Project.visible.find(params[:project_id])
   end
 end

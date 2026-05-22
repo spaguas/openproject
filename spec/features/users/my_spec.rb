@@ -56,7 +56,9 @@ RSpec.describe "my", :js do
   end
 
   before do
-    login_as user
+    # Use a fresh AR instance to avoid leaking virtual attributes (e.g. password accessors)
+    # between examples into RequestStore.current_user.
+    login_as User.find(user.id)
 
     # Create dangling session
     session = Sessions::SqlBypass.new data: { user_id: user.id }, session_id: "other"
@@ -82,6 +84,7 @@ RSpec.describe "my", :js do
 
           expect_and_dismiss_flash type: :success, message: "Account was successfully updated."
 
+          user.reload
           expect(page).to have_select "Time zone", selected: "(UTC+01:00) Paris"
           expect(user.pref.time_zone).to eq "Europe/Paris"
         end
@@ -97,6 +100,7 @@ RSpec.describe "my", :js do
 
         expect_and_dismiss_flash type: :success, message: "Cuenta se actualizó correctamente."
 
+        user.reload
         expect(page).to have_select "Idioma", selected: "Español"
         expect(user.language).to eq "es"
       end
@@ -114,11 +118,11 @@ RSpec.describe "my", :js do
         expect(page).to have_select "Idioma", selected: "Português do brasil"
 
         within "#main-menu" do
-          click_on "Configurações de notificação"
+          click_on "Tokens de acesso"
         end
 
-        expect(page).to have_heading "Configurações de notificação"
-        expect(page).to have_heading "Alertas de data"
+        expect(page).to have_heading "Tokens de acesso"
+        expect(page).to have_heading "iCalendar para reuniões"
       end
     end
   end
@@ -133,7 +137,7 @@ RSpec.describe "my", :js do
         fill_in "user[mail]", with: "foo@mail.com"
         fill_in "user[firstname]", with: "Foo"
         fill_in "user[lastname]", with: "Bar"
-        click_on "Save"
+        click_on "Update profile"
       end
 
       context "when confirmation disabled",
@@ -188,18 +192,14 @@ RSpec.describe "my", :js do
       end
 
       it "does not allow change of name and email but other fields can be changed" do
-        email_field = find_field("user[mail]", disabled: true)
-        firstname_field = find_field("user[firstname]", disabled: true)
-        lastname_field = find_field("user[lastname]", disabled: true)
+        expect(page).to have_field("user[mail]", readonly: true)
+        expect(page).to have_field("user[firstname]", readonly: true)
+        expect(page).to have_field("user[lastname]", readonly: true)
 
-        expect(email_field).to be_disabled
-        expect(firstname_field).to be_disabled
-        expect(lastname_field).to be_disabled
-
-        expect(page).to have_text(I18n.t("user.text_change_disabled_for_ldap_login"), count: 3)
+        expect(page).to have_text(I18n.t("user.text_change_disabled_for_provider_login"), count: 3)
 
         fill_in "Hobbies", with: "Ruby, DCS"
-        click_on "Save"
+        click_on "Update profile"
 
         expect(page).to have_content I18n.t(:notice_account_updated)
 

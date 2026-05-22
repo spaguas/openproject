@@ -220,7 +220,7 @@ RSpec.describe "custom field inplace editor", :js do
         field.expect_state_text "10,000.55"
 
         work_package.reload
-        expect(work_package.custom_value_for(custom_field.id).typed_value).to eq 10000.55
+        expect(work_package.custom_value_for(custom_field).typed_value).to eq 10000.55
       end
     end
 
@@ -234,7 +234,7 @@ RSpec.describe "custom field inplace editor", :js do
         field.expect_state_text "10.000,55"
 
         work_package.reload
-        expect(work_package.custom_value_for(custom_field.id).typed_value).to eq 10000.55
+        expect(work_package.custom_value_for(custom_field).typed_value).to eq 10000.55
       end
     end
   end
@@ -251,7 +251,7 @@ RSpec.describe "custom field inplace editor", :js do
       field.update "http://example.com"
 
       field.expect_state_text "http://example.com"
-      expect(field.display_element).to have_css('a[href="http://example.com"]')
+      expect(field.display_element).to have_link("http://example.com", href: "http://example.com")
 
       field.update "bogus", expect_failure: true
 
@@ -261,7 +261,8 @@ RSpec.describe "custom field inplace editor", :js do
       field.save!
 
       field.expect_state_text "http://community.openproject.org"
-      expect(field.display_element).to have_css('a[href="http://community.openproject.org"]')
+      expect(field.display_element).to have_link("http://community.openproject.org",
+                                                 href: "http://community.openproject.org")
     end
   end
 end

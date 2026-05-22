@@ -30,6 +30,8 @@
 
 class Principal < ApplicationRecord
   include ::Scopes::Scoped
+  include HasDetailsTable
+
   default_scope -> { where.not(status: Principal.statuses[:deleted]) }
 
   # Account statuses
@@ -74,6 +76,9 @@ class Principal < ApplicationRecord
            foreign_key: :user_id,
            inverse_of: :principal
   has_many :auth_providers, through: :user_auth_provider_links
+
+  has_many :persisted_views, inverse_of: :principal, dependent: :nullify
+  has_many :persisted_queries, inverse_of: :principal, dependent: :nullify
 
   has_paper_trail
 
@@ -135,7 +140,7 @@ class Principal < ApplicationRecord
 
   # Columns required for formatting the principal's name.
   def self.columns_for_name(formatter = nil)
-    raise NotImplementedError, "Redefine in subclass" unless self == Principal
+    raise SubclassResponsibilityError, "Redefine in subclass" unless self == Principal
 
     [User, Group, PlaceholderUser].map { it.columns_for_name(formatter) }.inject(:|)
   end
@@ -164,6 +169,19 @@ class Principal < ApplicationRecord
   def self.in_visible_project_or_me(user = User.current)
     in_visible_project(user)
       .or(me)
+  end
+
+  def self.in_visible_project_or_me_or_same_groups(user = User.current)
+    in_visible_project(user)
+      .or(me)
+      .or(in_same_groups(user))
+  end
+
+  def self.in_same_groups(user = User.current)
+    group_ids = user.group_ids
+    return none if group_ids.empty?
+
+    where(id: GroupUser.where(group_id: group_ids).select(:user_id))
   end
 
   def active_user_auth_provider_link

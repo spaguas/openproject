@@ -78,6 +78,10 @@ RSpec.describe Overviews::ShowComponent, type: :component do
     expect(rendered_component).to have_css ".widget-boxes"
   end
 
+  it "does not render widgets" do
+    expect(rendered_component).to have_no_element "opce-dashboard"
+  end
+
   context "when project has neither project attributes or life cycle" do
     it_behaves_like "not rendering layout with sidebar"
   end
