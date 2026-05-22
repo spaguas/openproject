@@ -1,0 +1,90 @@
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { @kpi.name }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_okr_objectives_path(@project), text: t("okr.label_plural") },
+       { href: project_okr_objective_path(@project, @objective), text: @objective.title },
+       @kpi.name]
+    )
+    if User.current.allowed_in_project?(:manage_okrs, @project)
+      header.with_action_button(
+        tag: :a,
+        mobile_icon: :pencil,
+        mobile_label: t(:button_edit),
+        href: edit_project_okr_objective_kpi_path(@project, @objective, @kpi),
+        aria: { label: t(:button_edit) },
+        title: t(:button_edit)
+      ) do |button|
+        button.with_leading_visual_icon(icon: :pencil)
+        t(:button_edit)
+      end
+      header.with_action_button(
+        tag: :a,
+        scheme: :danger,
+        mobile_icon: :trash,
+        mobile_label: t(:button_delete),
+        href: project_okr_objective_kpi_path(@project, @objective, @kpi),
+        aria: { label: t(:button_delete) },
+        data: { turbo_confirm: t(:text_are_you_sure), turbo_method: :delete },
+        title: t(:button_delete)
+      ) do |button|
+        button.with_leading_visual_icon(icon: :trash)
+        t(:button_delete)
+      end
+    end
+  end
+%>
+
+<%= render(AttributeGroups::AttributeGroupComponent.new) do |component|
+      component.with_header(title: OkrKpi.model_name.human)
+      component.with_attribute(key: OkrKpi.human_attribute_name(:description), value: simple_format(@kpi.description))
+      component.with_attribute(key: OkrKpi.human_attribute_name(:update_frequency), value: t("okr.update_frequency.#{@kpi.update_frequency}"))
+      component.with_attribute(key: OkrKpi.human_attribute_name(:baseline_value), value: [@kpi.baseline_value, @kpi.unit].compact_blank.join(" "))
+      component.with_attribute(key: OkrKpi.human_attribute_name(:current_value), value: [@kpi.current_value, @kpi.unit].compact_blank.join(" "))
+      component.with_attribute(key: OkrKpi.human_attribute_name(:target_value), value: [@kpi.target_value, @kpi.unit].compact_blank.join(" "))
+      component.with_attribute(key: OkrKpi.human_attribute_name(:target_direction), value: t("okr.target.#{@kpi.target_direction}"))
+      component.with_attribute(key: t("okr.current_status"), value: number_to_percentage(@kpi.progress_percentage, precision: 0)) if @kpi.progress_percentage
+    end %>
+
+<% if User.current.allowed_in_project?(:manage_okrs, @project) %>
+  <h3><%= t("okr.label_new_progress") %></h3>
+  <%=
+    primer_form_with(
+      model: @progress_entry,
+      url: project_okr_objective_kpi_progress_entries_path(@project, @objective, @kpi)
+    ) do |form|
+      render OkrProgressEntries::Form.new(form)
+    end
+  %>
+<% end %>
+
+<h3><%= t("okr.label_progress") %></h3>
+
+<% if @progress_entries.any? %>
+  <table class="generic-table">
+    <thead>
+      <tr>
+        <th><%= OkrProgressEntry.human_attribute_name(:recorded_on) %></th>
+        <th><%= OkrProgressEntry.human_attribute_name(:value) %></th>
+        <th><%= OkrProgressEntry.human_attribute_name(:note) %></th>
+        <th><%= User.model_name.human %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @progress_entries.each do |entry| %>
+        <tr>
+          <td><%= format_date(entry.recorded_on) %></td>
+          <td><%= [entry.value, @kpi.unit].compact_blank.join(" ") %></td>
+          <td><%= simple_format(entry.note) %></td>
+          <td><%= entry.author.name %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <%= render(Primer::Beta::Blankslate.new) do |blankslate|
+        blankslate.with_visual_icon(icon: :graph)
+        blankslate.with_heading(tag: :h2) { t("okr.no_progress") }
+      end %>
+<% end %>

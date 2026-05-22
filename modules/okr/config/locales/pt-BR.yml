@@ -1,0 +1,56 @@
+pt-BR:
+  plugin_openproject_okr:
+    name: "OpenProject OKR"
+    description: "Acompanha objetivos, KPIs, metas e progresso ao longo do tempo."
+
+  project_module_okr: "OKR"
+  permission_view_okrs: "Visualizar OKRs"
+  permission_manage_okrs: "Gerenciar OKRs"
+
+  activerecord:
+    models:
+      okr_objective: "Objetivo OKR"
+      okr_kpi: "KPI"
+      okr_progress_entry: "Registro de progresso"
+    attributes:
+      okr_objective:
+        title: "Objetivo"
+        description: "Descrição"
+        start_date: "Data inicial"
+        target_date: "Data alvo"
+      okr_kpi:
+        name: "KPI"
+        description: "Descrição"
+        update_frequency: "Periodicidade de atualização"
+        unit: "Unidade"
+        baseline_value: "Valor inicial"
+        current_value: "Valor atual"
+        target_value: "Meta"
+        target_direction: "Direção da meta"
+      okr_progress_entry:
+        value: "Valor"
+        recorded_on: "Registrado em"
+        note: "Observação"
+
+  okr:
+    label_plural: "OKRs"
+    label_objective_plural: "Objetivos"
+    label_kpi_plural: "KPIs"
+    label_progress: "Historico de progresso"
+    label_new_objective: "Novo objetivo"
+    label_edit_objective: "Editar objetivo"
+    label_new_kpi: "Nova KPI"
+    label_edit_kpi: "Editar KPI"
+    label_new_progress: "Registrar progresso"
+    no_objectives: "Ainda não há objetivos OKR neste projeto."
+    no_kpis: "Este objetivo ainda não possui KPIs."
+    no_progress: "Esta KPI ainda não possui registros de progresso."
+    current_status: "Situação atual"
+    target:
+      increase: "Aumentar até a meta"
+      decrease: "Reduzir ate a meta"
+    update_frequency:
+      daily: "Diária"
+      weekly: "Semanal"
+      monthly: "Mensal"
+      quarterly: "Trimestral"

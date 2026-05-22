@@ -1,0 +1,53 @@
+<% html_title t("okr.label_plural") %>
+
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { t("okr.label_plural") }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       t("okr.label_plural")]
+    )
+  end
+%>
+
+<% if User.current.allowed_in_project?(:manage_okrs, @project) %>
+  <%=
+    render(Primer::OpenProject::SubHeader.new) do |subheader|
+      subheader.with_action_button(
+        tag: :a,
+        scheme: :primary,
+        leading_icon: :plus,
+        label: t("okr.label_new_objective"),
+        href: new_project_okr_objective_path(@project)
+      ) { t("okr.label_new_objective") }
+    end
+  %>
+<% end %>
+
+<% if @objectives.any? %>
+  <table class="generic-table">
+    <thead>
+      <tr>
+        <th><%= OkrObjective.human_attribute_name(:title) %></th>
+        <th><%= OkrObjective.human_attribute_name(:start_date) %></th>
+        <th><%= OkrObjective.human_attribute_name(:target_date) %></th>
+        <th><%= t("okr.label_kpi_plural") %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @objectives.each do |objective| %>
+        <tr>
+          <td><%= link_to objective.title, project_okr_objective_path(@project, objective) %></td>
+          <td><%= format_date(objective.start_date) %></td>
+          <td><%= format_date(objective.target_date) %></td>
+          <td><%= objective.kpis.size %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <%= render(Primer::Beta::Blankslate.new) do |blankslate|
+        blankslate.with_visual_icon(icon: :graph)
+        blankslate.with_heading(tag: :h2) { t("okr.no_objectives") }
+      end %>
+<% end %>

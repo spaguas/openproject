@@ -1,0 +1,15 @@
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { t("okr.label_edit_objective") }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_okr_objectives_path(@project), text: t("okr.label_plural") },
+       { href: project_okr_objective_path(@project, @objective), text: @objective.title },
+       t("okr.label_edit_objective")]
+    )
+  end
+%>
+
+<%= settings_primer_form_with(model: @objective, url: project_okr_objective_path(@project, @objective)) do |form| %>
+  <%= render OkrObjectives::Form.new(form) %>
+<% end %>

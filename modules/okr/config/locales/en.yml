@@ -1,0 +1,56 @@
+en:
+  plugin_openproject_okr:
+    name: "OpenProject OKR"
+    description: "Track objectives, KPIs, targets, and KPI progress over time."
+
+  project_module_okr: "OKR"
+  permission_view_okrs: "View OKRs"
+  permission_manage_okrs: "Manage OKRs"
+
+  activerecord:
+    models:
+      okr_objective: "OKR objective"
+      okr_kpi: "KPI"
+      okr_progress_entry: "Progress entry"
+    attributes:
+      okr_objective:
+        title: "Objective"
+        description: "Description"
+        start_date: "Start date"
+        target_date: "Target date"
+      okr_kpi:
+        name: "KPI"
+        description: "Description"
+        update_frequency: "Update frequency"
+        unit: "Unit"
+        baseline_value: "Initial value"
+        current_value: "Current value"
+        target_value: "Target value"
+        target_direction: "Target direction"
+      okr_progress_entry:
+        value: "Value"
+        recorded_on: "Recorded on"
+        note: "Note"
+
+  okr:
+    label_plural: "OKRs"
+    label_objective_plural: "Objectives"
+    label_kpi_plural: "KPIs"
+    label_progress: "Progress history"
+    label_new_objective: "New objective"
+    label_edit_objective: "Edit objective"
+    label_new_kpi: "New KPI"
+    label_edit_kpi: "Edit KPI"
+    label_new_progress: "Record progress"
+    no_objectives: "There are no OKR objectives in this project yet."
+    no_kpis: "This objective does not have KPIs yet."
+    no_progress: "This KPI does not have progress entries yet."
+    current_status: "Current status"
+    target:
+      increase: "Increase to target"
+      decrease: "Decrease to target"
+    update_frequency:
+      daily: "Daily"
+      weekly: "Weekly"
+      monthly: "Monthly"
+      quarterly: "Quarterly"

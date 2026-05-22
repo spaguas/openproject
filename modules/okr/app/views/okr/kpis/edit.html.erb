@@ -1,0 +1,16 @@
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { t("okr.label_edit_kpi") }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_okr_objectives_path(@project), text: t("okr.label_plural") },
+       { href: project_okr_objective_path(@project, @objective), text: @objective.title },
+       { href: project_okr_objective_kpi_path(@project, @objective, @kpi), text: @kpi.name },
+       t("okr.label_edit_kpi")]
+    )
+  end
+%>
+
+<%= settings_primer_form_with(model: @kpi, url: project_okr_objective_kpi_path(@project, @objective, @kpi)) do |form| %>
+  <%= render OkrKpis::Form.new(form) %>
+<% end %>
