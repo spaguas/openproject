@@ -1878,9 +1878,10 @@ en:
         category: "Category"
         current_value: "Current value"
         description: "Description"
-        direction: "Direction"
+        direction: "Evaluation criterion"
         due_date: "Due date"
         groups: "Groups"
+        measurement_frequency: "Measurement frequency"
         name: "Name"
         owner: "Owner"
         owner_id: "Owner"
@@ -1889,6 +1890,12 @@ en:
         status: "Status"
         target_value: "Target value"
         unit: "Unit"
+      kpi_measurement:
+        author: "Entered by"
+        created_at: "Entered at"
+        measured_at: "Measurement date and time"
+        note: "Note"
+        value: "Value"
       kpi_category:
         active: "Active"
         description: "Description"
@@ -3693,6 +3700,42 @@ en:
       overdue: "Overdue"
       project_table: "Project health"
       recent_activity: "Recently updated"
+      details:
+        days_overdue: "Days overdue"
+        days_remaining: "Days remaining"
+        days_suffix: "days"
+        projects_suffix: "projects"
+        responsible: "Responsible"
+        status_distribution: "Status distribution"
+        status_not_set: "Status not set"
+        total: "Total"
+        unassigned: "Unassigned"
+        projects:
+          title: "Projects by responsible"
+          description: "Projects are grouped by members whose project role can edit the project. Projects with multiple responsible members appear in each applicable group."
+          dataset: "Projects"
+        areas:
+          title: "Projects by area and status"
+          description: "Each bar shows the projects in an area, split into the percentage represented by each project status."
+        work_packages:
+          title: "Work packages by area and status"
+          description: "Each bar shows the visible work packages in an area as a percentage stack by work package status."
+        completion:
+          title: "Completed projects"
+          description: "Projects whose project status is Finished."
+          completed: "Completed"
+          remaining: "Not completed"
+          empty: "There are no completed projects."
+        overdue:
+          title: "Projects with overdue work"
+          description: "Projects with at least one visible, open work package past its due date. Days overdue use the oldest overdue due date in each project."
+          dataset: "Days overdue"
+          empty: "There are no projects with overdue work."
+        due_soon:
+          title: "Projects with work due soon"
+          description: "Projects with at least one visible, open work package due within the next %{days} days. Remaining time uses the nearest due date."
+          dataset: "Days remaining"
+          empty: "There are no projects with work due soon."
     additional:
       projects: "Newest visible projects in this instance."
       no_visible_projects: "There are no visible projects in this instance."
@@ -5234,10 +5277,25 @@ en:
     directions:
       increase: "Higher is better"
       decrease: "Lower is better"
+    frequencies:
+      annual: "Annually"
+      biweekly: "Every two weeks"
+      daily: "Daily"
+      monthly: "Monthly"
+      quarterly: "Quarterly"
+      semiannual: "Every six months"
+      weekly: "Weekly"
     instructions:
+      current_value: "The current value is defined by the latest measurement and cannot be edited directly."
       groups: "Optional groups that should be related to this KPI."
       projects: "The current project is always included. Select any other projects that should share this KPI."
     measurement: "Measurement"
+    measurements:
+      add: "Add measurement"
+      history: "Measurement history"
+      legacy_author: "Legacy data"
+      new: "New measurement"
+    next_measurement: "Next measurement due"
     overdue: "Overdue"
     progress: "Progress"
     statuses:

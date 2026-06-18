@@ -14,7 +14,7 @@ class CreateKpis < ActiveRecord::Migration[8.0]
       t.decimal :target_value, precision: 15, scale: 4, null: false
       t.string :direction, null: false, default: "increase"
       t.string :status, null: false, default: "not_started"
-      t.date :start_date3436
+      t.date :start_date
       t.date :due_date
 
       t.timestamps

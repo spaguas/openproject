@@ -1,0 +1,23 @@
+<table class="generic-table">
+  <caption class="sr-only"><%= t("homescreen.project_overview.details.completion.title") %></caption>
+  <thead>
+    <tr>
+      <th><%= Project.model_name.human %></th>
+      <th><%= t("homescreen.project_overview.area") %></th>
+      <th><%= t(:field_status) %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% overview.completed_project_rows.each do |row| %>
+      <tr>
+        <td><%= link_to row[:project].name, project_path(row[:project]) %></td>
+        <td><%= link_to row[:area].name, project_path(row[:area]) %></td>
+        <td><%= row[:status] %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if overview.completed_project_rows.empty? %>
+  <p class="widget-box--additional-info"><%= t("homescreen.project_overview.details.completion.empty") %></p>
+<% end %>

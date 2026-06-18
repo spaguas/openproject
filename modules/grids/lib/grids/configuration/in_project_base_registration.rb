@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Grids::Configuration
   class InProjectBaseRegistration < ::Grids::Configuration::Registration
     widgets "work_packages_table",
@@ -8,6 +10,7 @@ module Grids::Configuration
             "work_packages_calendar",
             "work_packages_overview",
             "time_entries_list",
+            "kpi_chart",
             "members",
             "news",
             "documents",
@@ -56,6 +59,12 @@ module Grids::Configuration
 
     widget_strategy "work_packages_calendar" do
       allowed view_work_packages_lambda
+    end
+
+    widget_strategy "kpi_chart" do
+      allowed ->(user, project) { user.allowed_in_project?(:view_kpis, project) }
+
+      options_representer "::API::V3::Grids::Widgets::KpiChartOptionsRepresenter"
     end
 
     widget_strategy "members" do

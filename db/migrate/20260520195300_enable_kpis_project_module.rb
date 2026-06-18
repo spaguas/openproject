@@ -14,17 +14,11 @@ class EnableKpisProjectModule < ActiveRecord::Migration[8.0]
       )
     SQL
 
-    setting = Setting.find_by(name: "default_projects_modules")
-    return unless setting
-
     Setting.default_projects_modules = (Setting.default_projects_modules + ["kpis"]).uniq
   end
 
   def down
     execute "DELETE FROM enabled_modules WHERE name = 'kpis'"
-
-    setting = Setting.find_by(name: "default_projects_modules")
-    return unless setting
 
     Setting.default_projects_modules = Setting.default_projects_modules - ["kpis"]
   end

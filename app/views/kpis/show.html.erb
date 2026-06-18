@@ -55,6 +55,16 @@
     <div class="attributes-key-value--value-container"><%= t("kpis.directions.#{@kpi.direction}") %></div>
   </div>
   <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:measurement_frequency) %></div>
+    <div class="attributes-key-value--value-container"><%= t("kpis.frequencies.#{@kpi.measurement_frequency}") %></div>
+  </div>
+  <div class="attributes-key-value">
+    <div class="attributes-key-value--key"><%= t("kpis.next_measurement") %></div>
+    <div class="attributes-key-value--value-container">
+      <%= @kpi.next_measurement_at ? format_time(@kpi.next_measurement_at) : "-" %>
+    </div>
+  </div>
+  <div class="attributes-key-value">
     <div class="attributes-key-value--key"><%= Kpi.human_attribute_name(:category) %></div>
     <div class="attributes-key-value--value-container"><%= @kpi.category_name.presence || "-" %></div>
   </div>
@@ -90,6 +100,68 @@
   <div class="wiki op-uc-container">
     <%= format_text(@kpi.description, object: @kpi) %>
   </div>
+<% end %>
+
+<% if can_manage %>
+  <h3><%= t("kpis.measurements.new") %></h3>
+  <%= error_messages_for "measurement" %>
+
+  <%= form_with model: @measurement,
+                url: project_kpi_measurements_path(@project, @kpi),
+                local: true,
+                html: { class: "form" } do |form| %>
+    <div class="form--field -required">
+      <%= form.label :value, class: "form--label" %>
+      <span class="form--field-container">
+        <%= form.number_field :value, step: "0.0001", required: true, class: "form--text-field" %>
+      </span>
+    </div>
+
+    <div class="form--field -required">
+      <%= form.label :measured_at, class: "form--label" %>
+      <span class="form--field-container">
+        <%= form.datetime_local_field :measured_at, required: true, class: "form--text-field" %>
+      </span>
+    </div>
+
+    <div class="form--field">
+      <%= form.label :note, class: "form--label" %>
+      <span class="form--field-container">
+        <%= form.text_area :note, rows: 3, class: "form--text-field" %>
+      </span>
+    </div>
+
+    <%= styled_button_tag t("kpis.measurements.add"), class: "-primary" %>
+  <% end %>
+<% end %>
+
+<h3><%= t("kpis.measurements.history") %></h3>
+
+<% if @measurements.any? %>
+  <table class="generic-table">
+    <thead>
+      <tr>
+        <th><%= KpiMeasurement.human_attribute_name(:measured_at) %></th>
+        <th><%= KpiMeasurement.human_attribute_name(:value) %></th>
+        <th><%= KpiMeasurement.human_attribute_name(:note) %></th>
+        <th><%= KpiMeasurement.human_attribute_name(:author) %></th>
+        <th><%= KpiMeasurement.human_attribute_name(:created_at) %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @measurements.each do |measurement| %>
+        <tr>
+          <td><%= format_time(measurement.measured_at) %></td>
+          <td><%= @kpi.display_value(measurement.value) %></td>
+          <td><%= simple_format(measurement.note) %></td>
+          <td><%= measurement.author&.name || t("kpis.measurements.legacy_author") %></td>
+          <td><%= format_time(measurement.created_at) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <%= no_results_box %>
 <% end %>
 
 <% if can_manage %>

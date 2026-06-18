@@ -21,7 +21,9 @@ class KpisController < ApplicationController
     @summary = build_summary(Kpi.associated_with_project(@project))
   end
 
-  def show; end
+  def show
+    set_measurements
+  end
 
   def new
     @kpi = @project.kpis.build(
@@ -35,9 +37,9 @@ class KpisController < ApplicationController
   def create
     @kpi = @project.kpis.build(kpi_params)
 
-    if @kpi.save
+    if save_kpi_with_initial_measurement
       flash[:notice] = I18n.t(:notice_successful_create)
-      redirect_to project_kpis_path(@project)
+      redirect_to project_kpi_path(@project, @kpi)
     else
       render :new, status: :unprocessable_entity
     end
@@ -70,12 +72,13 @@ class KpisController < ApplicationController
   end
 
   def set_form_options
-    @owner_options = @project
-      .users
-      .active
+    project_user_ids = @project.users.active.select(:id)
+    @owner_options = User
+      .where(id: project_user_ids)
+      .or(User.where(id: @kpi&.owner_id))
       .order(:lastname, :firstname, :login)
     @project_options = Project
-      .visible(User.current)
+      .allowed_to(User.current, :manage_kpis)
       .active
       .order(:name)
     @group_options = Group
@@ -96,6 +99,7 @@ class KpisController < ApplicationController
         :current_value,
         :target_value,
         :direction,
+        :measurement_frequency,
         :status,
         :start_date,
         :due_date,
@@ -104,8 +108,39 @@ class KpisController < ApplicationController
         group_ids: []
       )
 
+    permitted.delete(:current_value) if @kpi&.persisted?
     permitted[:project_ids] = (Array(permitted[:project_ids]).compact_blank.map(&:to_i) | [@project.id])
     permitted
+  end
+
+  def save_kpi_with_initial_measurement
+    saved = false
+
+    Kpi.transaction do
+      unless @kpi.save
+        raise ActiveRecord::Rollback
+      end
+
+      measurement = @kpi.measurements.build(
+        value: @kpi.current_value,
+        measured_at: Time.current,
+        author: current_user
+      )
+
+      unless measurement.save
+        measurement.errors.full_messages.each { |message| @kpi.errors.add(:base, message) }
+        raise ActiveRecord::Rollback
+      end
+
+      saved = true
+    end
+
+    saved
+  end
+
+  def set_measurements
+    @measurements = @kpi.measurements.includes(:author)
+    @measurement = @kpi.measurements.build(measured_at: Time.current)
   end
 
   def available_kpi_categories

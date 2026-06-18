@@ -84,6 +84,8 @@ import {
 import { IconModule } from 'core-app/shared/components/icon/icon.module';
 import { OpenprojectEnterpriseModule } from 'core-app/features/enterprise/openproject-enterprise.module';
 import { ErrorBlankSlateComponent } from './widgets/error-blankslate/error-blankslate.component';
+import { WidgetKpiChartComponent } from './widgets/kpi-chart/kpi-chart.component';
+import { KpiChartRendererComponent } from './widgets/kpi-chart/kpi-chart-renderer.component';
 
 @NgModule({
   imports: [
@@ -107,6 +109,7 @@ import { ErrorBlankSlateComponent } from './widgets/error-blankslate/error-blank
     IconModule,
 
     ErrorBlankSlateComponent,
+    KpiChartRendererComponent,
   ],
   providers: [
     GridWidgetsService,
@@ -131,6 +134,7 @@ import { ErrorBlankSlateComponent } from './widgets/error-blankslate/error-blank
     WidgetProjectFavoritesComponent,
     WidgetTimeEntriesCurrentUserComponent,
     WidgetTimeEntriesProjectComponent,
+    WidgetKpiChartComponent,
 
     // Widget menus
     WidgetMenuComponent,

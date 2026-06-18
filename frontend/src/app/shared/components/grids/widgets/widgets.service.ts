@@ -29,6 +29,7 @@ import {
   WidgetProjectFavoritesComponent,
 } from 'core-app/shared/components/grids/widgets/project-favorites/widget-project-favorites.component';
 import { I18nService } from 'core-app/core/i18n/i18n.service';
+import { WidgetKpiChartComponent } from 'core-app/shared/components/grids/widgets/kpi-chart/kpi-chart.component';
 
 @Injectable()
 export class GridWidgetsService {
@@ -182,6 +183,17 @@ export class GridWidgetsService {
         title: this.I18n.t('js.grid.widgets.documents.title'),
         properties: {
           name: this.I18n.t('js.grid.widgets.documents.title'),
+        },
+      },
+      {
+        identifier: 'kpi_chart',
+        component: WidgetKpiChartComponent,
+        title: this.I18n.t('js.grid.widgets.kpi_chart.title'),
+        properties: {
+          name: this.I18n.t('js.grid.widgets.kpi_chart.title'),
+          kpiIds: [],
+          metric: 'progress',
+          chartType: 'horizontal_bar',
         },
       },
       {

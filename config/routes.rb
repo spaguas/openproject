@@ -413,7 +413,9 @@ Rails.application.routes.draw do
     resources :news do
       resources :comments, controller: "news/comments", only: %i[create destroy]
     end
-    resources :kpis
+    resources :kpis do
+      resources :measurements, controller: "kpi_measurements", only: :create
+    end
 
     # Match everything to be the ID of the wiki page except the part that
     # is reserved for the format. This assumes that we have only two formats:

@@ -14,6 +14,22 @@ pt-BR:
         documents:
           title: Documentos
           no_results: Nenhum documento ainda.
+        kpi_chart:
+          title: Gráfico de KPIs
+          configuration: Configuração do gráfico
+          displayed_kpis: KPIs exibidos
+          metric: Métrica
+          chart_type: Tipo de gráfico
+          loading: Carregando KPIs...
+          no_results: Nenhum KPI disponível.
+          load_failed: Não foi possível carregar os dados dos KPIs.
+          metrics:
+            progress: Progresso
+            current: Valor atual
+            target: Meta
+          chart_types:
+            horizontal_bar: Barras horizontais
+            vertical_bar: Barras verticais
         members:
           title: Membros
         news:

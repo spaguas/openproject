@@ -3,3 +3,42 @@ en:
     label_home: "%{workspace_type} home"
     label_dashboard: "Dashboard"
     label_overview: "Overview"
+    kpis:
+      label: "Indicators (KPIs)"
+      title: "KPI monitoring"
+      description: "Track performance, measurement freshness, and indicators that require attention."
+      period: "Period"
+      months:
+        one: "Last month"
+        other: "Last %{count} months"
+      summary: "KPI summary"
+      metrics:
+        total: "Total KPIs"
+        average_progress: "Average progress"
+        at_risk: "At risk"
+        overdue_measurements: "Overdue measurements"
+      charts:
+        progress: "Progress by indicator"
+        status: "Distribution by status"
+        trend: "Measurement trend"
+        no_history: "There are not enough measurements in this period to show a trend."
+      attention:
+        title: "Attention required"
+        overdue:
+          one: "Overdue measurement (1)"
+          other: "Overdue measurements (%{count})"
+        risky:
+          one: "At-risk indicator (1)"
+          other: "At-risk indicators (%{count})"
+        days_late:
+          one: "1 day overdue"
+          other: "%{count} days overdue"
+        none_overdue: "All measurements are up to date."
+        none_risky: "No indicators are currently at risk or off track."
+      table:
+        title: "Indicator details"
+        last_measurement: "Last measurement"
+        next_measurement: "Next measurement"
+      empty:
+        title: "No KPIs configured"
+        description: "Create the first KPI to start monitoring targets and measurements for this project."

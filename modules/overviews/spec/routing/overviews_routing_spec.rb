@@ -79,6 +79,13 @@ RSpec.describe Overviews::OverviewsController do
     end
 
     it do
+      expect(get(kpis_project_overview_path("my-project")))
+        .to route_to(
+          controller: "overviews/overviews", action: "kpis", project_id: "my-project"
+        )
+    end
+
+    it do
       expect(get(project_custom_fields_sidebar_path("my-project")))
         .to route_to(
           controller: "overviews/overviews", action: "project_custom_fields_sidebar", project_id: "my-project"

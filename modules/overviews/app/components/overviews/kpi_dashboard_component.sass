@@ -1,0 +1,261 @@
+.op-kpi-dashboard
+  --kpi-border: var(--borderColor-default)
+  --kpi-muted: var(--fgColor-muted)
+  --kpi-primary: var(--fgColor-accent)
+  --kpi-success: var(--fgColor-success)
+  --kpi-warning: var(--fgColor-attention)
+  --kpi-danger: var(--fgColor-danger)
+  padding: 24px
+
+  &--toolbar
+    align-items: end
+    display: flex
+    gap: 24px
+    justify-content: space-between
+    margin-bottom: 20px
+
+    h2
+      font-size: 1.5rem
+      margin: 0 0 4px
+
+    p
+      color: var(--kpi-muted)
+      margin: 0
+
+  &--period-form
+    align-items: center
+    display: flex
+    flex: 0 0 auto
+    gap: 8px
+
+    label
+      color: var(--kpi-muted)
+      font-size: 0.875rem
+      font-weight: 600
+
+  &--summary
+    display: grid
+    gap: 12px
+    grid-template-columns: repeat(4, minmax(0, 1fr))
+    margin-bottom: 12px
+
+  &--summary-item
+    align-items: center
+    border: 1px solid var(--kpi-border)
+    border-radius: 8px
+    display: flex
+    gap: 12px
+    min-height: 88px
+    padding: 16px
+
+    strong
+      display: block
+      font-size: 1.75rem
+      line-height: 1.1
+      margin-top: 3px
+
+    &[data-tone="success"] .op-kpi-dashboard--summary-icon,
+    &[data-tone="success"] strong
+      color: var(--kpi-success)
+
+    &[data-tone="warning"] .op-kpi-dashboard--summary-icon,
+    &[data-tone="warning"] strong
+      color: var(--kpi-warning)
+
+    &[data-tone="danger"] .op-kpi-dashboard--summary-icon,
+    &[data-tone="danger"] strong
+      color: var(--kpi-danger)
+
+  &--summary-icon
+    align-items: center
+    background: var(--bgColor-muted)
+    border-radius: 50%
+    color: var(--kpi-primary)
+    display: flex
+    flex: 0 0 42px
+    height: 42px
+    justify-content: center
+
+  &--summary-label
+    color: var(--kpi-muted)
+    font-size: 0.875rem
+
+  &--primary-grid,
+  &--secondary-grid
+    display: grid
+    gap: 12px
+    margin-bottom: 12px
+
+  &--primary-grid
+    grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1fr)
+
+  &--secondary-grid
+    grid-template-columns: minmax(0, 1.55fr) minmax(340px, 1fr)
+
+  &--panel
+    border: 1px solid var(--kpi-border)
+    border-radius: 8px
+    min-width: 0
+    padding: 16px
+
+    h3
+      font-size: 1rem
+      margin: 0 0 16px
+
+  &--ranking
+    display: grid
+    gap: 9px
+
+  &--ranking-row
+    align-items: center
+    display: grid
+    gap: 10px
+    grid-template-columns: minmax(130px, 0.85fr) minmax(180px, 2fr) 44px
+    min-width: 0
+
+    strong
+      font-size: 0.8125rem
+      text-align: right
+
+  &--ranking-name
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+
+  &--ranking-track
+    background: var(--bgColor-muted)
+    border-radius: 3px
+    height: 8px
+    overflow: hidden
+
+    span
+      background: var(--kpi-primary)
+      border-radius: inherit
+      display: block
+      height: 100%
+
+  &--chart
+    height: 260px
+    position: relative
+
+  &--chart-wide
+    height: 290px
+
+  &--empty-chart
+    align-items: center
+    color: var(--kpi-muted)
+    display: flex
+    height: 260px
+    justify-content: center
+    margin: 0
+    text-align: center
+
+  &--attention
+    section + section
+      border-top: 1px solid var(--kpi-border)
+      margin-top: 14px
+      padding-top: 14px
+
+    h4
+      font-size: 0.875rem
+      margin: 0 0 8px
+
+    p
+      color: var(--kpi-muted)
+      font-size: 0.8125rem
+      margin: 0
+
+    ul
+      list-style: none
+      margin: 0
+      padding: 0
+
+    li
+      align-items: center
+      display: flex
+      font-size: 0.8125rem
+      gap: 12px
+      justify-content: space-between
+      padding: 6px 0
+
+      span
+        color: var(--kpi-danger)
+        flex: 0 0 auto
+        font-weight: 600
+
+  &--table-panel
+    padding: 0
+
+    h3
+      padding: 16px 16px 0
+
+  &--table-scroll
+    overflow-x: auto
+
+    table
+      margin-bottom: 0
+      min-width: 1040px
+
+  &--table-progress
+    align-items: center
+    display: flex
+    gap: 8px
+    white-space: nowrap
+
+    > span
+      background: var(--bgColor-muted)
+      border-radius: 3px
+      display: inline-block
+      height: 7px
+      overflow: hidden
+      width: 72px
+
+      span
+        background: var(--kpi-success)
+        display: block
+        height: 100%
+
+  &--status
+    align-items: center
+    display: inline-flex
+    gap: 6px
+    white-space: nowrap
+
+    > span
+      background: var(--kpi-muted)
+      border-radius: 50%
+      height: 8px
+      width: 8px
+
+    &[data-tone="success"] > span
+      background: var(--kpi-success)
+
+    &[data-tone="warning"] > span
+      background: var(--kpi-warning)
+
+    &[data-tone="danger"] > span
+      background: var(--kpi-danger)
+
+  @media screen and (max-width: 900px)
+    padding: 16px
+
+    &--toolbar
+      align-items: stretch
+      flex-direction: column
+
+    &--period-form
+      justify-content: space-between
+
+    &--summary
+      grid-template-columns: repeat(2, minmax(0, 1fr))
+
+    &--primary-grid,
+    &--secondary-grid
+      grid-template-columns: 1fr
+
+  @media screen and (max-width: 520px)
+    &--summary
+      grid-template-columns: 1fr
+
+    &--ranking-row
+      grid-template-columns: minmax(100px, 1fr) minmax(90px, 1fr) 40px

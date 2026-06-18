@@ -72,7 +72,16 @@
 
       <div class="form--field -required">
         <%= f.label :current_value, class: "form--label" %>
-        <span class="form--field-container"><%= f.number_field :current_value, step: "0.0001", required: true, class: "form--text-field" %></span>
+        <span class="form--field-container">
+          <% if @kpi.new_record? %>
+            <%= f.number_field :current_value, step: "0.0001", required: true, class: "form--text-field" %>
+          <% else %>
+            <%= @kpi.display_value(@kpi.current_value) %>
+          <% end %>
+        </span>
+        <% unless @kpi.new_record? %>
+          <div class="form--field-instructions"><%= t("kpis.instructions.current_value") %></div>
+        <% end %>
       </div>
 
       <div class="form--field -required">
@@ -90,6 +99,16 @@
         <span class="form--field-container">
           <%= f.select :direction,
                        Kpi::DIRECTIONS.map { |direction| [t("kpis.directions.#{direction}"), direction] },
+                       {},
+                       class: "form--select" %>
+        </span>
+      </div>
+
+      <div class="form--field -required">
+        <%= f.label :measurement_frequency, class: "form--label" %>
+        <span class="form--field-container">
+          <%= f.select :measurement_frequency,
+                       Kpi::MEASUREMENT_FREQUENCIES.map { |frequency| [t("kpis.frequencies.#{frequency}"), frequency] },
                        {},
                        class: "form--select" %>
         </span>

@@ -71,6 +71,17 @@
           t.with_text { I18n.t("overviews.label_dashboard") }
         end
       end
+
+      if allowed_to_view_kpis?
+        tab_nav.with_tab(
+          test_selector: "project-kpi-dashboard-tab",
+          selected: current_page?(kpis_project_overview_path),
+          href: helpers.kpis_project_overview_path
+        ) do |t|
+          t.with_icon(icon: :graph)
+          t.with_text { I18n.t("overviews.kpis.label") }
+        end
+      end
     end
   end
 %>

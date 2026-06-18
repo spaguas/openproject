@@ -1,0 +1,59 @@
+<% dialog_id = component.dialog_id(kind) %>
+
+<%=
+  render(
+    Primer::Alpha::Dialog.new(
+      id: dialog_id,
+      title: component.detail_title(kind),
+      size: :xlarge
+    )
+  ) do |dialog|
+    dialog.with_header(variant: :large)
+
+    dialog.with_body do
+      concat(
+        content_tag(
+          :p,
+          component.detail_description(kind),
+          class: "homescreen-project-overview--detail-description"
+        )
+      )
+
+      concat(
+        content_tag(:div, class: "homescreen-project-overview--chart-container") do
+          tag.canvas(
+            data: {
+              chart_key: kind,
+              chart_config: component.chart_config(kind).to_json
+            },
+            role: "img",
+            aria: { label: component.detail_title(kind) }
+          )
+        end
+      )
+
+      concat(
+        content_tag(:div, class: "homescreen-project-overview--detail-table") do
+          case kind
+          when :projects
+            render partial: "homescreen/project_overview_projects_detail", locals: { overview: component.overview }
+          when :areas
+            render partial: "homescreen/project_overview_areas_detail", locals: { overview: component.overview }
+          when :work_packages
+            render partial: "homescreen/project_overview_work_packages_detail", locals: { overview: component.overview }
+          when :completion
+            render partial: "homescreen/project_overview_completion_detail", locals: { overview: component.overview }
+          when :overdue
+            render partial: "homescreen/project_overview_overdue_detail", locals: { overview: component.overview }
+          when :due_soon
+            render partial: "homescreen/project_overview_due_soon_detail", locals: { overview: component.overview }
+          end
+        end
+      )
+    end
+
+    dialog.with_footer(show_divider: true) do
+      render(Primer::Beta::Button.new(data: { close_dialog_id: dialog_id })) { t(:button_close) }
+    end
+  end
+%>

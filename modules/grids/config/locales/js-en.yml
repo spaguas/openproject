@@ -13,6 +13,22 @@ en:
         documents:
           title: 'Documents'
           no_results: 'No documents yet.'
+        kpi_chart:
+          title: 'KPI chart'
+          configuration: 'Chart configuration'
+          displayed_kpis: 'Displayed KPIs'
+          metric: 'Metric'
+          chart_type: 'Chart type'
+          loading: 'Loading KPIs...'
+          no_results: 'No KPIs available.'
+          load_failed: 'The KPI data could not be loaded.'
+          metrics:
+            progress: 'Progress'
+            current: 'Current value'
+            target: 'Target value'
+          chart_types:
+            horizontal_bar: 'Horizontal bars'
+            vertical_bar: 'Vertical bars'
         members:
           title: 'Members'
         news:

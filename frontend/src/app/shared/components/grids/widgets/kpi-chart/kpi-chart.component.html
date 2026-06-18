@@ -1,0 +1,79 @@
+<widget-header
+  [name]="widgetName"
+  (onRenamed)="renameWidget($event)">
+  <widget-menu slot="menu" [resource]="resource" />
+</widget-header>
+
+<div class="op-widget-box--body op-kpi-chart">
+  @if (loading) {
+    <p class="op-kpi-chart--message">{{ text.loading }}</p>
+  } @else if (loadFailed) {
+    <p class="op-kpi-chart--message -error">{{ text.loadFailed }}</p>
+  } @else if (kpis.length === 0) {
+    <p class="op-kpi-chart--message">{{ text.noResults }}</p>
+  } @else {
+    @if (canConfigure) {
+      <details class="op-kpi-chart--configuration">
+        <summary>{{ text.configuration }}</summary>
+
+        <div class="op-kpi-chart--configuration-grid">
+          <label>
+            <span>{{ text.metric }}</span>
+            <select
+              class="form--select"
+              [ngModel]="metric"
+              (ngModelChange)="updateMetric($event)">
+              @for (option of metricOptions; track option) {
+                <option [ngValue]="option">{{ metricLabel(option) }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span>{{ text.chartType }}</span>
+            <select
+              class="form--select"
+              [ngModel]="chartType"
+              (ngModelChange)="updateChartType($event)">
+              @for (option of chartTypeOptions; track option) {
+                <option [ngValue]="option">{{ chartTypeLabel(option) }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <fieldset class="op-kpi-chart--kpi-options">
+          <legend>{{ text.displayedKpis }}</legend>
+          @for (kpi of kpis; track kpi.id) {
+            <label>
+              <input
+                type="checkbox"
+                [checked]="isSelected(kpi.id)"
+                (change)="toggleKpi(kpi.id, $any($event.target).checked)">
+              <span>{{ kpi.name }}</span>
+            </label>
+          }
+        </fieldset>
+      </details>
+    }
+
+    <div
+      class="op-kpi-chart--canvas"
+      [class.-vertical]="chartType === 'vertical_bar'">
+      <op-kpi-chart-renderer
+        [kpis]="selectedKpis"
+        [metric]="metric"
+        [chartType]="chartType"
+        [datasetLabel]="datasetLabel" />
+    </div>
+
+    <ul class="op-kpi-chart--values">
+      @for (kpi of selectedKpis; track kpi.id) {
+        <li>
+          <a [href]="kpi.href">{{ kpi.name }}</a>
+          <strong>{{ formattedValue(kpi) }}</strong>
+        </li>
+      }
+    </ul>
+  }
+</div>

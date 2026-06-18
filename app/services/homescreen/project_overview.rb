@@ -23,10 +23,10 @@ module Homescreen
         work_packages: work_packages.size,
         open: open_work_packages.size,
         closed: closed_work_packages.size,
-        overdue: overdue_work_packages.size,
-        due_soon: due_soon_work_packages.size,
+        overdue: overdue_project_rows.size,
+        due_soon: due_soon_project_rows.size,
         unassigned: unassigned_work_packages.size,
-        completion: completion_percentage
+        completion: project_completion_percentage
       }
     end
 
@@ -47,32 +47,69 @@ module Homescreen
 
     def project_rows
       grouped = work_packages.group_by(&:project_id)
+      rows = projects.filter_map { |project| project_row(project, grouped[project.id] || []) }
 
-      projects.filter_map do |project|
-        items = grouped[project.id] || []
-        next if items.empty?
-
-        open = items.count { |work_package| !work_package.status.is_closed? }
-        closed = items.size - open
-        overdue = items.count { |work_package| overdue?(work_package) }
-
-        {
-          project:,
-          area: area_for(project),
-          total: items.size,
-          open:,
-          closed:,
-          overdue:,
-          completion: percentage(closed, items.size)
-        }
-      end.sort_by { |row| [-row[:overdue], -row[:open], row[:project].name.downcase] }.first(10)
+      rows.sort_by { |row| [-row[:overdue], -row[:open], row[:project].name.downcase] }.first(10)
     end
 
     def recent_work_packages
       work_packages
         .sort_by(&:updated_at)
+        .last(8)
         .reverse
-        .first(8)
+    end
+
+    def project_responsibility_rows
+      grouped = Hash.new { |hash, key| hash[key] = [] }
+
+      projects.each { |project| group_project_by_responsible(grouped, project) }
+      rows = grouped.map { |responsible, responsible_projects| responsibility_row(responsible, responsible_projects) }
+
+      rows.sort_by { |row| [-row[:count], row[:label].downcase] }
+    end
+
+    def area_project_status_rows
+      grouped = projects.group_by { |project| area_for(project) }
+      rows = grouped.map { |area, area_projects| area_project_status_row(area, area_projects) }
+
+      rows.sort_by { |row| [-row[:total], row[:area].name.downcase] }
+    end
+
+    def area_work_package_status_rows
+      grouped = work_packages.group_by { |work_package| area_for(projects_by_id.fetch(work_package.project_id)) }
+      rows = grouped.map { |area, area_work_packages| area_work_package_status_row(area, area_work_packages) }
+
+      rows.sort_by { |row| [-row[:total], row[:area].name.downcase] }
+    end
+
+    def completed_project_rows
+      rows = projects
+        .select(&:finished?)
+        .map do |project|
+          {
+            project:,
+            area: area_for(project),
+            status: project_status_label(project)
+          }
+        end
+
+      rows.sort_by { |row| row[:project].name.downcase }
+    end
+
+    def overdue_project_rows
+      rows = overdue_work_packages.group_by(&:project_id).map do |project_id, items|
+        project_deadline_row(project_id, items, overdue: true)
+      end
+
+      rows.sort_by { |row| [-row[:days], row[:project].name.downcase] }
+    end
+
+    def due_soon_project_rows
+      rows = due_soon_work_packages.group_by(&:project_id).map do |project_id, items|
+        project_deadline_row(project_id, items, overdue: false)
+      end
+
+      rows.sort_by { |row| [row[:days], row[:project].name.downcase] }
     end
 
     private
@@ -84,7 +121,7 @@ module Homescreen
       WorkPackage
         .visible(user)
         .where(project_id: project_ids)
-        .includes(:project, :status, :type, :assigned_to)
+        .includes(:project, :status, :type, :assigned_to, :responsible)
         .to_a
     end
 
@@ -94,6 +131,83 @@ module Homescreen
 
     def areas
       @areas ||= projects.map { |project| area_for(project) }.uniq
+    end
+
+    def members_by_project
+      @members_by_project ||= Member
+        .where(project_id: projects.map(&:id))
+        .includes(:principal, :roles)
+        .to_a
+        .group_by(&:project_id)
+    end
+
+    def project_responsibles(project)
+      (members_by_project[project.id] || [])
+        .filter_map { |member| member.principal if member.roles.any? { it.permissions.include?(:edit_project) } }
+        .uniq
+        .sort_by { it.name.downcase }
+    end
+
+    def project_row(project, items)
+      return if items.empty?
+
+      open = items.count { |work_package| !work_package.status.is_closed? }
+      closed = items.size - open
+      overdue = items.count { |work_package| overdue?(work_package) }
+
+      {
+        project:,
+        area: area_for(project),
+        total: items.size,
+        open:,
+        closed:,
+        overdue:,
+        completion: percentage(closed, items.size)
+      }
+    end
+
+    def group_project_by_responsible(grouped, project)
+      responsibles = project_responsibles(project)
+      responsibles = [nil] if responsibles.empty?
+      responsibles.each { |responsible| grouped[responsible] << project }
+    end
+
+    def responsibility_row(responsible, responsible_projects)
+      {
+        responsible:,
+        label: responsible&.name || I18n.t("homescreen.project_overview.details.unassigned"),
+        projects: responsible_projects.sort_by { it.name.downcase },
+        count: responsible_projects.size
+      }
+    end
+
+    def area_project_status_row(area, area_projects)
+      {
+        area:,
+        total: area_projects.size,
+        statuses: distribution_hash(area_projects) { project_status_label(it) }
+      }
+    end
+
+    def area_work_package_status_row(area, area_work_packages)
+      {
+        area:,
+        total: area_work_packages.size,
+        statuses: distribution_hash(area_work_packages) { it.status.name }
+      }
+    end
+
+    def project_deadline_row(project_id, items, overdue:)
+      due_date = items.filter_map(&:due_date).min
+      project = projects_by_id.fetch(project_id)
+
+      {
+        project:,
+        area: area_for(project),
+        due_date:,
+        days: overdue ? (Date.current - due_date).to_i : (due_date - Date.current).to_i,
+        work_packages: items.size
+      }
     end
 
     def area_for(project)
@@ -134,8 +248,8 @@ module Homescreen
       work_package.due_date.present? && work_package.due_date < Date.current && !work_package.status.is_closed?
     end
 
-    def completion_percentage
-      percentage(closed_work_packages.size, work_packages.size)
+    def project_completion_percentage
+      percentage(completed_project_rows.size, projects.size)
     end
 
     def percentage(part, total)
@@ -158,6 +272,20 @@ module Homescreen
         percentage: percentage(count, work_packages.size),
         project_path_id:
       }
+    end
+
+    def distribution_hash(records)
+      records
+        .group_by { yield(it) }
+        .transform_values(&:size)
+        .sort_by { |label, count| [-count, label.downcase] }
+        .to_h
+    end
+
+    def project_status_label(project)
+      return I18n.t("homescreen.project_overview.details.status_not_set") if project.status_code.blank?
+
+      I18n.t("activerecord.attributes.project.status_codes.#{project.status_code}")
     end
   end
 end

@@ -1044,9 +1044,10 @@ pt-BR:
         category: "Categoria"
         current_value: "Valor atual"
         description: "Descrição"
-        direction: "Direção"
+        direction: "Critério de avaliação"
         due_date: "Data limite"
         groups: "Grupos"
+        measurement_frequency: "Periodicidade das medições"
         name: "Nome"
         owner: "Responsável"
         owner_id: "Responsável"
@@ -1055,6 +1056,12 @@ pt-BR:
         status: "Situação"
         target_value: "Meta"
         unit: "Unidade"
+      kpi_measurement:
+        author: "Inserido por"
+        created_at: "Inserido em"
+        measured_at: "Data e hora da medição"
+        note: "Observação"
+        value: "Valor"
       kpi_category:
         active: "Ativa"
         description: "Descrição"
@@ -2629,6 +2636,42 @@ pt-BR:
       overdue: "Atrasados"
       project_table: "Saúde dos projetos"
       recent_activity: "Atualizados recentemente"
+      details:
+        days_overdue: "Dias de atraso"
+        days_remaining: "Dias restantes"
+        days_suffix: "dias"
+        projects_suffix: "projetos"
+        responsible: "Responsável"
+        status_distribution: "Distribuição por status"
+        status_not_set: "Status não definido"
+        total: "Total"
+        unassigned: "Não atribuído"
+        projects:
+          title: "Projetos por responsável"
+          description: "Os projetos são agrupados pelos membros cujo papel permite editar o projeto. Projetos com mais de um responsável aparecem em cada grupo aplicável."
+          dataset: "Projetos"
+        areas:
+          title: "Projetos por área e status"
+          description: "Cada barra mostra os projetos da área, divididos pelo percentual correspondente a cada status de projeto."
+        work_packages:
+          title: "Pacotes de trabalho por área e status"
+          description: "Cada barra mostra os pacotes de trabalho visíveis da área em uma pilha percentual por status."
+        completion:
+          title: "Projetos concluídos"
+          description: "Projetos cujo status do projeto está definido como Concluído."
+          completed: "Concluídos"
+          remaining: "Não concluídos"
+          empty: "Não há projetos concluídos."
+        overdue:
+          title: "Projetos com trabalho atrasado"
+          description: "Projetos com pelo menos um pacote de trabalho visível e aberto após a data de vencimento. Os dias de atraso usam a data vencida mais antiga de cada projeto."
+          dataset: "Dias de atraso"
+          empty: "Não há projetos com trabalho atrasado."
+        due_soon:
+          title: "Projetos com trabalho a vencer"
+          description: "Projetos com pelo menos um pacote de trabalho visível e aberto que vence nos próximos %{days} dias. O tempo restante usa a data de vencimento mais próxima."
+          dataset: "Dias restantes"
+          empty: "Não há projetos com trabalho a vencer em breve."
     additional:
       projects: "Projetos mais recentes visíveis nesta instância."
       no_visible_projects: "Não há nenhum projeto visível nesta instância."
@@ -3938,10 +3981,25 @@ pt-BR:
     directions:
       increase: "Maior é melhor"
       decrease: "Menor é melhor"
+    frequencies:
+      annual: "Anual"
+      biweekly: "Quinzenal"
+      daily: "Diária"
+      monthly: "Mensal"
+      quarterly: "Trimestral"
+      semiannual: "Semestral"
+      weekly: "Semanal"
     instructions:
+      current_value: "O valor atual é definido pela medição mais recente e não pode ser editado diretamente."
       groups: "Grupos opcionais que devem ser relacionados a este KPI."
       projects: "O projeto atual é sempre incluído. Selecione outros projetos que também devem compartilhar este KPI."
     measurement: "Medição"
+    measurements:
+      add: "Adicionar medição"
+      history: "Histórico de medições"
+      legacy_author: "Dado legado"
+      new: "Nova medição"
+    next_measurement: "Próxima medição prevista"
     overdue: "Atrasado"
     progress: "Progresso"
     statuses:

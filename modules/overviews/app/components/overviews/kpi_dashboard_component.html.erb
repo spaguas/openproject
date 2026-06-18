@@ -1,0 +1,179 @@
+<section class="op-kpi-dashboard"
+         data-controller="overviews--kpi-dashboard-charts">
+  <div class="op-kpi-dashboard--toolbar">
+    <div>
+      <h2><%= t("overviews.kpis.title") %></h2>
+      <p><%= t("overviews.kpis.description") %></p>
+    </div>
+
+    <%= form_with url: helpers.kpis_project_overview_path(project),
+                  method: :get,
+                  local: true,
+                  class: "op-kpi-dashboard--period-form",
+                  data: { controller: "auto-submit" } do |form| %>
+      <%= form.label :period, t("overviews.kpis.period") %>
+      <%= form.select :period,
+                      dashboard[:period_options].map { |months| [t("overviews.kpis.months", count: months), months] },
+                      { selected: dashboard[:period] },
+                      data: { action: "change->auto-submit#submit" },
+                      class: "form--select" %>
+    <% end %>
+  </div>
+
+  <% if kpis.empty? %>
+    <%= render(Primer::Beta::Blankslate.new) do |blankslate|
+          blankslate.with_visual_icon(icon: :graph)
+          blankslate.with_heading(tag: :h2) { t("overviews.kpis.empty.title") }
+          blankslate.with_description { t("overviews.kpis.empty.description") }
+          if User.current.allowed_in_project?(:manage_kpis, project)
+            blankslate.with_primary_action(
+              href: helpers.new_project_kpi_path(project)
+            ) { t(:label_kpi_new) }
+          end
+        end %>
+  <% else %>
+    <div class="op-kpi-dashboard--summary"
+         role="region"
+         aria-label="<%= t("overviews.kpis.summary") %>">
+      <% [
+           [:total, :graph, "primary"],
+           [:average_progress, :pulse, "success"],
+           [:at_risk, :alert, "warning"],
+           [:overdue_measurements, :clock, "danger"]
+         ].each do |key, icon, tone| %>
+        <article class="op-kpi-dashboard--summary-item" data-tone="<%= tone %>">
+          <span class="op-kpi-dashboard--summary-icon" aria-hidden="true">
+            <%= render Primer::Beta::Octicon.new(icon:) %>
+          </span>
+          <span>
+            <span class="op-kpi-dashboard--summary-label"><%= t("overviews.kpis.metrics.#{key}") %></span>
+            <strong><%= summary[key] %><%= "%" if key == :average_progress %></strong>
+          </span>
+        </article>
+      <% end %>
+    </div>
+
+    <div class="op-kpi-dashboard--primary-grid">
+      <article class="op-kpi-dashboard--panel">
+        <h3><%= t("overviews.kpis.charts.progress") %></h3>
+        <div class="op-kpi-dashboard--ranking">
+          <% dashboard[:ranking].each do |kpi| %>
+            <div class="op-kpi-dashboard--ranking-row">
+              <%= link_to kpi.name, helpers.project_kpi_path(project, kpi), class: "op-kpi-dashboard--ranking-name" %>
+              <span class="op-kpi-dashboard--ranking-track" aria-hidden="true">
+                <span style="width: <%= kpi.progress_percentage %>%"></span>
+              </span>
+              <strong><%= kpi.progress_percentage %>%</strong>
+            </div>
+          <% end %>
+        </div>
+      </article>
+
+      <article class="op-kpi-dashboard--panel op-kpi-dashboard--status-panel">
+        <h3><%= t("overviews.kpis.charts.status") %></h3>
+        <div class="op-kpi-dashboard--chart">
+          <canvas data-overviews--kpi-dashboard-charts-target="chart"
+                  data-chart-config="<%= chart_config(:status_chart) %>"
+                  aria-label="<%= t("overviews.kpis.charts.status") %>"
+                  role="img"></canvas>
+        </div>
+      </article>
+    </div>
+
+    <div class="op-kpi-dashboard--secondary-grid">
+      <article class="op-kpi-dashboard--panel">
+        <h3><%= t("overviews.kpis.charts.trend") %></h3>
+        <% if dashboard[:trend_chart][:datasets].any? %>
+          <div class="op-kpi-dashboard--chart op-kpi-dashboard--chart-wide">
+            <canvas data-overviews--kpi-dashboard-charts-target="chart"
+                    data-chart-config="<%= chart_config(:trend_chart) %>"
+                    aria-label="<%= t("overviews.kpis.charts.trend") %>"
+                    role="img"></canvas>
+          </div>
+        <% else %>
+          <p class="op-kpi-dashboard--empty-chart"><%= t("overviews.kpis.charts.no_history") %></p>
+        <% end %>
+      </article>
+
+      <article class="op-kpi-dashboard--panel op-kpi-dashboard--attention">
+        <h3><%= t("overviews.kpis.attention.title") %></h3>
+
+        <section>
+          <h4><%= t("overviews.kpis.attention.overdue", count: dashboard[:overdue_measurements].size) %></h4>
+          <% if dashboard[:overdue_measurements].any? %>
+            <ul>
+              <% dashboard[:overdue_measurements].first(4).each do |kpi| %>
+                <li>
+                  <%= link_to kpi.name, helpers.project_kpi_path(project, kpi) %>
+                  <span><%= t("overviews.kpis.attention.days_late", count: overdue_days(kpi)) %></span>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p><%= t("overviews.kpis.attention.none_overdue") %></p>
+          <% end %>
+        </section>
+
+        <section>
+          <h4><%= t("overviews.kpis.attention.risky", count: dashboard[:risky_kpis].size) %></h4>
+          <% if dashboard[:risky_kpis].any? %>
+            <ul>
+              <% dashboard[:risky_kpis].first(4).each do |kpi| %>
+                <li>
+                  <%= link_to kpi.name, helpers.project_kpi_path(project, kpi) %>
+                  <span><%= kpi.progress_percentage %>%</span>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p><%= t("overviews.kpis.attention.none_risky") %></p>
+          <% end %>
+        </section>
+      </article>
+    </div>
+
+    <article class="op-kpi-dashboard--panel op-kpi-dashboard--table-panel">
+      <h3><%= t("overviews.kpis.table.title") %></h3>
+      <div class="op-kpi-dashboard--table-scroll">
+        <table class="generic-table">
+          <thead>
+            <tr>
+              <th><%= Kpi.human_attribute_name(:name) %></th>
+              <th><%= Kpi.human_attribute_name(:current_value) %></th>
+              <th><%= Kpi.human_attribute_name(:target_value) %></th>
+              <th><%= t("kpis.progress") %></th>
+              <th><%= Kpi.human_attribute_name(:status) %></th>
+              <th><%= Kpi.human_attribute_name(:measurement_frequency) %></th>
+              <th><%= t("overviews.kpis.table.last_measurement") %></th>
+              <th><%= t("overviews.kpis.table.next_measurement") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% kpis.each do |kpi| %>
+              <tr>
+                <td><%= link_to kpi.name, helpers.project_kpi_path(project, kpi) %></td>
+                <td><%= kpi.display_value(kpi.current_value) %></td>
+                <td><%= kpi.display_value(kpi.target_value) %></td>
+                <td>
+                  <span class="op-kpi-dashboard--table-progress">
+                    <span aria-hidden="true"><span style="width: <%= kpi.progress_percentage %>%"></span></span>
+                    <%= kpi.progress_percentage %>%
+                  </span>
+                </td>
+                <td>
+                  <span class="op-kpi-dashboard--status" data-tone="<%= status_tone(kpi.status) %>">
+                    <span aria-hidden="true"></span>
+                    <%= t("kpis.statuses.#{kpi.status}") %>
+                  </span>
+                </td>
+                <td><%= t("kpis.frequencies.#{kpi.measurement_frequency}") %></td>
+                <td><%= kpi.latest_measurement ? format_time(kpi.latest_measurement.measured_at) : "-" %></td>
+                <td><%= kpi.next_measurement_at ? format_time(kpi.next_measurement_at) : "-" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </article>
+  <% end %>
+</section>

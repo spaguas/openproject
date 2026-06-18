@@ -6,6 +6,7 @@ Rails.application.routes.draw do
       scope module: "overviews" do
         resource :overview, path: "/", only: [:show] do
           get :dashboard, on: :member
+          get :kpis, on: :member
         end
 
         controller :overviews do

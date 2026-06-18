@@ -1,0 +1,27 @@
+<table class="generic-table">
+  <caption class="sr-only"><%= t("homescreen.project_overview.details.overdue.title") %></caption>
+  <thead>
+    <tr>
+      <th><%= Project.model_name.human %></th>
+      <th><%= t("homescreen.project_overview.area") %></th>
+      <th><%= t(:field_due_date) %></th>
+      <th><%= t("homescreen.project_overview.details.days_overdue") %></th>
+      <th><%= t(:label_work_package_plural) %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% overview.overdue_project_rows.each do |row| %>
+      <tr>
+        <td><%= link_to row[:project].name, project_path(row[:project]) %></td>
+        <td><%= link_to row[:area].name, project_path(row[:area]) %></td>
+        <td><%= format_date(row[:due_date]) %></td>
+        <td><%= row[:days] %></td>
+        <td><%= row[:work_packages] %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if overview.overdue_project_rows.empty? %>
+  <p class="widget-box--additional-info"><%= t("homescreen.project_overview.details.overdue.empty") %></p>
+<% end %>

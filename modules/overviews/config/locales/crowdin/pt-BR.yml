@@ -4,3 +4,42 @@ pt-BR:
     label_home: "%{workspace_type} inicial"
     label_dashboard: Painel
     label_overview: Visão geral
+    kpis:
+      label: "Indicadores (KPI's)"
+      title: "Monitoramento de KPIs"
+      description: "Acompanhe o desempenho, a atualização das medições e os indicadores que exigem atenção."
+      period: "Período"
+      months:
+        one: "Último mês"
+        other: "Últimos %{count} meses"
+      summary: "Resumo dos KPIs"
+      metrics:
+        total: "Total de KPIs"
+        average_progress: "Progresso médio"
+        at_risk: "Em risco"
+        overdue_measurements: "Medições atrasadas"
+      charts:
+        progress: "Progresso por indicador"
+        status: "Distribuição por situação"
+        trend: "Evolução das medições"
+        no_history: "Não há medições suficientes neste período para exibir uma evolução."
+      attention:
+        title: "Atenção necessária"
+        overdue:
+          one: "Medição atrasada (1)"
+          other: "Medições atrasadas (%{count})"
+        risky:
+          one: "Indicador em risco (1)"
+          other: "Indicadores em risco (%{count})"
+        days_late:
+          one: "1 dia de atraso"
+          other: "%{count} dias de atraso"
+        none_overdue: "Todas as medições estão em dia."
+        none_risky: "Nenhum indicador está em risco ou fora do planejado."
+      table:
+        title: "Detalhamento dos indicadores"
+        last_measurement: "Última medição"
+        next_measurement: "Próxima medição"
+      empty:
+        title: "Nenhum KPI configurado"
+        description: "Crie o primeiro KPI para começar a monitorar metas e medições deste projeto."

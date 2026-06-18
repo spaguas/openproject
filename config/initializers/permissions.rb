@@ -540,12 +540,19 @@ Rails.application.reloader.to_prepare do
 
     map.project_module :kpis do |kpis|
       kpis.permission :view_kpis,
-                      { kpis: %i[index show] },
+                      {
+                        kpis: %i[index show],
+                        "overviews/overviews": [:kpis],
+                        "grids/widgets/kpi_charts": [:show]
+                      },
                       permissible_on: :project,
                       public: true
 
       kpis.permission :manage_kpis,
-                      { kpis: %i[new create edit update destroy] },
+                      {
+                        kpis: %i[new create edit update destroy],
+                        kpi_measurements: [:create]
+                      },
                       permissible_on: :project,
                       require: :member,
                       dependencies: :view_kpis

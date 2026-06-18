@@ -259,6 +259,10 @@ export class PathHelperService {
     return `${this.projectPath(projectIdentifier)}/widgets/${widgetName}`;
   }
 
+  public projectKpiChartWidgetPath(projectIdentifier:string) {
+    return this.projectWidgetPath(projectIdentifier, 'kpi_chart');
+  }
+
   public timeEntriesPath(workPackageId:string|number) {
     const suffix = '/time_entries';
 

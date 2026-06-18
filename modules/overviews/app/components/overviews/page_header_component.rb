@@ -77,5 +77,10 @@ module Overviews
       project.project_creation_wizard_enabled &&
         current_user.allowed_in_project?(:export_projects, project)
     end
+
+    def allowed_to_view_kpis?
+      project.module_enabled?("kpis") &&
+        current_user.allowed_in_project?(:view_kpis, project)
+    end
   end
 end

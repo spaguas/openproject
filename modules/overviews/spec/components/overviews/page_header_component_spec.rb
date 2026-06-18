@@ -180,11 +180,12 @@ RSpec.describe Overviews::PageHeaderComponent, type: :component do
         expect(rendered_component).to have_css ".PageHeader-tabNavBar"
       end
 
-      it "renders 2 tabs", :aggregate_failures do
+      it "renders 3 tabs", :aggregate_failures do
         expect(rendered_component).to have_list class: "tabnav-tabs" do |list|
-          expect(list).to have_list_item count: 2
+          expect(list).to have_list_item count: 3
           expect(list).to have_list_item "Overview"
           expect(list).to have_list_item "Dashboard"
+          expect(list).to have_list_item "Indicators (KPIs)"
         end
       end
 
@@ -207,6 +208,27 @@ RSpec.describe Overviews::PageHeaderComponent, type: :component do
       it "renders only the Overview tab", :aggregate_failures do
         expect(rendered_component).to have_link "Overview"
         expect(rendered_component).to have_no_link "Dashboard"
+      end
+    end
+
+    context "when the KPI module is enabled and the user can view KPIs" do
+      let(:project) do
+        build_stubbed(
+          :project,
+          name: "Too big to fail",
+          workspace_type:,
+          project_creation_wizard_enabled: true
+        )
+      end
+
+      before do
+        allow(project).to receive(:module_enabled?).with("kpis").and_return(true)
+        allow(user).to receive(:allowed_in_project?).and_call_original
+        allow(user).to receive(:allowed_in_project?).with(:view_kpis, project).and_return(true)
+      end
+
+      it "renders the KPI indicators tab" do
+        expect(rendered_component).to have_link "Indicators (KPIs)"
       end
     end
   end

@@ -42,6 +42,13 @@ module ::Overviews
       render :project_life_cycle_sidebar, layout: false
     end
 
+    def kpis
+      @kpi_dashboard = Overviews::KpiDashboard.new(
+        project: @project,
+        period: params[:period]
+      ).call
+    end
+
     def jump_to_project_menu_item
       # try to redirect to the requested menu item
       redirect_to_project_menu_item(@project, params[:jump]) if params[:jump]

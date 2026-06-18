@@ -1,4 +1,5 @@
-<section class="homescreen-project-overview">
+<section class="homescreen-project-overview"
+         data-controller="homescreen--project-overview-charts">
   <style>
     .homescreen-project-overview {
       margin: 1rem 0 1.5rem;
@@ -36,6 +37,26 @@
       border: 1px solid var(--borderColor-default);
       border-radius: 6px;
       padding: 1rem;
+    }
+
+    .homescreen-project-overview--metric {
+      color: var(--fgColor-default);
+      cursor: pointer;
+      font: inherit;
+      text-align: left;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+      width: 100%;
+    }
+
+    .homescreen-project-overview--metric:hover {
+      border-color: var(--borderColor-accent-emphasis);
+      transform: translateY(-1px);
+    }
+
+    .homescreen-project-overview--metric:focus-visible {
+      border-color: var(--borderColor-accent-emphasis);
+      box-shadow: 0 0 0 3px var(--focus-outline-color);
+      outline: none;
     }
 
     .homescreen-project-overview--metric-value {
@@ -83,6 +104,33 @@
       grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
     }
 
+    .homescreen-project-overview--detail-description {
+      color: var(--fgColor-muted);
+      margin-top: 0;
+    }
+
+    .homescreen-project-overview--chart-container {
+      height: min(52vh, 420px);
+      margin-bottom: 1.5rem;
+      min-height: 280px;
+      position: relative;
+    }
+
+    .homescreen-project-overview--detail-table {
+      max-height: 40vh;
+      overflow: auto;
+    }
+
+    .homescreen-project-overview--compact-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .homescreen-project-overview--compact-list li + li {
+      margin-top: 0.25rem;
+    }
+
     @media screen and (max-width: 900px) {
       .homescreen-project-overview--header,
       .homescreen-project-overview--tables {
@@ -91,6 +139,16 @@
 
       .homescreen-project-overview--header .button {
         margin-top: 0.75rem;
+      }
+
+      .homescreen-project-overview--chart-container {
+        height: 320px;
+        min-height: 240px;
+      }
+
+      .homescreen-project-overview--detail-table {
+        max-height: none;
+        overflow-x: auto;
       }
     }
   </style>
@@ -108,31 +166,66 @@
   </div>
 
   <div class="homescreen-project-overview--metrics">
-    <div class="homescreen-project-overview--metric">
+    <button class="homescreen-project-overview--metric"
+            type="button"
+            aria-haspopup="dialog"
+            data-show-dialog-id="<%= dialog_id(:projects) %>"
+            data-action="click->homescreen--project-overview-charts#render"
+            data-homescreen--project-overview-charts-key-param="projects">
       <span class="homescreen-project-overview--metric-value"><%= summary[:projects] %></span>
       <span class="homescreen-project-overview--metric-label"><%= t(:label_project_plural) %></span>
-    </div>
-    <div class="homescreen-project-overview--metric">
+    </button>
+    <button class="homescreen-project-overview--metric"
+            type="button"
+            aria-haspopup="dialog"
+            data-show-dialog-id="<%= dialog_id(:areas) %>"
+            data-action="click->homescreen--project-overview-charts#render"
+            data-homescreen--project-overview-charts-key-param="areas">
       <span class="homescreen-project-overview--metric-value"><%= summary[:areas] %></span>
       <span class="homescreen-project-overview--metric-label"><%= t("homescreen.project_overview.areas") %></span>
-    </div>
-    <div class="homescreen-project-overview--metric">
+    </button>
+    <button class="homescreen-project-overview--metric"
+            type="button"
+            aria-haspopup="dialog"
+            data-show-dialog-id="<%= dialog_id(:work_packages) %>"
+            data-action="click->homescreen--project-overview-charts#render"
+            data-homescreen--project-overview-charts-key-param="work_packages">
       <span class="homescreen-project-overview--metric-value"><%= summary[:work_packages] %></span>
       <span class="homescreen-project-overview--metric-label"><%= t(:label_work_package_plural) %></span>
-    </div>
-    <div class="homescreen-project-overview--metric">
+    </button>
+    <button class="homescreen-project-overview--metric"
+            type="button"
+            aria-haspopup="dialog"
+            data-show-dialog-id="<%= dialog_id(:completion) %>"
+            data-action="click->homescreen--project-overview-charts#render"
+            data-homescreen--project-overview-charts-key-param="completion">
       <span class="homescreen-project-overview--metric-value"><%= summary[:completion] %>%</span>
       <span class="homescreen-project-overview--metric-label"><%= t("homescreen.project_overview.completion") %></span>
-    </div>
-    <div class="homescreen-project-overview--metric">
+    </button>
+    <button class="homescreen-project-overview--metric"
+            type="button"
+            aria-haspopup="dialog"
+            data-show-dialog-id="<%= dialog_id(:overdue) %>"
+            data-action="click->homescreen--project-overview-charts#render"
+            data-homescreen--project-overview-charts-key-param="overdue">
       <span class="homescreen-project-overview--metric-value"><%= summary[:overdue] %></span>
       <span class="homescreen-project-overview--metric-label"><%= t("homescreen.project_overview.overdue") %></span>
-    </div>
-    <div class="homescreen-project-overview--metric">
+    </button>
+    <button class="homescreen-project-overview--metric"
+            type="button"
+            aria-haspopup="dialog"
+            data-show-dialog-id="<%= dialog_id(:due_soon) %>"
+            data-action="click->homescreen--project-overview-charts#render"
+            data-homescreen--project-overview-charts-key-param="due_soon">
       <span class="homescreen-project-overview--metric-value"><%= summary[:due_soon] %></span>
       <span class="homescreen-project-overview--metric-label"><%= t("homescreen.project_overview.due_soon") %></span>
-    </div>
+    </button>
   </div>
+
+  <% DETAIL_KEYS.each do |kind| %>
+    <%= render partial: "homescreen/project_overview_detail_dialog",
+               locals: { component: self, kind: } %>
+  <% end %>
 
   <div class="homescreen-project-overview--charts">
     <%= render partial: "homescreen/project_overview_distribution",

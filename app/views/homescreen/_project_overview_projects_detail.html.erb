@@ -1,0 +1,25 @@
+<table class="generic-table">
+  <caption class="sr-only"><%= t("homescreen.project_overview.details.projects.title") %></caption>
+  <thead>
+    <tr>
+      <th><%= t("homescreen.project_overview.details.responsible") %></th>
+      <th><%= t(:label_project_plural) %></th>
+      <th><%= t("homescreen.project_overview.details.total") %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% overview.project_responsibility_rows.each do |row| %>
+      <tr>
+        <td><%= row[:label] %></td>
+        <td>
+          <ul class="homescreen-project-overview--compact-list">
+            <% row[:projects].each do |project| %>
+              <li><%= link_to project.name, project_path(project) %></li>
+            <% end %>
+          </ul>
+        </td>
+        <td><%= row[:count] %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

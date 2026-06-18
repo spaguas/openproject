@@ -31,6 +31,8 @@ import DailyRemindersController from './controllers/dynamic/my/daily-reminders.c
 import NonWorkingTimesController from './controllers/dynamic/users/non-working-times.controller';
 import NonWorkingTimesFormController from './controllers/dynamic/users/non-working-times-form.controller';
 import OpPasswordForceChangeController from './controllers/password-force-change.controller';
+import ProjectOverviewChartsController from './controllers/dynamic/homescreen/project-overview-charts.controller';
+import KpiDashboardChartsController from './controllers/dynamic/overviews/kpi-dashboard-charts.controller';
 
 import AutoSubmit from '@stimulus-components/auto-submit';
 import RevealController from '@stimulus-components/reveal';
@@ -94,6 +96,8 @@ OpenProjectStimulusApplication.preregister('my--daily-reminders', DailyReminders
 OpenProjectStimulusApplication.preregister('users--non-working-times', NonWorkingTimesController);
 OpenProjectStimulusApplication.preregister('users--non-working-times-form', NonWorkingTimesFormController);
 OpenProjectStimulusApplication.preregister('password-force-change', OpPasswordForceChangeController);
+OpenProjectStimulusApplication.preregister('homescreen--project-overview-charts', ProjectOverviewChartsController);
+OpenProjectStimulusApplication.preregister('overviews--kpi-dashboard-charts', KpiDashboardChartsController);
 OpenProjectStimulusApplication.preregister('check-all', CheckAllController);
 OpenProjectStimulusApplication.preregister('checkable', CheckableController);
 OpenProjectStimulusApplication.preregister('truncation', TruncationController);

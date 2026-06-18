@@ -1,0 +1,29 @@
+<table class="generic-table">
+  <caption class="sr-only"><%= t("homescreen.project_overview.details.work_packages.title") %></caption>
+  <thead>
+    <tr>
+      <th><%= t("homescreen.project_overview.area") %></th>
+      <th><%= t(:label_work_package_plural) %></th>
+      <th><%= t("homescreen.project_overview.details.status_distribution") %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% overview.area_work_package_status_rows.each do |row| %>
+      <tr>
+        <td><%= link_to row[:area].name, project_path(row[:area]) %></td>
+        <td><%= row[:total] %></td>
+        <td>
+          <ul class="homescreen-project-overview--compact-list">
+            <% row[:statuses].each do |status, count| %>
+              <li>
+                <%= status %>:
+                <strong><%= count %></strong>
+                (<%= number_to_percentage((count.to_f / row[:total]) * 100, precision: 1) %>)
+              </li>
+            <% end %>
+          </ul>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

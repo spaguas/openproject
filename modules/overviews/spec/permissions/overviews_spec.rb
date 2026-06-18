@@ -35,4 +35,5 @@ RSpec.describe Overviews::OverviewsController, "permissions", type: :controller 
   include PermissionSpecs
 
   check_permission_required_for("overviews/overviews#show", :view_project)
+  check_permission_required_for("overviews/overviews#kpis", :view_kpis)
 end
