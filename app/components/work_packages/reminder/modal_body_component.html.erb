@@ -1,4 +1,4 @@
-<%= component_wrapper(tag: "turbo-frame") do %>
+<%= component_wrapper(tag: "turbo-frame", data: { controller: "show-when-value-selected" }) do %>
   <%= primer_form_with(
         model: reminder,
         url: submit_path,
@@ -6,11 +6,53 @@
       ) do |f| %>
     <%= flex_layout(classes: "reminder-modal-body--form-flex-container") do |form_flex_container| %>
       <%= form_flex_container.with_row do %>
-        <%= render(WorkPackages::Reminder::RemindAtDate.new(f, initial_value: remind_at_date_initial_value)) %>
+        <%= render(WorkPackages::Reminder::ScheduleType.new(f)) %>
       <% end %>
-      <%= form_flex_container.with_row do %>
-        <%= render(WorkPackages::Reminder::RemindAtTime.new(f, initial_value: remind_at_time_initial_value)) %>
-      <% end %>
+      <div <%= "hidden" unless one_time_schedule? %>
+           data-show-when-value-selected-target="effect"
+           data-target-name="reminder-schedule-type"
+           data-value="one_time"
+           data-disable-descendants="true">
+        <%= form_flex_container.with_row do %>
+          <%= render(
+                WorkPackages::Reminder::RemindAtDate.new(
+                  f,
+                  initial_value: remind_at_date_initial_value,
+                  disabled: !one_time_schedule?
+                )
+              ) %>
+        <% end %>
+        <%= form_flex_container.with_row do %>
+          <%= render(
+                WorkPackages::Reminder::RemindAtTime.new(
+                  f,
+                  initial_value: remind_at_time_initial_value,
+                  disabled: !one_time_schedule?
+                )
+              ) %>
+        <% end %>
+      </div>
+      <div <%= "hidden" unless deadline_schedule? %>
+           data-show-when-value-selected-target="effect"
+           data-target-name="reminder-schedule-type"
+           data-value="deadline">
+        <% if remindable.due_date.present? %>
+          <%= form_flex_container.with_row do %>
+            <p class="fgColor-muted">
+              <%= t("work_package.reminders.deadline.current_due_date", date: format_date(remindable.due_date)) %>
+            </p>
+          <% end %>
+          <%= form_flex_container.with_row do %>
+            <%= render(WorkPackages::Reminder::DeadlineSettings.new(f)) %>
+          <% end %>
+        <% else %>
+          <%= form_flex_container.with_row do %>
+            <%= render(Primer::Alpha::Banner.new(scheme: :warning)) do %>
+              <%= t("work_package.reminders.deadline.missing_due_date") %>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
       <%= form_flex_container.with_row do %>
         <%= render(WorkPackages::Reminder::Note.new(f)) %>
       <% end %>

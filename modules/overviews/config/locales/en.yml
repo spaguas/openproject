@@ -3,6 +3,114 @@ en:
     label_home: "%{workspace_type} home"
     label_dashboard: "Dashboard"
     label_overview: "Overview"
+    team_allocation:
+      label: "Team allocation"
+      title: "Team allocation"
+      description: "Review project capacity, participation, workload, and estimated labor costs."
+      global_description: "Review capacity, participation, workload, and estimated labor costs across all visible projects."
+      period: "Period"
+      months:
+        one: "Next month"
+        other: "Next %{count} months"
+      summary: "Team allocation summary"
+      restricted: "Restricted"
+      metrics:
+        allocation: "Allocated capacity"
+        active_members: "Active members"
+        planned_hours: "Planned hours"
+        estimated_cost: "Estimated cost"
+      metric_notes:
+        allocation: "%{allocated} of %{capacity} available"
+        active_members: "of %{total} project members"
+        global_active_members: "of %{total} members in visible projects"
+        planned_hours: "Approved allocations in the period"
+        estimated_cost: "Based on visible hourly rates"
+      charts:
+        distribution: "Allocation distribution"
+        capacity: "100% capacity"
+      insights:
+        title: "Insights"
+        overloaded:
+          one: "1 member is over capacity"
+          other: "%{count} members are over capacity"
+        near_capacity:
+          one: "1 member is close to capacity"
+          other: "%{count} members are close to capacity"
+        available:
+          one: "1 member has available capacity"
+          other: "%{count} members have available capacity"
+        available_description: "There is room to redistribute or accept new demand."
+        requested:
+          one: "1 allocation request is pending"
+          other: "%{count} allocation requests are pending"
+        requested_description: "Pending requests are excluded from allocated capacity."
+        concentrated: "The top 3 members account for %{share}"
+        concentrated_description: "Participation is concentrated and may represent a delivery risk."
+      table:
+        title: "Allocation by member"
+        member: "Member"
+        role: "Role"
+        planned: "Planned"
+        logged: "Logged"
+        allocation: "Allocation"
+        cost: "Estimated cost"
+        participation: "Participation"
+        no_role: "No project role"
+      caveat: >
+        Allocation is calculated from approved resource allocations over each member's available working capacity.
+        Absences and non-working days reduce capacity. Costs and logged hours are shown only when permitted.
+      empty:
+        title: "No project members"
+        description: "Add members and resource allocations to start analyzing project capacity."
+    budget:
+      label: "Budget"
+      title: "Budget monitoring"
+      description: "Monitor planned and actual costs, available balance, and budgets that require attention."
+      period: "Period"
+      months:
+        one: "Last month"
+        other: "Last %{count} months"
+      summary: "Budget summary"
+      metrics:
+        planned: "Planned budget"
+        spent: "Actual cost"
+        remaining: "Available balance"
+        ratio: "Budget consumption"
+      metric_notes:
+        planned: "Approved budget total"
+        spent: "Costs recorded to date"
+        remaining: "Resources still available"
+        ratio: "Actual cost versus planned"
+      categories:
+        base: "Base"
+        labor: "Labor"
+        material: "Materials"
+      charts:
+        comparison: "Planned versus actual by category"
+        planned: "Planned"
+        actual: "Actual"
+        trend: "Monthly cost evolution"
+        no_history: "No actual costs were recorded in this period."
+      attention:
+        title: "Attention required"
+        none: "No budget requires attention."
+        over_budget: "Budget exceeded: %{ratio} consumed."
+        near_limit: "Approaching the limit: %{ratio} consumed."
+        without_spending: "No actual costs have been recorded."
+      table:
+        title: "Budget details"
+        view_all: "View all budgets"
+        budget: "Budget"
+        project: "Project"
+        base_date: "Base date"
+        planned: "Planned"
+        actual: "Actual"
+        balance: "Balance"
+        consumption: "Consumption"
+        work_packages: "Work packages"
+      empty:
+        title: "No budgets configured"
+        description: "Create the first budget and associate work packages to start monitoring project costs."
     kpis:
       label: "Indicators (KPIs)"
       title: "KPI monitoring"

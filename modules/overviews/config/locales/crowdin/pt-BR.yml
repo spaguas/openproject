@@ -4,6 +4,114 @@ pt-BR:
     label_home: "%{workspace_type} inicial"
     label_dashboard: Painel
     label_overview: Visão geral
+    team_allocation:
+      label: "Alocação da equipe"
+      title: "Alocação da equipe"
+      description: "Acompanhe a capacidade, participação, carga de trabalho e custos estimados dos membros do projeto."
+      global_description: "Acompanhe a capacidade, participação, carga de trabalho e custos estimados em todos os projetos visíveis."
+      period: "Período"
+      months:
+        one: "Próximo mês"
+        other: "Próximos %{count} meses"
+      summary: "Resumo da alocação da equipe"
+      restricted: "Restrito"
+      metrics:
+        allocation: "Capacidade alocada"
+        active_members: "Membros ativos"
+        planned_hours: "Horas planejadas"
+        estimated_cost: "Custo estimado"
+      metric_notes:
+        allocation: "%{allocated} de %{capacity} disponíveis"
+        active_members: "de %{total} membros do projeto"
+        global_active_members: "de %{total} membros nos projetos visíveis"
+        planned_hours: "Alocações aprovadas no período"
+        estimated_cost: "Com base nas taxas horárias visíveis"
+      charts:
+        distribution: "Distribuição da alocação"
+        capacity: "100% da capacidade"
+      insights:
+        title: "Insights"
+        overloaded:
+          one: "1 membro está acima da capacidade"
+          other: "%{count} membros estão acima da capacidade"
+        near_capacity:
+          one: "1 membro está próximo da capacidade"
+          other: "%{count} membros estão próximos da capacidade"
+        available:
+          one: "1 membro possui capacidade disponível"
+          other: "%{count} membros possuem capacidade disponível"
+        available_description: "Há margem para redistribuir ou receber novas demandas."
+        requested:
+          one: "1 solicitação de alocação está pendente"
+          other: "%{count} solicitações de alocação estão pendentes"
+        requested_description: "Solicitações pendentes não entram no cálculo da capacidade alocada."
+        concentrated: "Os 3 membros com maior participação concentram %{share}"
+        concentrated_description: "A concentração da participação pode representar risco para a entrega."
+      table:
+        title: "Alocação por membro"
+        member: "Membro"
+        role: "Função"
+        planned: "Planejado"
+        logged: "Registrado"
+        allocation: "Alocação"
+        cost: "Custo estimado"
+        participation: "Participação"
+        no_role: "Sem função no projeto"
+      caveat: >
+        A alocação considera os registros aprovados sobre a capacidade de trabalho disponível de cada membro.
+        Ausências e dias não úteis reduzem a capacidade. Custos e horas registradas aparecem somente quando permitidos.
+      empty:
+        title: "Nenhum membro no projeto"
+        description: "Adicione membros e alocações de recursos para começar a analisar a capacidade do projeto."
+    budget:
+      label: "Orçamento"
+      title: "Acompanhamento orçamentário"
+      description: "Monitore valores planejados e realizados, saldo disponível e orçamentos que exigem atenção."
+      period: "Período"
+      months:
+        one: "Último mês"
+        other: "Últimos %{count} meses"
+      summary: "Resumo do orçamento"
+      metrics:
+        planned: "Orçamento planejado"
+        spent: "Custo realizado"
+        remaining: "Saldo disponível"
+        ratio: "Consumo do orçamento"
+      metric_notes:
+        planned: "Total dos orçamentos aprovados"
+        spent: "Custos registrados até o momento"
+        remaining: "Recursos ainda disponíveis"
+        ratio: "Custo realizado sobre o planejado"
+      categories:
+        base: "Base"
+        labor: "Mão de obra"
+        material: "Materiais"
+      charts:
+        comparison: "Planejado x realizado por natureza"
+        planned: "Planejado"
+        actual: "Realizado"
+        trend: "Evolução mensal dos custos"
+        no_history: "Nenhum custo realizado foi registrado neste período."
+      attention:
+        title: "Atenção necessária"
+        none: "Nenhum orçamento exige atenção."
+        over_budget: "Orçamento excedido: %{ratio} consumido."
+        near_limit: "Próximo do limite: %{ratio} consumido."
+        without_spending: "Nenhum custo realizado foi registrado."
+      table:
+        title: "Detalhamento dos orçamentos"
+        view_all: "Ver todos os orçamentos"
+        budget: "Orçamento"
+        project: "Projeto"
+        base_date: "Data base"
+        planned: "Planejado"
+        actual: "Realizado"
+        balance: "Saldo"
+        consumption: "Consumo"
+        work_packages: "Pacotes de trabalho"
+      empty:
+        title: "Nenhum orçamento configurado"
+        description: "Crie o primeiro orçamento e associe pacotes de trabalho para começar a monitorar os custos do projeto."
     kpis:
       label: "Indicadores (KPI's)"
       title: "Monitoramento de KPIs"

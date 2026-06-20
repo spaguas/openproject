@@ -37,6 +37,10 @@ module Reminders
     attribute :remindable_type
     attribute :remind_at
     attribute :note
+    attribute :schedule_type
+    attribute :days_before
+    attribute :recurrence
+    attribute :delivery_channel
 
     validate :validate_creator_exists
     validate :validate_acting_user
@@ -45,6 +49,7 @@ module Reminders
     validate :validate_remind_at_present
     validate :validate_remind_at_is_in_future
     validate :validate_note_length
+    validate :validate_deadline_configuration
 
     def self.model = Reminder
 
@@ -67,7 +72,11 @@ module Reminders
     end
 
     def validate_remind_at_is_in_future
-      if model.remind_at.present? && model.remind_at < Time.current
+      return unless model.remind_at.present? && model.remind_at < Time.current
+
+      if model.schedule_type_deadline?
+        errors.add :days_before, :deadline_alert_must_be_in_future
+      else
         errors.add :remind_at, :datetime_must_be_in_future
       end
     end
@@ -76,6 +85,33 @@ module Reminders
       if model.note.present? && model.note.length > MAX_NOTE_CHARS_LENGTH
         errors.add :note, :too_long, count: MAX_NOTE_CHARS_LENGTH
       end
+    end
+
+    def validate_deadline_configuration
+      return unless model.schedule_type_deadline?
+
+      validate_deadline_due_date
+      validate_deadline_days
+      validate_deadline_recurrence
+      validate_deadline_delivery_channel
+    end
+
+    def validate_deadline_due_date
+      errors.add :remindable, :due_date_required if model.remindable&.due_date.blank?
+    end
+
+    def validate_deadline_days
+      errors.add :days_before, :inclusion unless Reminder::DEADLINE_DAYS.include?(model.days_before)
+    end
+
+    def validate_deadline_recurrence
+      errors.add :recurrence, :inclusion unless Reminder.recurrences.key?(model.recurrence)
+    end
+
+    def validate_deadline_delivery_channel
+      return if Reminder.delivery_channels.key?(model.delivery_channel)
+
+      errors.add :delivery_channel, :inclusion
     end
 
     def validate_manage_reminders_permissions

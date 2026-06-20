@@ -118,5 +118,43 @@ RSpec.describe Reminders::ScheduleReminderJob do
           .not_to have_enqueued_job(Mails::Reminders::NotificationDeliveryJob)
       end
     end
+
+    context "with a recurring due date alert" do
+      let(:work_package) { create(:work_package, project:, due_date: 7.days.from_now.to_date) }
+      let(:reminder) do
+        create(
+          :reminder,
+          creator: user,
+          remindable: work_package,
+          schedule_type: "deadline",
+          days_before: 7,
+          recurrence: "daily",
+          delivery_channel:,
+          remind_at: Time.current.change(hour: 9)
+        )
+      end
+      let(:delivery_channel) { "system_only" }
+
+      it "creates the notification and schedules the next occurrence" do
+        expect { subject }
+          .to change(Notification, :count).by(1)
+          .and have_enqueued_job(described_class)
+
+        expect(reminder.reload.remind_at).to eq(Time.current.change(hour: 9) + 1.day)
+        expect(reminder).not_to be_completed
+      end
+
+      it "does not send an email for system-only alerts" do
+        expect { subject }.not_to have_enqueued_job(Mails::Reminders::NotificationDeliveryJob)
+      end
+
+      context "with email enabled" do
+        let(:delivery_channel) { "system_and_email" }
+
+        it "sends an email in addition to the system notification" do
+          expect { subject }.to have_enqueued_job(Mails::Reminders::NotificationDeliveryJob)
+        end
+      end
+    end
   end
 end

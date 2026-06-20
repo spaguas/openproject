@@ -1,0 +1,31 @@
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { organization_name }
+    header.with_breadcrumbs(nil)
+    header.with_tab_nav(label: nil) do |tab_nav|
+      tab_nav.with_tab(
+        selected: false,
+        href: home_path
+      ) do |tab|
+        tab.with_icon(icon: :home)
+        tab.with_text { t(:label_home) }
+      end
+
+      tab_nav.with_tab(
+        selected: true,
+        href: global_team_allocation_path
+      ) do |tab|
+        tab.with_icon(icon: :people)
+        tab.with_text { t("overviews.team_allocation.label") }
+      end
+    end
+  end
+%>
+
+<%= render(
+      Overviews::TeamAllocationDashboardComponent.new(
+        dashboard: @team_allocation_dashboard,
+        form_url: global_team_allocation_path,
+        context: :global
+      )
+    ) %>

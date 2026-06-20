@@ -2295,6 +2295,7 @@ en:
         not_an_iso_date: "is not a valid date. Required format: YYYY-MM-DD."
         not_same_project: "doesn't belong to the same project."
         datetime_must_be_in_future: "must be in the future."
+        deadline_alert_must_be_in_future: "must result in an alert in the future. Choose a shorter interval or a recurring alert."
         odd: "must be odd."
         regex_match_failed: "does not match the regular expression %{expression}."
         regex_invalid: "could not be validated with the associated regular expression."
@@ -6275,6 +6276,37 @@ en:
       create_success_message_html: "Reminder set successfully. You will receive a notification for this work package %{reminder_time}."
       success_update_message: "Reminder updated successfully."
       success_deletion_message: "Reminder deleted successfully."
+      schedule_type:
+        label: "Reminder type"
+        one_time:
+          label: "Specific date and time"
+          caption: "Receive one notification at the selected date and time."
+        deadline:
+          label: "Due date alert"
+          caption: "Receive alerts based on this work package's due date."
+      deadline:
+        days_before: "First alert"
+        day_options:
+          zero: "On the due date"
+          one: "1 day before"
+          other: "%{count} days before"
+        recurrence: "Repeat alert"
+        recurrences:
+          once: "Do not repeat"
+          daily: "Every day until the due date"
+          every_three_days: "Every 3 days until the due date"
+          weekly: "Every week until the due date"
+        delivery_channel: "Notification channel"
+        delivery_channels:
+          system_only:
+            label: "System notification only"
+            caption: "Show the alert in the OpenProject notification center."
+          system_and_email:
+            label: "System notification and email"
+            caption: "Show the alert in OpenProject and also send an email."
+        current_due_date: "Current due date: %{date}"
+        missing_due_date: "Set a due date on this work package before configuring a due date alert."
+        create_success_message: "Due date alert configured successfully. The first alert will be sent %{days}."
   sharing:
     count:
       zero: "0 users"

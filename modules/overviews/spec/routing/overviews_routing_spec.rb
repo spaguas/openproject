@@ -33,6 +33,13 @@ require "rails_helper"
 RSpec.describe Overviews::OverviewsController do
   describe "routing" do
     it do
+      expect(get("/team_allocation"))
+        .to route_to(
+          controller: "homescreen", action: "team_allocation"
+        )
+    end
+
+    it do
       expect(get("/projects/my-project"))
         .to route_to(
           controller: "overviews/overviews", action: "show", project_id: "my-project"
@@ -65,6 +72,13 @@ RSpec.describe Overviews::OverviewsController do
 
   describe "named routing" do
     it do
+      expect(get(global_team_allocation_path))
+        .to route_to(
+          controller: "homescreen", action: "team_allocation"
+        )
+    end
+
+    it do
       expect(get(project_overview_path("my-project")))
         .to route_to(
           controller: "overviews/overviews", action: "show", project_id: "my-project"
@@ -82,6 +96,20 @@ RSpec.describe Overviews::OverviewsController do
       expect(get(kpis_project_overview_path("my-project")))
         .to route_to(
           controller: "overviews/overviews", action: "kpis", project_id: "my-project"
+        )
+    end
+
+    it do
+      expect(get(budget_project_overview_path("my-project")))
+        .to route_to(
+          controller: "overviews/overviews", action: "budget", project_id: "my-project"
+        )
+    end
+
+    it do
+      expect(get(team_allocation_project_overview_path("my-project")))
+        .to route_to(
+          controller: "overviews/overviews", action: "team_allocation", project_id: "my-project"
         )
     end
 

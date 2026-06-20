@@ -33,9 +33,15 @@ module Reminders
     include Reminders::ServiceHelpers
 
     def after_perform(service_call)
-      reschedule_reminder(service_call.result) if model.saved_change_to_remind_at?
+      reschedule_reminder(service_call.result) if scheduling_changed?
 
       service_call
+    end
+
+    private
+
+    def scheduling_changed?
+      model.saved_changes.keys.intersect?(%w[remind_at schedule_type days_before recurrence delivery_channel])
     end
   end
 end

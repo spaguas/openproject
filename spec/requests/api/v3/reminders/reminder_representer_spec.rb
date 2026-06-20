@@ -49,6 +49,20 @@ RSpec.describe API::V3::Reminders::ReminderRepresenter do
     expect(parsed["note"]).to eq reminder.note
   end
 
+  it "renders the deadline alert configuration" do
+    reminder.schedule_type = "deadline"
+    reminder.days_before = 7
+    reminder.recurrence = "daily"
+    reminder.delivery_channel = "system_and_email"
+
+    expect(parsed).to include(
+      "scheduleType" => "deadline",
+      "daysBefore" => 7,
+      "recurrence" => "daily",
+      "deliveryChannel" => "system_and_email"
+    )
+  end
+
   it "renders the _type" do
     expect(parsed["_type"]).to eq "Reminder"
   end

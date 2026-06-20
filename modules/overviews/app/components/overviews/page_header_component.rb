@@ -82,5 +82,17 @@ module Overviews
       project.module_enabled?("kpis") &&
         current_user.allowed_in_project?(:view_kpis, project)
     end
+
+    def allowed_to_view_budget_dashboard?
+      project.module_enabled?("budgets") &&
+        project.module_enabled?("costs") &&
+        Overviews::BudgetDashboard::REQUIRED_PERMISSIONS.all? do |permission|
+          current_user.allowed_in_project?(permission, project)
+        end
+    end
+
+    def allowed_to_view_team_allocation?
+      current_user.allowed_in_project?(:view_project, project)
+    end
   end
 end

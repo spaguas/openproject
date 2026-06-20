@@ -82,6 +82,28 @@
           t.with_text { I18n.t("overviews.kpis.label") }
         end
       end
+
+      if allowed_to_view_budget_dashboard?
+        tab_nav.with_tab(
+          test_selector: "project-budget-dashboard-tab",
+          selected: current_page?(budget_project_overview_path),
+          href: helpers.budget_project_overview_path
+        ) do |t|
+          t.with_icon(icon: :"op-budget")
+          t.with_text { I18n.t("overviews.budget.label") }
+        end
+      end
+
+      if allowed_to_view_team_allocation?
+        tab_nav.with_tab(
+          test_selector: "project-team-allocation-dashboard-tab",
+          selected: current_page?(team_allocation_project_overview_path),
+          href: helpers.team_allocation_project_overview_path
+        ) do |t|
+          t.with_icon(icon: :people)
+          t.with_text { I18n.t("overviews.team_allocation.label") }
+        end
+      end
     end
   end
 %>

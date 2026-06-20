@@ -1,0 +1,252 @@
+.op-budget-dashboard
+  --budget-border: var(--borderColor-default)
+  --budget-muted: var(--fgColor-muted)
+  --budget-primary: var(--fgColor-accent)
+  --budget-success: var(--fgColor-success)
+  --budget-warning: var(--fgColor-attention)
+  --budget-danger: var(--fgColor-danger)
+  padding: 24px
+
+  &--toolbar
+    align-items: end
+    display: flex
+    gap: 24px
+    justify-content: space-between
+    margin-bottom: 20px
+
+    h2
+      font-size: 1.5rem
+      margin: 0 0 4px
+
+    p
+      color: var(--budget-muted)
+      margin: 0
+
+  &--period-form
+    align-items: center
+    display: flex
+    flex: 0 0 auto
+    gap: 8px
+
+    label
+      color: var(--budget-muted)
+      font-size: 0.875rem
+      font-weight: 600
+
+  &--summary
+    display: grid
+    gap: 12px
+    grid-template-columns: repeat(4, minmax(0, 1fr))
+    margin-bottom: 12px
+
+  &--summary-item
+    align-items: center
+    border: 1px solid var(--budget-border)
+    border-radius: 8px
+    display: flex
+    gap: 12px
+    min-height: 104px
+    padding: 16px
+
+    strong,
+    small
+      display: block
+
+    strong
+      font-size: 1.45rem
+      line-height: 1.2
+      margin: 3px 0
+
+    small
+      color: var(--budget-muted)
+      font-size: 0.75rem
+
+    &[data-tone="success"] .op-budget-dashboard--summary-icon,
+    &[data-tone="success"] strong
+      color: var(--budget-success)
+
+    &[data-tone="warning"] .op-budget-dashboard--summary-icon,
+    &[data-tone="warning"] strong
+      color: var(--budget-warning)
+
+    &[data-tone="danger"] .op-budget-dashboard--summary-icon,
+    &[data-tone="danger"] strong
+      color: var(--budget-danger)
+
+  &--summary-icon
+    align-items: center
+    background: var(--bgColor-muted)
+    border-radius: 50%
+    color: var(--budget-primary)
+    display: flex
+    flex: 0 0 42px
+    height: 42px
+    justify-content: center
+
+  &--summary-label
+    color: var(--budget-muted)
+    font-size: 0.875rem
+
+  &--primary-grid
+    display: grid
+    gap: 12px
+    grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr)
+    margin-bottom: 12px
+
+  &--panel
+    border: 1px solid var(--budget-border)
+    border-radius: 8px
+    min-width: 0
+    padding: 16px
+
+    h3
+      font-size: 1rem
+      margin: 0 0 16px
+
+  &--chart
+    height: 280px
+    position: relative
+
+  &--chart-wide
+    height: 320px
+
+  &--empty-chart
+    align-items: center
+    color: var(--budget-muted)
+    display: flex
+    height: 180px
+    justify-content: center
+    margin: 0
+    text-align: center
+
+  &--trend-panel
+    margin-bottom: 12px
+
+  &--attention
+    ul
+      list-style: none
+      margin: 0
+      padding: 0
+
+    li
+      align-items: start
+      border-bottom: 1px solid var(--budget-border)
+      display: flex
+      gap: 10px
+      padding: 10px 0
+
+      &:last-child
+        border-bottom: 0
+
+      > span
+        min-width: 0
+
+      a,
+      small
+        display: block
+
+      a
+        font-weight: 600
+
+      small
+        color: var(--budget-muted)
+        margin-top: 2px
+
+      &[data-tone="danger"] > svg
+        color: var(--budget-danger)
+
+      &[data-tone="warning"] > svg
+        color: var(--budget-warning)
+
+      &[data-tone="neutral"] > svg
+        color: var(--budget-primary)
+
+  &--attention-empty
+    align-items: center
+    color: var(--budget-success)
+    display: flex
+    gap: 10px
+    min-height: 180px
+    justify-content: center
+
+    p
+      color: var(--budget-muted)
+      margin: 0
+
+  &--table-panel
+    padding: 0
+
+  &--table-heading
+    align-items: center
+    display: flex
+    justify-content: space-between
+    padding: 16px
+
+    h3
+      margin: 0
+
+  &--details-link
+    font-size: 0.875rem
+
+  &--table-scroll
+    overflow-x: auto
+
+    table
+      margin-bottom: 0
+      min-width: 1120px
+
+  &--balance[data-tone="success"]
+    color: var(--budget-success)
+
+  &--balance[data-tone="danger"]
+    color: var(--budget-danger)
+
+  &--consumption
+    align-items: center
+    display: flex
+    gap: 8px
+    white-space: nowrap
+
+    > span
+      background: var(--bgColor-muted)
+      border-radius: 3px
+      display: inline-block
+      height: 7px
+      overflow: hidden
+      width: 72px
+
+      span
+        background: var(--budget-success)
+        display: block
+        height: 100%
+
+    &[data-tone="warning"] > span span
+      background: var(--budget-warning)
+
+    &[data-tone="danger"] > span span
+      background: var(--budget-danger)
+
+  @media screen and (max-width: 1000px)
+    &--summary
+      grid-template-columns: repeat(2, minmax(0, 1fr))
+
+    &--primary-grid
+      grid-template-columns: 1fr
+
+  @media screen and (max-width: 600px)
+    padding: 16px
+
+    &--toolbar
+      align-items: stretch
+      flex-direction: column
+
+    &--period-form
+      justify-content: space-between
+
+    &--summary
+      grid-template-columns: 1fr
+
+    &--table-heading
+      align-items: start
+      flex-direction: column
+      gap: 6px

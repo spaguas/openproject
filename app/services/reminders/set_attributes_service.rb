@@ -33,7 +33,7 @@ module Reminders
     def perform
       remind_at_params = params.extract!(:remind_at_date, :remind_at_time)
 
-      build_remind_at_from_params(params, remind_at_params) unless params.key?(:remind_at)
+      build_remind_at(params, remind_at_params) unless params.key?(:remind_at)
 
       contract_call = super
 
@@ -45,6 +45,50 @@ module Reminders
     end
 
     private
+
+    def build_remind_at(params, remind_at_params)
+      if deadline_schedule?(params)
+        build_deadline_remind_at(params)
+      else
+        build_remind_at_from_params(params, remind_at_params)
+      end
+    end
+
+    def deadline_schedule?(params)
+      params.fetch(:schedule_type, model.schedule_type) == "deadline"
+    end
+
+    def build_deadline_remind_at(params)
+      remindable = params[:remindable] || model.remindable
+      days_before = params[:days_before].to_i
+
+      params[:remind_at] =
+        if remindable&.due_date
+          first_occurrence = deadline_time(remindable.due_date - days_before.days)
+          next_deadline_occurrence(
+            first_occurrence:,
+            due_date: remindable.due_date,
+            recurrence: params.fetch(:recurrence, model.recurrence)
+          )
+        end
+    end
+
+    def next_deadline_occurrence(first_occurrence:, due_date:, recurrence:)
+      return first_occurrence if first_occurrence >= Time.current
+      return first_occurrence if recurrence == "once"
+
+      interval = Reminder::RECURRENCE_INTERVALS[recurrence]
+      return first_occurrence unless interval
+
+      occurrence = first_occurrence
+      occurrence += interval while occurrence < Time.current
+
+      occurrence <= deadline_time(due_date) ? occurrence : first_occurrence
+    end
+
+    def deadline_time(date)
+      user.time_zone.local(date.year, date.month, date.day, 9)
+    end
 
     def build_remind_at_from_params(params, remind_at_params)
       return params if remind_at_params.empty?
@@ -60,6 +104,7 @@ module Reminders
     # remap the error attribute to the appropriate field.
     def prepare_errors_from_result(remind_at_params, contract_call)
       return contract_call unless contract_call.errors.include?(:remind_at)
+      return prepare_deadline_errors(contract_call) if contract_call.result.schedule_type_deadline?
 
       case contract_call.errors.find { |error| error.attribute == :remind_at }.type
       when :blank
@@ -69,6 +114,15 @@ module Reminders
       end
 
       contract_call.errors.delete(:remind_at)
+    end
+
+    def prepare_deadline_errors(contract_call)
+      if contract_call.errors.added?(:remind_at, :datetime_must_be_in_future)
+        contract_call.errors.add(:days_before, :deadline_alert_must_be_in_future)
+      end
+
+      contract_call.errors.delete(:remind_at)
+      contract_call
     end
 
     def handle_blank_error(remind_at_params, contract_call)

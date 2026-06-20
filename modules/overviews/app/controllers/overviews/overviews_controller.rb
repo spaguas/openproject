@@ -31,6 +31,7 @@
 module ::Overviews
   class OverviewsController < ::Grids::BaseInProjectController
     before_action :jump_to_project_menu_item, only: [:show] # rubocop:disable Rails/LexicallyScopedActionFilter
+    before_action :ensure_budget_dashboard_permissions, only: :budget
 
     menu_item :overview
 
@@ -49,9 +50,35 @@ module ::Overviews
       ).call
     end
 
+    def budget
+      @budget_dashboard = Overviews::BudgetDashboard.new(
+        project: @project,
+        current_user:,
+        period: params[:period]
+      ).call
+    end
+
+    def team_allocation
+      @team_allocation_dashboard = Overviews::TeamAllocationDashboard.new(
+        project: @project,
+        current_user:,
+        period: params[:period]
+      ).call
+    end
+
     def jump_to_project_menu_item
       # try to redirect to the requested menu item
       redirect_to_project_menu_item(@project, params[:jump]) if params[:jump]
+    end
+
+    private
+
+    def ensure_budget_dashboard_permissions
+      allowed = Overviews::BudgetDashboard::REQUIRED_PERMISSIONS.all? do |permission|
+        current_user.allowed_in_project?(permission, @project)
+      end
+
+      render_403 unless allowed
     end
   end
 end

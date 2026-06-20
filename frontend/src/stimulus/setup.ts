@@ -33,6 +33,7 @@ import NonWorkingTimesFormController from './controllers/dynamic/users/non-worki
 import OpPasswordForceChangeController from './controllers/password-force-change.controller';
 import ProjectOverviewChartsController from './controllers/dynamic/homescreen/project-overview-charts.controller';
 import KpiDashboardChartsController from './controllers/dynamic/overviews/kpi-dashboard-charts.controller';
+import BudgetDashboardChartsController from './controllers/dynamic/overviews/budget-dashboard-charts.controller';
 
 import AutoSubmit from '@stimulus-components/auto-submit';
 import RevealController from '@stimulus-components/reveal';
@@ -98,6 +99,7 @@ OpenProjectStimulusApplication.preregister('users--non-working-times-form', NonW
 OpenProjectStimulusApplication.preregister('password-force-change', OpPasswordForceChangeController);
 OpenProjectStimulusApplication.preregister('homescreen--project-overview-charts', ProjectOverviewChartsController);
 OpenProjectStimulusApplication.preregister('overviews--kpi-dashboard-charts', KpiDashboardChartsController);
+OpenProjectStimulusApplication.preregister('overviews--budget-dashboard-charts', BudgetDashboardChartsController);
 OpenProjectStimulusApplication.preregister('check-all', CheckAllController);
 OpenProjectStimulusApplication.preregister('checkable', CheckableController);
 OpenProjectStimulusApplication.preregister('truncation', TruncationController);

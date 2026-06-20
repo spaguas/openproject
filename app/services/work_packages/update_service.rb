@@ -50,6 +50,7 @@ class WorkPackages::UpdateService < BaseServices::Update
     apply_patterns(service_call.result, save: false)
     update_related_work_packages(service_call)
     cleanup(service_call.result)
+    reschedule_deadline_reminders(service_call.result)
 
     service_call
   end
@@ -107,6 +108,26 @@ class WorkPackages::UpdateService < BaseServices::Update
     if work_package.saved_change_to_type_id?
       reset_custom_values(work_package)
     end
+  end
+
+  def reschedule_deadline_reminders(work_package)
+    return unless work_package.saved_change_to_due_date?
+
+    work_package.reminders
+      .where(schedule_type: "deadline", completed_at: nil)
+      .find_each do |reminder|
+        next_occurrence = reminder.next_deadline_occurrence
+
+        if next_occurrence
+          Reminders::UpdateService
+            .new(user: reminder.creator, model: reminder, contract_class: EmptyContract)
+            .call(remind_at: next_occurrence)
+        else
+          Reminders::DeleteService
+            .new(user: reminder.creator, model: reminder, contract_class: EmptyContract)
+            .call
+        end
+      end
   end
 
   def update_semantic_ids(work_packages)
@@ -182,6 +203,6 @@ class WorkPackages::UpdateService < BaseServices::Update
             master.result.attributes = sc.result.changes.transform_values(&:last)
           end
         end
-    end
+      end
   end
 end

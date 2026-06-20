@@ -36,4 +36,6 @@ RSpec.describe Overviews::OverviewsController, "permissions", type: :controller 
 
   check_permission_required_for("overviews/overviews#show", :view_project)
   check_permission_required_for("overviews/overviews#kpis", :view_kpis)
+  check_permission_required_for("overviews/overviews#budget", :view_budgets)
+  check_permission_required_for("overviews/overviews#team_allocation", :view_project)
 end

@@ -103,6 +103,35 @@ RSpec.describe Reminder do
     end
   end
 
+  describe "#next_deadline_occurrence" do
+    let(:user) { build_stubbed(:user, preferences: { time_zone: "UTC" }) }
+    let(:work_package) { build_stubbed(:work_package, due_date: Date.new(2026, 7, 10)) }
+    let(:reminder) do
+      build_stubbed(
+        :reminder,
+        creator: user,
+        remindable: work_package,
+        schedule_type: "deadline",
+        days_before: 7,
+        recurrence: "every_three_days"
+      )
+    end
+
+    it "returns the first configured alert" do
+      expect(reminder.next_deadline_occurrence(after: Time.utc(2026, 7, 1)))
+        .to eq(Time.utc(2026, 7, 3, 9))
+    end
+
+    it "returns the next recurring alert up to the due date" do
+      expect(reminder.next_deadline_occurrence(after: Time.utc(2026, 7, 4)))
+        .to eq(Time.utc(2026, 7, 6, 9))
+    end
+
+    it "returns nil after the due date" do
+      expect(reminder.next_deadline_occurrence(after: Time.utc(2026, 7, 11))).to be_nil
+    end
+  end
+
   describe "#visible?" do
     let(:user) { build_stubbed(:user) }
     let(:other_user) { build_stubbed(:user) }

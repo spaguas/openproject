@@ -53,8 +53,7 @@ class WorkPackages::RemindersController < ApplicationController
                                              .call(reminder_params)
 
     if service_result.success?
-      message = helpers.t("work_package.reminders.create_success_message_html",
-                          reminder_time: reminder_chosen_time(service_result.result))
+      message = success_message(service_result.result)
       respond_with_success_flash_message(message:)
     else
       respond_with_error_modal_component(service_result)
@@ -114,17 +113,32 @@ class WorkPackages::RemindersController < ApplicationController
     ).render_in(view_context)
   end
 
+  def success_message(reminder)
+    if reminder.schedule_type_deadline?
+      helpers.t("work_package.reminders.deadline.create_success_message",
+                days: helpers.t("work_package.reminders.deadline.day_options", count: reminder.days_before))
+    else
+      helpers.t("work_package.reminders.create_success_message_html",
+                reminder_time: reminder_chosen_time(reminder))
+    end
+  end
+
   def find_work_package
-    @work_package = WorkPackage.visible.find(params[:work_package_id])
+    @work_package = WorkPackage.visible.find(params.expect(:work_package_id))
   end
 
   # We assume for now that there is only one reminder per work package
   def find_or_build_reminder
-    @reminder = reminders.last || @work_package.reminders.build
+    @reminder = reminders.last || @work_package.reminders.build(
+      schedule_type: "one_time",
+      days_before: 0,
+      recurrence: "once",
+      delivery_channel: "system_only"
+    )
   end
 
   def find_reminder
-    @reminder = reminders.find(params[:id])
+    @reminder = reminders.find(params.expect(:id))
   rescue ActiveRecord::RecordNotFound
     render_error_flash_message_via_turbo_stream(message: I18n.t(:error_reminder_not_found))
     respond_with_turbo_streams(status: :not_found)
@@ -136,7 +150,17 @@ class WorkPackages::RemindersController < ApplicationController
   end
 
   def reminder_params
-    params.expect(reminder: %i[remind_at_date remind_at_time note])
+    params.expect(
+      reminder: %i[
+        remind_at_date
+        remind_at_time
+        note
+        schedule_type
+        days_before
+        recurrence
+        delivery_channel
+      ]
+    )
           .merge(remindable: @work_package, creator: User.current)
   end
 end

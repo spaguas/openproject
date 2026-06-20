@@ -65,6 +65,40 @@ RSpec.describe WorkPackages::Reminder::ModalBodyComponent, type: :component do
     end
   end
 
+  context "with a due date alert" do
+    let(:remindable) { build_stubbed(:work_package, due_date: 14.days.from_now.to_date) }
+    let(:reminder) do
+      build_stubbed(
+        :reminder,
+        schedule_type: "deadline",
+        days_before: 7,
+        recurrence: "weekly",
+        delivery_channel: "system_and_email"
+      )
+    end
+
+    it "renders deadline, recurrence and delivery channel settings" do
+      expect(page).to have_checked_field("Due date alert")
+      expect(page).to have_field("Date", disabled: true, visible: :all)
+      expect(page).to have_field("Time", disabled: true, visible: :all)
+      expect(page.find_field("Date", visible: :all).ancestor("[data-disable-descendants]"))
+        .to match_selector("[data-value='one_time'][data-disable-descendants='true'][hidden]")
+      expect(page).to have_select("First alert", selected: "7 days before")
+      expect(page).to have_select("Repeat alert", selected: "Every week until the due date")
+      expect(page).to have_checked_field("System notification and email")
+    end
+  end
+
+  context "without a work package due date" do
+    let(:remindable) { build_stubbed(:work_package, due_date: nil) }
+    let(:reminder) { build_stubbed(:reminder, schedule_type: "deadline") }
+
+    it "explains that a due date is required" do
+      expect(page).to have_text("Set a due date on this work package before configuring a due date alert.")
+      expect(page).to have_no_select("First alert")
+    end
+  end
+
   describe "Date presets" do
     let(:reminder) { Reminder.new }
 

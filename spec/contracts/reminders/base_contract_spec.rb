@@ -159,5 +159,42 @@ RSpec.describe Reminders::BaseContract do
     end
   end
 
+  describe "validate deadline configuration" do
+    let(:reminder) do
+      build_stubbed(
+        :reminder,
+        creator:,
+        schedule_type: "deadline",
+        days_before: 7,
+        recurrence: "daily",
+        delivery_channel: "system_only",
+        remindable: build_stubbed(:work_package, due_date: 10.days.from_now)
+      )
+    end
+
+    it_behaves_like "contract is valid"
+
+    context "without a due date" do
+      before { reminder.remindable.due_date = nil }
+
+      it_behaves_like "contract is invalid", remindable: :due_date_required
+    end
+
+    context "with an unsupported number of days" do
+      before { reminder.days_before = 8 }
+
+      it_behaves_like "contract is invalid", days_before: :inclusion
+    end
+
+    context "when the resulting one-time alert is in the past" do
+      before do
+        reminder.recurrence = "once"
+        reminder.remind_at = 1.day.ago
+      end
+
+      it_behaves_like "contract is invalid", days_before: :deadline_alert_must_be_in_future
+    end
+  end
+
   include_examples "contract reuses the model errors"
 end

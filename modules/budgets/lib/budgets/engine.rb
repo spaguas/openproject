@@ -37,7 +37,10 @@ module Budgets
              bundled: true do
       project_module :budgets do
         permission :view_budgets,
-                   { budgets: %i[index show] },
+                   {
+                     budgets: %i[index show],
+                     "overviews/overviews": [:budget]
+                   },
                    permissible_on: :project
         permission :edit_budgets,
                    {

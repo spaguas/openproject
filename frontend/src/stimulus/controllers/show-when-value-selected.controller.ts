@@ -16,7 +16,7 @@ export default class OpShowWhenValueSelectedController extends ApplicationContro
     target.removeEventListener('change', this.boundListener);
   }
 
-  private toggleDisabled(evt:InputEvent):void {
+  private toggleDisabled(evt:Event):void {
     const input = evt.target as HTMLInputElement;
     const targetName = input.dataset.targetName;
 
@@ -26,6 +26,7 @@ export default class OpShowWhenValueSelectedController extends ApplicationContro
       .forEach((el) => {
         const disabled = this.willDisable(el, input.value);
         el.disabled = disabled;
+        this.toggleDescendantFields(el, disabled);
 
         if (el.dataset.setVisibility === 'true') {
           toggleElementByVisibility(el, !disabled);
@@ -41,5 +42,19 @@ export default class OpShowWhenValueSelectedController extends ApplicationContro
     }
 
     return !(el.dataset.value === value);
+  }
+
+  private toggleDescendantFields(el:HTMLElement, disabled:boolean):void {
+    if (el.dataset.disableDescendants !== 'true') {
+      return;
+    }
+
+    el
+      .querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement>(
+        'input, select, textarea, button',
+      )
+      .forEach((field) => {
+        field.disabled = disabled;
+      });
   }
 }

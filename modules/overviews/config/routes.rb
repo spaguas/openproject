@@ -1,12 +1,18 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
+  get "team_allocation",
+      to: "homescreen#team_allocation",
+      as: :global_team_allocation
+
   constraints(Constraints::ProjectIdentifier) do
     scope "projects/:project_id", as: "project" do
       scope module: "overviews" do
         resource :overview, path: "/", only: [:show] do
           get :dashboard, on: :member
           get :kpis, on: :member
+          get :budget, on: :member
+          get :team_allocation, on: :member
         end
 
         controller :overviews do

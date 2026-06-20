@@ -30,7 +30,8 @@
 
 class HomescreenController < ApplicationController
   skip_before_action :check_if_login_required, only: [:robots]
-  no_authorization_required! :index, :robots
+  no_authorization_required! :index, :team_allocation, :robots
+  before_action :require_login, only: :team_allocation
   before_action :jump_to_module
 
   layout "global"
@@ -41,7 +42,14 @@ class HomescreenController < ApplicationController
     @project_overview = Homescreen::ProjectOverview.new(user: current_user)
   end
 
-  current_menu_item [:index] do
+  def team_allocation
+    @team_allocation_dashboard = Overviews::GlobalTeamAllocationDashboard.new(
+      current_user:,
+      period: params[:period]
+    ).call
+  end
+
+  current_menu_item %i[index team_allocation] do
     :home
   end
 

@@ -38,13 +38,15 @@ class WorkPackages::Reminder::RemindAtDate < ApplicationForm
       label: I18n.t(:label_date),
       leading_visual: { icon: :calendar },
       required: true,
+      disabled: @disabled,
       autofocus: false
     )
   end
 
-  def initialize(initial_value: DateTime.now.strftime("%Y-%m-%d"))
+  def initialize(initial_value: DateTime.now.strftime("%Y-%m-%d"), disabled: false)
     super()
 
     @initial_value = initial_value
+    @disabled = disabled
   end
 end

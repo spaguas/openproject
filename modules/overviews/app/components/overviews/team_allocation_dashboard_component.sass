@@ -1,0 +1,340 @@
+.op-team-allocation-dashboard
+  --team-border: var(--borderColor-default)
+  --team-muted: var(--fgColor-muted)
+  --team-primary: var(--fgColor-accent)
+  --team-success: var(--fgColor-success)
+  --team-warning: var(--fgColor-attention)
+  --team-danger: var(--fgColor-danger)
+  padding: 24px
+
+  &--toolbar
+    align-items: end
+    display: flex
+    gap: 24px
+    justify-content: space-between
+    margin-bottom: 20px
+
+    h2
+      font-size: 1.5rem
+      margin: 0 0 4px
+
+    p
+      color: var(--team-muted)
+      margin: 0
+
+  &--period-form
+    align-items: center
+    display: flex
+    flex: 0 0 auto
+    gap: 8px
+
+    label
+      color: var(--team-muted)
+      font-size: 0.875rem
+      font-weight: 600
+
+  &--summary
+    display: grid
+    gap: 12px
+    grid-template-columns: repeat(4, minmax(0, 1fr))
+    margin-bottom: 12px
+
+  &--summary-item
+    align-items: center
+    border: 1px solid var(--team-border)
+    border-radius: 8px
+    display: flex
+    gap: 12px
+    min-height: 104px
+    padding: 16px
+
+    strong,
+    small
+      display: block
+
+    strong
+      font-size: 1.45rem
+      line-height: 1.2
+      margin: 3px 0
+
+    small
+      color: var(--team-muted)
+      font-size: 0.75rem
+
+    &[data-tone="healthy"] .op-team-allocation-dashboard--summary-icon,
+    &[data-tone="available"] .op-team-allocation-dashboard--summary-icon
+      color: var(--team-success)
+
+    &[data-tone="warning"] .op-team-allocation-dashboard--summary-icon
+      color: var(--team-warning)
+
+    &[data-tone="danger"] .op-team-allocation-dashboard--summary-icon
+      color: var(--team-danger)
+
+  &--summary-icon
+    align-items: center
+    background: var(--bgColor-muted)
+    border-radius: 50%
+    color: var(--team-primary)
+    display: flex
+    flex: 0 0 42px
+    height: 42px
+    justify-content: center
+
+  &--summary-label
+    color: var(--team-muted)
+    font-size: 0.875rem
+
+  &--primary-grid
+    display: grid
+    gap: 12px
+    grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1fr)
+    margin-bottom: 12px
+
+  &--panel
+    border: 1px solid var(--team-border)
+    border-radius: 8px
+    min-width: 0
+    padding: 16px
+
+    h3
+      font-size: 1rem
+      margin: 0 0 16px
+
+  &--capacity-key
+    height: 20px
+    margin-left: 176px
+    position: relative
+
+    span
+      display: none
+
+    small
+      color: var(--team-muted)
+      font-size: 0.75rem
+      left: var(--capacity-marker, 66.67%)
+      padding-right: 8px
+      position: absolute
+      transform: translateX(-100%)
+      white-space: nowrap
+
+  &--ranking
+    display: grid
+    gap: 12px
+
+  &--ranking-row
+    align-items: center
+    display: grid
+    gap: 12px
+    grid-template-columns: 164px minmax(180px, 1fr) 58px
+
+    > strong
+      font-size: 0.875rem
+      text-align: right
+
+  &--member
+    min-width: 0
+
+    .user-avatar--container
+      max-width: 100%
+
+  &--ranking-track
+    background: var(--bgColor-muted)
+    border-radius: 3px
+    height: 16px
+    overflow: hidden
+    position: relative
+
+    &::after
+      border-left: 1px dashed var(--team-muted)
+      bottom: 0
+      content: ""
+      left: var(--capacity-marker)
+      position: absolute
+      top: 0
+
+    > span
+      display: block
+      height: 100%
+
+      &[data-tone="healthy"]
+        background: var(--team-success)
+
+      &[data-tone="available"]
+        background: var(--team-primary)
+
+      &[data-tone="warning"]
+        background: var(--team-warning)
+
+      &[data-tone="danger"]
+        background: var(--team-danger)
+
+  &--axis
+    color: var(--team-muted)
+    display: flex
+    font-size: 0.75rem
+    justify-content: space-between
+    margin: 10px 70px 0 176px
+
+  &--insights
+    ul
+      display: grid
+      gap: 10px
+      list-style: none
+      margin: 0
+      padding: 0
+
+    li
+      align-items: start
+      border: 1px solid var(--team-border)
+      border-radius: 8px
+      display: flex
+      gap: 12px
+      padding: 12px
+
+      > svg
+        flex: 0 0 auto
+        margin-top: 2px
+
+      strong,
+      small
+        display: block
+
+      small
+        color: var(--team-muted)
+        margin-top: 3px
+
+      &[data-tone="danger"] > svg
+        color: var(--team-danger)
+
+      &[data-tone="warning"] > svg
+        color: var(--team-warning)
+
+      &[data-tone="success"] > svg
+        color: var(--team-success)
+
+      &[data-tone="neutral"] > svg
+        color: var(--team-primary)
+
+  &--table-panel
+    padding: 0
+
+    h3
+      padding: 16px
+      margin: 0
+
+  &--table-scroll
+    overflow-x: auto
+
+    table
+      margin-bottom: 0
+      min-width: 1200px
+
+      th,
+      td
+        padding-left: 12px
+        padding-right: 12px
+
+      th:nth-child(1)
+        width: 220px
+
+      th:nth-child(2)
+        width: 220px
+
+      th:nth-child(3),
+      th:nth-child(4)
+        width: 110px
+
+      th:nth-child(5)
+        width: 180px
+
+      th:nth-child(6)
+        width: 140px
+
+      th:nth-child(7)
+        width: 180px
+
+  &--meter
+    align-items: center
+    display: flex
+    gap: 8px
+    white-space: nowrap
+
+    > span
+      background: var(--bgColor-muted)
+      border-radius: 3px
+      display: inline-block
+      height: 7px
+      overflow: hidden
+      width: 72px
+
+      span
+        background: var(--team-success)
+        display: block
+        height: 100%
+
+    &[data-tone="available"] > span span,
+    &[data-tone="participation"] > span span
+      background: var(--team-primary)
+
+    &[data-tone="warning"] > span span
+      background: var(--team-warning)
+
+    &[data-tone="danger"] > span span
+      background: var(--team-danger)
+
+  &--caveat
+    align-items: start
+    color: var(--team-muted)
+    display: flex
+    font-size: 0.75rem
+    gap: 8px
+    margin: 12px 0 0
+
+    svg
+      flex: 0 0 auto
+      margin-top: 1px
+
+  @media screen and (max-width: 1000px)
+    &--summary
+      grid-template-columns: repeat(2, minmax(0, 1fr))
+
+    &--primary-grid
+      grid-template-columns: 1fr
+
+  @media screen and (max-width: 700px)
+    padding: 16px
+
+    &--toolbar
+      align-items: stretch
+      flex-direction: column
+
+    &--period-form
+      justify-content: space-between
+
+    &--summary
+      grid-template-columns: 1fr
+
+    &--capacity-key
+      margin-left: 0
+
+      span
+        display: none
+
+    &--ranking-row
+      gap: 6px 10px
+      grid-template-columns: minmax(0, 1fr) 56px
+
+    &--member
+      grid-column: 1
+
+    &--ranking-track
+      grid-column: 1
+      grid-row: 2
+
+    &--ranking-row > strong
+      grid-column: 2
+      grid-row: 2
+
+    &--axis
+      margin-left: 0

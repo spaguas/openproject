@@ -1,0 +1,8 @@
+<%= render(Overviews::PageHeaderComponent.new(project: @project, current_user:)) %>
+<%= render(
+      Overviews::TeamAllocationDashboardComponent.new(
+        project: @project,
+        dashboard: @team_allocation_dashboard,
+        form_url: team_allocation_project_overview_path(@project)
+      )
+    ) %>

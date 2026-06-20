@@ -131,6 +131,46 @@ RSpec.describe WorkPackages::UpdateService, "integration", type: :model do
     end
   end
 
+  describe "updating the due date with an active deadline reminder" do
+    let(:initial_due_date) { 30.days.from_now.to_date }
+    let(:new_due_date) { 40.days.from_now.to_date }
+    let(:attributes) { { due_date: new_due_date } }
+    let(:work_package) do
+      create(
+        :work_package,
+        subject: "work_package",
+        start_date: initial_due_date,
+        due_date: initial_due_date
+      )
+    end
+    let!(:reminder) do
+      create(
+        :reminder,
+        creator: user,
+        remindable: work_package,
+        schedule_type: "deadline",
+        days_before: 7,
+        recurrence: "daily",
+        delivery_channel: "system_only",
+        remind_at: user.time_zone.local(
+          initial_due_date.year,
+          initial_due_date.month,
+          initial_due_date.day,
+          9
+        ) - 7.days
+      )
+    end
+
+    it "reschedules the first alert from the new due date" do
+      expect(subject).to be_success
+
+      expected_date = new_due_date - 7.days
+      expect(reminder.reload.remind_at).to eq(
+        user.time_zone.local(expected_date.year, expected_date.month, expected_date.day, 9)
+      )
+    end
+  end
+
   context "when updating the project" do
     shared_let(:target_project) do
       create(:project,

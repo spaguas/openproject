@@ -180,12 +180,14 @@ RSpec.describe Overviews::PageHeaderComponent, type: :component do
         expect(rendered_component).to have_css ".PageHeader-tabNavBar"
       end
 
-      it "renders 3 tabs", :aggregate_failures do
+      it "renders the available tabs", :aggregate_failures do
         expect(rendered_component).to have_list class: "tabnav-tabs" do |list|
-          expect(list).to have_list_item count: 3
+          expect(list).to have_list_item count: 5
           expect(list).to have_list_item "Overview"
           expect(list).to have_list_item "Dashboard"
           expect(list).to have_list_item "Indicators (KPIs)"
+          expect(list).to have_list_item "Budget"
+          expect(list).to have_list_item "Team allocation"
         end
       end
 
@@ -199,6 +201,12 @@ RSpec.describe Overviews::PageHeaderComponent, type: :component do
         expect(rendered_component).to have_link "Dashboard" do |link|
           expect(link).to have_octicon :"op-view-list"
         end
+      end
+
+      it "renders team allocation independently of the resource management module" do
+        allow(project).to receive(:module_enabled?).with("resource_management").and_return(false)
+
+        expect(rendered_component).to have_link "Team allocation"
       end
     end
 
@@ -222,6 +230,7 @@ RSpec.describe Overviews::PageHeaderComponent, type: :component do
       end
 
       before do
+        allow(project).to receive(:module_enabled?).and_call_original
         allow(project).to receive(:module_enabled?).with("kpis").and_return(true)
         allow(user).to receive(:allowed_in_project?).and_call_original
         allow(user).to receive(:allowed_in_project?).with(:view_kpis, project).and_return(true)
@@ -229,6 +238,22 @@ RSpec.describe Overviews::PageHeaderComponent, type: :component do
 
       it "renders the KPI indicators tab" do
         expect(rendered_component).to have_link "Indicators (KPIs)"
+      end
+    end
+
+    context "when budget and cost modules are enabled and the user has financial permissions" do
+      before do
+        allow(project).to receive(:module_enabled?).and_call_original
+        allow(project).to receive(:module_enabled?).with("budgets").and_return(true)
+        allow(project).to receive(:module_enabled?).with("costs").and_return(true)
+        allow(user).to receive(:allowed_in_project?).and_call_original
+        Overviews::BudgetDashboard::REQUIRED_PERMISSIONS.each do |permission|
+          allow(user).to receive(:allowed_in_project?).with(permission, project).and_return(true)
+        end
+      end
+
+      it "renders the budget dashboard tab" do
+        expect(rendered_component).to have_link "Budget"
       end
     end
   end

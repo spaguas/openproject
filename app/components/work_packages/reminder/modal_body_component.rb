@@ -107,6 +107,14 @@ module WorkPackages
         DEFAULT_TIME
       end
 
+      def one_time_schedule?
+        @reminder.schedule_type_one_time?
+      end
+
+      def deadline_schedule?
+        @reminder.schedule_type_deadline?
+      end
+
       private
 
       def calculate_preset_date

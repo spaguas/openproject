@@ -1385,6 +1385,7 @@ pt-BR:
         not_an_iso_date: "não é uma data válida. Formato exigido: AAAA-MM-DD."
         not_same_project: "não pertence ao mesmo projeto."
         datetime_must_be_in_future: "deve ser no futuro."
+        deadline_alert_must_be_in_future: "deve resultar em um alerta futuro. Escolha um intervalo menor ou um aviso recorrente."
         odd: "deve ser ímpar."
         regex_match_failed: "não corresponde à expressão regular %{expression}."
         regex_invalid: "não pode ser validado com a expressão regular associada."
@@ -4735,9 +4736,41 @@ pt-BR:
     reminders:
       label_remind_at: "Data"
       note_placeholder: "Por que você está configurando este lembrete?"
+      create_success_message_html: "Lembrete configurado com sucesso. Você receberá uma notificação deste pacote de trabalho %{reminder_time}."
       create_success_message: "Lembrete configurado com sucesso. Você receberá uma notificação deste pacote de trabalho %{reminder_time}."
       success_update_message: "Lembrete atualizado com sucesso."
       success_deletion_message: "Lembrete excluído com sucesso."
+      schedule_type:
+        label: "Tipo de lembrete"
+        one_time:
+          label: "Data e hora específicas"
+          caption: "Receba uma única notificação na data e hora selecionadas."
+        deadline:
+          label: "Alerta de prazo"
+          caption: "Receba alertas com base na data de término deste pacote de trabalho."
+      deadline:
+        days_before: "Primeiro aviso"
+        day_options:
+          zero: "Na data do prazo"
+          one: "1 dia antes"
+          other: "%{count} dias antes"
+        recurrence: "Recorrência do aviso"
+        recurrences:
+          once: "Não repetir"
+          daily: "Todos os dias até o prazo"
+          every_three_days: "A cada 3 dias até o prazo"
+          weekly: "Toda semana até o prazo"
+        delivery_channel: "Canal da notificação"
+        delivery_channels:
+          system_only:
+            label: "Somente notificação do sistema"
+            caption: "Exibe o alerta na central de notificações do OpenProject."
+          system_and_email:
+            label: "Notificação do sistema e e-mail"
+            caption: "Exibe o alerta no OpenProject e também envia um e-mail."
+        current_due_date: "Prazo atual: %{date}"
+        missing_due_date: "Defina uma data de término neste pacote de trabalho antes de configurar um alerta de prazo."
+        create_success_message: "Alerta de prazo configurado com sucesso. O primeiro aviso será enviado %{days}."
   sharing:
     count:
       zero: "0 usuários"

@@ -1,0 +1,229 @@
+<section class="op-team-allocation-dashboard">
+  <div class="op-team-allocation-dashboard--toolbar">
+    <div>
+      <h2><%= t("overviews.team_allocation.title") %></h2>
+      <p><%= description %></p>
+    </div>
+
+    <%= form_with url: form_url,
+                  method: :get,
+                  local: true,
+                  class: "op-team-allocation-dashboard--period-form",
+                  data: { controller: "auto-submit" } do |form| %>
+      <%= form.label :period, t("overviews.team_allocation.period") %>
+      <%= form.select :period,
+                      period_options,
+                      { selected: dashboard[:period] },
+                      data: { action: "change->auto-submit#submit" },
+                      class: "form--select" %>
+    <% end %>
+  </div>
+
+  <% if rows.empty? %>
+    <%= render(Primer::Beta::Blankslate.new) do |blankslate|
+          blankslate.with_visual_icon(icon: :people)
+          blankslate.with_heading(tag: :h2) { t("overviews.team_allocation.empty.title") }
+          blankslate.with_description { t("overviews.team_allocation.empty.description") }
+        end %>
+  <% else %>
+    <div class="op-team-allocation-dashboard--summary"
+         role="region"
+         aria-label="<%= t("overviews.team_allocation.summary") %>">
+      <% [
+           [:allocation, :meter, allocation_tone(summary[:allocation])],
+           [:active_members, :people, "primary"],
+           [:planned_hours, :clock, "primary"],
+           [:estimated_cost, :"credit-card", "primary"]
+         ].each do |key, icon, tone| %>
+        <article class="op-team-allocation-dashboard--summary-item" data-tone="<%= tone %>">
+          <span class="op-team-allocation-dashboard--summary-icon" aria-hidden="true">
+            <%= render Primer::Beta::Octicon.new(icon:) %>
+          </span>
+          <span>
+            <span class="op-team-allocation-dashboard--summary-label">
+              <%= t("overviews.team_allocation.metrics.#{key}") %>
+            </span>
+            <strong>
+              <% if key == :allocation %>
+                <%= percentage(summary[key]) %>
+              <% elsif key == :active_members %>
+                <%= summary[key] %>
+              <% elsif key == :planned_hours %>
+                <%= hours(summary[key]) %>
+              <% else %>
+                <%= money(summary[key]) %>
+              <% end %>
+            </strong>
+            <small><%= summary_note(key) %></small>
+          </span>
+        </article>
+      <% end %>
+    </div>
+
+    <div class="op-team-allocation-dashboard--primary-grid">
+      <article class="op-team-allocation-dashboard--panel">
+        <h3><%= t("overviews.team_allocation.charts.distribution") %></h3>
+        <div class="op-team-allocation-dashboard--capacity-key"
+             style="--capacity-marker: <%= capacity_marker %>%">
+          <span style="left: <%= capacity_marker %>%"></span>
+          <small><%= t("overviews.team_allocation.charts.capacity") %></small>
+        </div>
+        <div class="op-team-allocation-dashboard--ranking">
+          <% dashboard[:ranking].each do |row| %>
+            <div class="op-team-allocation-dashboard--ranking-row">
+              <div class="op-team-allocation-dashboard--member">
+                <%= render Users::AvatarComponent.new(
+                      user: row[:user],
+                      size: :mini,
+                      link: true,
+                      show_name: true
+                    ) %>
+              </div>
+              <div class="op-team-allocation-dashboard--ranking-track"
+                   style="--capacity-marker: <%= capacity_marker %>%">
+                <span data-tone="<%= allocation_tone(row[:allocation]) %>"
+                      style="width: <%= chart_width(row[:allocation]) %>%"></span>
+              </div>
+              <strong><%= percentage(row[:allocation]) %></strong>
+            </div>
+          <% end %>
+        </div>
+        <div class="op-team-allocation-dashboard--axis" aria-hidden="true">
+          <span>0%</span>
+          <span><%= dashboard[:chart_max] / 2 %>%</span>
+          <span><%= dashboard[:chart_max] %>%</span>
+        </div>
+      </article>
+
+      <article class="op-team-allocation-dashboard--panel op-team-allocation-dashboard--insights">
+        <h3><%= t("overviews.team_allocation.insights.title") %></h3>
+        <ul>
+          <% if dashboard[:insights][:overloaded].any? %>
+            <li data-tone="danger">
+              <%= render Primer::Beta::Octicon.new(icon: :"arrow-up-right") %>
+              <span>
+                <strong>
+                  <%= t(
+                        "overviews.team_allocation.insights.overloaded",
+                        count: dashboard[:insights][:overloaded].size
+                      ) %>
+                </strong>
+                <small><%= member_allocation_summary(dashboard[:insights][:overloaded]) %></small>
+              </span>
+            </li>
+          <% end %>
+          <% if dashboard[:insights][:near_capacity].any? %>
+            <li data-tone="warning">
+              <%= render Primer::Beta::Octicon.new(icon: :clock) %>
+              <span>
+                <strong>
+                  <%= t(
+                        "overviews.team_allocation.insights.near_capacity",
+                        count: dashboard[:insights][:near_capacity].size
+                      ) %>
+                </strong>
+                <small><%= member_allocation_summary(dashboard[:insights][:near_capacity]) %></small>
+              </span>
+            </li>
+          <% end %>
+          <% if dashboard[:insights][:available].any? %>
+            <li data-tone="success">
+              <%= render Primer::Beta::Octicon.new(icon: :"check-circle") %>
+              <span>
+                <strong>
+                  <%= t(
+                        "overviews.team_allocation.insights.available",
+                        count: dashboard[:insights][:available].size
+                      ) %>
+                </strong>
+                <small><%= t("overviews.team_allocation.insights.available_description") %></small>
+              </span>
+            </li>
+          <% end %>
+          <% if dashboard[:insights][:requested].positive? %>
+            <li data-tone="neutral">
+              <%= render Primer::Beta::Octicon.new(icon: :hourglass) %>
+              <span>
+                <strong>
+                  <%= t(
+                        "overviews.team_allocation.insights.requested",
+                        count: dashboard[:insights][:requested]
+                      ) %>
+                </strong>
+                <small><%= t("overviews.team_allocation.insights.requested_description") %></small>
+              </span>
+            </li>
+          <% end %>
+          <% if dashboard[:insights][:concentrated] %>
+            <li data-tone="neutral">
+              <%= render Primer::Beta::Octicon.new(icon: :graph) %>
+              <span>
+                <strong>
+                  <%= t(
+                        "overviews.team_allocation.insights.concentrated",
+                        share: percentage(dashboard[:insights][:top_share])
+                      ) %>
+                </strong>
+                <small><%= t("overviews.team_allocation.insights.concentrated_description") %></small>
+              </span>
+            </li>
+          <% end %>
+        </ul>
+      </article>
+    </div>
+
+    <article class="op-team-allocation-dashboard--panel op-team-allocation-dashboard--table-panel">
+      <h3><%= t("overviews.team_allocation.table.title") %></h3>
+      <div class="op-team-allocation-dashboard--table-scroll">
+        <table class="generic-table">
+          <thead>
+            <tr>
+              <th><%= t("overviews.team_allocation.table.member") %></th>
+              <th><%= t("overviews.team_allocation.table.role") %></th>
+              <th><%= t("overviews.team_allocation.table.planned") %></th>
+              <th><%= t("overviews.team_allocation.table.logged") %></th>
+              <th><%= t("overviews.team_allocation.table.allocation") %></th>
+              <th><%= t("overviews.team_allocation.table.cost") %></th>
+              <th><%= t("overviews.team_allocation.table.participation") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% rows.each do |row| %>
+              <tr>
+                <td>
+                  <%= render Users::AvatarComponent.new(
+                        user: row[:user],
+                        size: :mini,
+                        link: true,
+                        show_name: true
+                      ) %>
+                </td>
+                <td><%= row[:roles].presence || t("overviews.team_allocation.table.no_role") %></td>
+                <td><%= hours(row[:allocated_hours]) %></td>
+                <td><%= row[:logged_hours] ? hours(row[:logged_hours]) : t("overviews.team_allocation.restricted") %></td>
+                <td>
+                  <span class="op-team-allocation-dashboard--meter" data-tone="<%= allocation_tone(row[:allocation]) %>">
+                    <span aria-hidden="true"><span style="width: <%= [row[:allocation], 100].min %>%"></span></span>
+                    <%= percentage(row[:allocation]) %>
+                  </span>
+                </td>
+                <td><%= money(row[:estimated_cost]) %></td>
+                <td>
+                  <span class="op-team-allocation-dashboard--meter" data-tone="participation">
+                    <span aria-hidden="true"><span style="width: <%= row[:participation] %>%"></span></span>
+                    <%= percentage(row[:participation]) %>
+                  </span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <p class="op-team-allocation-dashboard--caveat">
+      <%= render Primer::Beta::Octicon.new(icon: :info) %>
+      <span><%= t("overviews.team_allocation.caveat") %></span>
+    </p>
+  <% end %>
+</section>

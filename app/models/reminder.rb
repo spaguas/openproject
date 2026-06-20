@@ -29,11 +29,36 @@
 #++
 
 class Reminder < ApplicationRecord
+  DEADLINE_DAYS = [0, 1, 3, 7, 14, 30].freeze
+  RECURRENCE_INTERVALS = {
+    "once" => nil,
+    "daily" => 1.day,
+    "every_three_days" => 3.days,
+    "weekly" => 1.week
+  }.freeze
+
   belongs_to :remindable, polymorphic: true
   belongs_to :creator, class_name: "User"
 
   has_many :reminder_notifications, dependent: :destroy
   has_many :notifications, through: :reminder_notifications
+
+  enum :schedule_type, {
+    one_time: "one_time",
+    deadline: "deadline"
+  }, prefix: true
+
+  enum :recurrence, {
+    once: "once",
+    daily: "daily",
+    every_three_days: "every_three_days",
+    weekly: "weekly"
+  }, prefix: true
+
+  enum :delivery_channel, {
+    system_only: "system_only",
+    system_and_email: "system_and_email"
+  }, prefix: true
 
   # Currently, reminders are personal, meaning
   # they are only visible to the user who created them
@@ -44,9 +69,14 @@ class Reminder < ApplicationRecord
   end
 
   def self.upcoming_and_visible_to(user)
-    visible(user)
-      .where(completed_at: nil)
-      .where.missing(:reminder_notifications)
+    active = visible(user).where(completed_at: nil)
+
+    active.where(schedule_type: "deadline")
+      .or(
+        active
+          .where(schedule_type: "one_time")
+          .where.not(id: ReminderNotification.select(:reminder_id))
+      )
   end
 
   def visible?(user = User.current)
@@ -67,5 +97,30 @@ class Reminder < ApplicationRecord
 
   def scheduled?
     job_id.present? && !completed?
+  end
+
+  def next_deadline_occurrence(after: Time.current)
+    return unless schedule_type_deadline? && remindable&.due_date
+
+    first_occurrence = first_deadline_occurrence
+    return first_occurrence if first_occurrence >= after
+    return if recurrence_once?
+
+    recurring_deadline_occurrence(first_occurrence, after:)
+  end
+
+  def first_deadline_occurrence
+    deadline_time(remindable.due_date - days_before.days)
+  end
+
+  def recurring_deadline_occurrence(first_occurrence, after:)
+    interval = RECURRENCE_INTERVALS.fetch(recurrence)
+    occurrence = first_occurrence
+    occurrence += interval while occurrence < after
+    occurrence if occurrence <= deadline_time(remindable.due_date)
+  end
+
+  def deadline_time(date)
+    creator.time_zone.local(date.year, date.month, date.day, 9)
   end
 end

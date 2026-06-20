@@ -1,0 +1,172 @@
+<section class="op-budget-dashboard"
+         data-controller="overviews--budget-dashboard-charts">
+  <div class="op-budget-dashboard--toolbar">
+    <div>
+      <h2><%= t("overviews.budget.title") %></h2>
+      <p><%= t("overviews.budget.description") %></p>
+    </div>
+
+    <%= form_with url: helpers.budget_project_overview_path(project),
+                  method: :get,
+                  local: true,
+                  class: "op-budget-dashboard--period-form",
+                  data: { controller: "auto-submit" } do |form| %>
+      <%= form.label :period, t("overviews.budget.period") %>
+      <%= form.select :period,
+                      dashboard[:period_options].map { |months| [t("overviews.budget.months", count: months), months] },
+                      { selected: dashboard[:period] },
+                      data: { action: "change->auto-submit#submit" },
+                      class: "form--select" %>
+    <% end %>
+  </div>
+
+  <% if budgets.empty? %>
+    <%= render(Primer::Beta::Blankslate.new) do |blankslate|
+          blankslate.with_visual_icon(icon: :"op-budget")
+          blankslate.with_heading(tag: :h2) { t("overviews.budget.empty.title") }
+          blankslate.with_description { t("overviews.budget.empty.description") }
+          if User.current.allowed_in_project?(:edit_budgets, project)
+            blankslate.with_primary_action(
+              href: helpers.new_projects_budget_path(project)
+            ) { t(:button_add) }
+          end
+        end %>
+  <% else %>
+    <div class="op-budget-dashboard--summary"
+         role="region"
+         aria-label="<%= t("overviews.budget.summary") %>">
+      <% [
+           [:planned, :checklist, "primary"],
+           [:spent, :"credit-card", ratio_tone(summary[:ratio])],
+           [:remaining, :database, summary[:remaining].negative? ? "danger" : "success"],
+           [:ratio, :graph, ratio_tone(summary[:ratio])]
+         ].each do |key, icon, tone| %>
+        <article class="op-budget-dashboard--summary-item" data-tone="<%= tone %>">
+          <span class="op-budget-dashboard--summary-icon" aria-hidden="true">
+            <%= render Primer::Beta::Octicon.new(icon:) %>
+          </span>
+          <span>
+            <span class="op-budget-dashboard--summary-label"><%= t("overviews.budget.metrics.#{key}") %></span>
+            <strong><%= key == :ratio ? percentage(summary[key]) : money(summary[key]) %></strong>
+            <small><%= t("overviews.budget.metric_notes.#{key}") %></small>
+          </span>
+        </article>
+      <% end %>
+    </div>
+
+    <div class="op-budget-dashboard--primary-grid">
+      <article class="op-budget-dashboard--panel">
+        <h3><%= t("overviews.budget.charts.comparison") %></h3>
+        <div class="op-budget-dashboard--chart">
+          <canvas data-overviews--budget-dashboard-charts-target="chart"
+                  data-chart-config="<%= chart_config(:comparison_chart) %>"
+                  aria-label="<%= t("overviews.budget.charts.comparison") %>"
+                  role="img"></canvas>
+        </div>
+      </article>
+
+      <article class="op-budget-dashboard--panel op-budget-dashboard--attention">
+        <h3><%= t("overviews.budget.attention.title") %></h3>
+
+        <% if dashboard[:alerts].values.all?(&:empty?) %>
+          <div class="op-budget-dashboard--attention-empty">
+            <%= render Primer::Beta::Octicon.new(icon: :"check-circle") %>
+            <p><%= t("overviews.budget.attention.none") %></p>
+          </div>
+        <% else %>
+          <ul>
+            <% dashboard[:alerts][:over_budget].first(3).each do |row| %>
+              <li data-tone="danger">
+                <%= render Primer::Beta::Octicon.new(icon: :alert) %>
+                <span>
+                  <%= link_to row[:budget].subject, helpers.budget_path(row[:budget]) %>
+                  <small><%= t("overviews.budget.attention.over_budget", ratio: percentage(row[:ratio])) %></small>
+                </span>
+              </li>
+            <% end %>
+            <% dashboard[:alerts][:near_limit].first(3).each do |row| %>
+              <li data-tone="warning">
+                <%= render Primer::Beta::Octicon.new(icon: :alert) %>
+                <span>
+                  <%= link_to row[:budget].subject, helpers.budget_path(row[:budget]) %>
+                  <small><%= t("overviews.budget.attention.near_limit", ratio: percentage(row[:ratio])) %></small>
+                </span>
+              </li>
+            <% end %>
+            <% dashboard[:alerts][:without_spending].first(2).each do |row| %>
+              <li data-tone="neutral">
+                <%= render Primer::Beta::Octicon.new(icon: :info) %>
+                <span>
+                  <%= link_to row[:budget].subject, helpers.budget_path(row[:budget]) %>
+                  <small><%= t("overviews.budget.attention.without_spending") %></small>
+                </span>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </article>
+    </div>
+
+    <article class="op-budget-dashboard--panel op-budget-dashboard--trend-panel">
+      <h3><%= t("overviews.budget.charts.trend") %></h3>
+      <% if trend_has_data? %>
+        <div class="op-budget-dashboard--chart op-budget-dashboard--chart-wide">
+          <canvas data-overviews--budget-dashboard-charts-target="chart"
+                  data-chart-config="<%= chart_config(:trend_chart) %>"
+                  aria-label="<%= t("overviews.budget.charts.trend") %>"
+                  role="img"></canvas>
+        </div>
+      <% else %>
+        <p class="op-budget-dashboard--empty-chart"><%= t("overviews.budget.charts.no_history") %></p>
+      <% end %>
+    </article>
+
+    <article class="op-budget-dashboard--panel op-budget-dashboard--table-panel">
+      <div class="op-budget-dashboard--table-heading">
+        <h3><%= t("overviews.budget.table.title") %></h3>
+        <%= link_to t("overviews.budget.table.view_all"),
+                    helpers.projects_budgets_path(project),
+                    class: "op-budget-dashboard--details-link" %>
+      </div>
+      <div class="op-budget-dashboard--table-scroll">
+        <table class="generic-table">
+          <thead>
+            <tr>
+              <th><%= t("overviews.budget.table.budget") %></th>
+              <th><%= t("overviews.budget.table.project") %></th>
+              <th><%= t("overviews.budget.table.base_date") %></th>
+              <th><%= t("overviews.budget.table.planned") %></th>
+              <th><%= t("overviews.budget.table.actual") %></th>
+              <th><%= t("overviews.budget.table.balance") %></th>
+              <th><%= t("overviews.budget.table.consumption") %></th>
+              <th><%= t("overviews.budget.table.work_packages") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% dashboard[:rows].each do |row| %>
+              <tr>
+                <td><%= link_to row[:budget].subject, helpers.budget_path(row[:budget]) %></td>
+                <td><%= row[:budget].project.name %></td>
+                <td><%= format_date(row[:budget].fixed_date) %></td>
+                <td><%= money(row[:planned]) %></td>
+                <td><%= money(row[:spent]) %></td>
+                <td class="op-budget-dashboard--balance" data-tone="<%= row[:remaining].negative? ? "danger" : "success" %>">
+                  <%= money(row[:remaining]) %>
+                </td>
+                <td>
+                  <span class="op-budget-dashboard--consumption" data-tone="<%= ratio_tone(row[:ratio]) %>">
+                    <span aria-hidden="true">
+                      <span style="width: <%= [row[:ratio], 100].min %>%"></span>
+                    </span>
+                    <%= percentage(row[:ratio]) %>
+                  </span>
+                </td>
+                <td><%= row[:work_packages] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </article>
+  <% end %>
+</section>

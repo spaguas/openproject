@@ -37,7 +37,7 @@ module Reminders
     end
 
     def perform(reminder)
-      return if reminder.unread_notifications?
+      return if reminder.schedule_type_one_time? && reminder.unread_notifications?
 
       unless reminder.visible?(reminder.creator)
         reminder.update_column(:completed_at, Time.current)
@@ -47,9 +47,7 @@ module Reminders
       create_notification_service = create_notification_from_reminder(reminder)
 
       create_notification_service.on_success do |service_result|
-        notification = service_result.result
-        ReminderNotification.create!(reminder:, notification:)
-        dispatch_immediate_email_notification(notification)
+        process_created_notification(reminder, service_result.result)
       end
 
       create_notification_service.on_failure do |service_result|
@@ -60,6 +58,12 @@ module Reminders
     end
 
     private
+
+    def process_created_notification(reminder, notification)
+      ReminderNotification.create!(reminder:, notification:)
+      dispatch_immediate_email_notification(notification)
+      schedule_next_deadline_notification(reminder)
+    end
 
     def create_notification_from_reminder(reminder)
       Notifications::CreateService
@@ -73,9 +77,30 @@ module Reminders
 
     def dispatch_immediate_email_notification(notification)
       recipient = notification.recipient
-      return unless recipient.pref.immediate_reminders[:personal_reminder]
+      send_email =
+        if notification.reminder.schedule_type_deadline?
+          notification.reminder.delivery_channel_system_and_email?
+        else
+          recipient.pref.immediate_reminders[:personal_reminder]
+        end
+
+      return unless send_email
 
       Mails::Reminders::NotificationDeliveryJob.perform_later(notification)
+    end
+
+    def schedule_next_deadline_notification(reminder)
+      return unless reminder.schedule_type_deadline?
+
+      next_occurrence = reminder.next_deadline_occurrence(after: reminder.remind_at + 1.second)
+
+      if next_occurrence
+        reminder.update_columns(remind_at: next_occurrence, job_id: nil)
+        job = self.class.schedule(reminder)
+        reminder.update_columns(job_id: job.job_id)
+      else
+        reminder.update_columns(completed_at: Time.current, job_id: nil)
+      end
     end
   end
 end

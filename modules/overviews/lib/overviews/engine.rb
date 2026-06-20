@@ -48,7 +48,8 @@ module Overviews
           .controller_actions
           .push(
             "overviews/overviews/show",
-            "overviews/overviews/dashboard"
+            "overviews/overviews/dashboard",
+            "overviews/overviews/team_allocation"
           )
 
         OpenProject::AccessControl.permission(:view_project_attributes)

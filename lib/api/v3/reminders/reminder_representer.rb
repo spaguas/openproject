@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 #-- copyright
 # OpenProject is an open source project management software.
 # Copyright (C) the OpenProject GmbH
@@ -63,6 +65,10 @@ module API
         date_time_property :remind_at
 
         property :note
+        property :schedule_type
+        property :days_before
+        property :recurrence
+        property :delivery_channel
 
         associated_resource :creator,
                             v3_path: :user,

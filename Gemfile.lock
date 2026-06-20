@@ -167,15 +167,15 @@ PATH
       icalendar (>= 2.11.2, < 2.13.0)
 
 PATH
-  remote: modules/okr
-  specs:
-    openproject-okr (1.0.0)
-
-PATH
   remote: modules/my_page
   specs:
     my_page (1.0.0)
       grids
+
+PATH
+  remote: modules/okr
+  specs:
+    openproject-okr (1.0.0)
 
 PATH
   remote: modules/openid_connect
@@ -1690,9 +1690,9 @@ DEPENDENCIES
   openproject-job_status!
   openproject-ldap_groups!
   openproject-meeting!
-  openproject-okr!
   openproject-octicons (~> 19.35.0)
   openproject-octicons_helper (~> 19.35.0)
+  openproject-okr!
   openproject-openid_connect!
   openproject-primer_view_components (~> 0.85.0)
   openproject-recaptcha!
@@ -2072,9 +2072,9 @@ CHECKSUMS
   openproject-job_status (1.0.0)
   openproject-ldap_groups (1.0.0)
   openproject-meeting (1.0.0)
-  openproject-okr (1.0.0)
   openproject-octicons (19.35.0) sha256=a5033550d0961b4a8cb0993512a899716d633e17c2b5147bc6a9ed74f3952b38
   openproject-octicons_helper (19.35.0) sha256=c32d142a4bb7fda739b16768aa8846fd88ffc1750509d8056f516056e8767361
+  openproject-okr (1.0.0)
   openproject-openid_connect (1.0.0)
   openproject-primer_view_components (0.85.0) sha256=16bc8358ef600f0465488a2e3c86991a9c69ed84580bd450c2dbec6f268eeaca
   openproject-recaptcha (1.0.0)

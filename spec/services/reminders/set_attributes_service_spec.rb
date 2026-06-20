@@ -49,10 +49,6 @@ RSpec.describe Reminders::SetAttributesService do
     travel_to(business_day_at_noon)
   end
 
-  after do
-    travel_back
-  end
-
   describe "building remind_at timestamp" do
     it "sets the remind_at attribute from date and time params" do
       params = {
@@ -71,6 +67,44 @@ RSpec.describe Reminders::SetAttributesService do
         remindable:,
         creator: user
       )
+    end
+
+    context "for a due date alert" do
+      let(:remindable) { build_stubbed(:work_package, due_date: Date.new(2025, 1, 20)) }
+
+      it "builds the timestamp at 09:00 in the user's time zone" do
+        service.call(
+          schedule_type: "deadline",
+          days_before: 7,
+          recurrence: "daily",
+          delivery_channel: "system_only",
+          remindable:,
+          creator: user
+        )
+
+        expect(model_instance).to have_attributes(
+          schedule_type: "deadline",
+          days_before: 7,
+          recurrence: "daily",
+          delivery_channel: "system_only",
+          remind_at: current_user.time_zone.local(2025, 1, 13, 9)
+        )
+      end
+
+      it "uses the next recurring occurrence when the first alert is already in the past" do
+        remindable.due_date = Date.new(2025, 1, 11)
+
+        service.call(
+          schedule_type: "deadline",
+          days_before: 7,
+          recurrence: "daily",
+          delivery_channel: "system_only",
+          remindable:,
+          creator: user
+        )
+
+        expect(model_instance.remind_at).to eq(current_user.time_zone.local(2025, 1, 9, 9))
+      end
     end
 
     context "when the `remind_at` attribute is specified" do
@@ -156,6 +190,25 @@ RSpec.describe Reminders::SetAttributesService do
           remind_at_date: ["must be in the future."],
           remind_at_time: ["must be in the future."]
         )
+      end
+    end
+
+    context "with a one-time deadline alert whose configured interval is already past" do
+      let(:remindable) { build_stubbed(:work_package, due_date: Date.new(2025, 1, 10)) }
+
+      it "associates the error with the deadline interval instead of the hidden date and time fields" do
+        result = service.call(
+          schedule_type: "deadline",
+          days_before: 7,
+          recurrence: "once",
+          delivery_channel: "system_only",
+          remindable:,
+          creator: user
+        )
+
+        expect(result).to be_failure
+        expect(result.errors).to be_added(:days_before, :deadline_alert_must_be_in_future)
+        expect(result.errors).not_to include(:remind_at_date, :remind_at_time)
       end
     end
   end

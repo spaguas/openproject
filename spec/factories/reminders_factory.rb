@@ -44,6 +44,14 @@ FactoryBot.define do
       completed_at { Time.zone.now }
     end
 
+    trait :deadline do
+      schedule_type { "deadline" }
+      days_before { 7 }
+      recurrence { "daily" }
+      delivery_channel { "system_only" }
+      remind_at { remindable.due_date.to_time - 7.days }
+    end
+
     trait :with_unread_notifications do
       after(:create) do |reminder|
         create(:reminder_notification, reminder:, notification: create(:notification, read_ian: false))

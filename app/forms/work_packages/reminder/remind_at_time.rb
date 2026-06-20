@@ -40,14 +40,16 @@ class WorkPackages::Reminder::RemindAtTime < ApplicationForm
       label: I18n.t(:label_time),
       leading_visual: { icon: :clock },
       required: true,
+      disabled: @disabled,
       autofocus: false,
       caption: formatted_time_zone_offset
     )
   end
 
-  def initialize(initial_value: DateTime.now.strftime("%H:%M"))
+  def initialize(initial_value: DateTime.now.strftime("%H:%M"), disabled: false)
     super()
 
     @initial_value = initial_value
+    @disabled = disabled
   end
 end
