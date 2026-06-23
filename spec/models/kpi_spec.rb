@@ -7,12 +7,22 @@ RSpec.describe Kpi do
     shared_let(:primary_project) { create(:project, enabled_module_names: %w[kpis]) }
     shared_let(:associated_project) { create(:project, enabled_module_names: %w[kpis]) }
     shared_let(:user) do
-      create(:user, member_with_permissions: { associated_project => %i[view_kpis] })
+      create(:user, member_with_permissions: { associated_project => %i[view_kpis edit_project] })
     end
     shared_let(:kpi) { create(:kpi, project: primary_project, projects: [associated_project]) }
 
     it "includes KPIs shared with a project visible to the user" do
       expect(described_class.visible(user)).to contain_exactly(kpi)
+    end
+
+    context "without project management permission" do
+      let(:user) do
+        create(:user, member_with_permissions: { associated_project => %i[view_kpis] })
+      end
+
+      it "does not include KPIs shared with the project" do
+        expect(described_class.visible(user)).to be_empty
+      end
     end
   end
 

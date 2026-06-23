@@ -81,12 +81,29 @@ en:
         spent: "Costs recorded to date"
         remaining: "Resources still available"
         ratio: "Actual cost versus planned"
+      insights:
+        title: "Budget insights"
+        highest_consumption:
+          title: "Highest consumption"
+        largest_spend:
+          title: "Largest actual cost"
+        burn_rate:
+          title: "Average monthly cost"
+          description: "Based on the selected %{months}-month period"
+        runway:
+          title: "Projected balance runway"
+          description: "At the current average monthly cost"
+          no_projection: "No projection"
+          months:
+            one: "%{count} month"
+            other: "%{count} months"
       categories:
         base: "Base"
         labor: "Labor"
         material: "Materials"
       charts:
         comparison: "Planned versus actual by category"
+        consumption: "Budget consumption by budget"
         planned: "Planned"
         actual: "Actual"
         trend: "Monthly cost evolution"

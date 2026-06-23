@@ -25,7 +25,7 @@
           blankslate.with_visual_icon(icon: :graph)
           blankslate.with_heading(tag: :h2) { t("overviews.kpis.empty.title") }
           blankslate.with_description { t("overviews.kpis.empty.description") }
-          if User.current.allowed_in_project?(:manage_kpis, project)
+          if can_manage_kpis?
             blankslate.with_primary_action(
               href: helpers.new_project_kpi_path(project)
             ) { t(:label_kpi_new) }
@@ -146,6 +146,9 @@
               <th><%= Kpi.human_attribute_name(:measurement_frequency) %></th>
               <th><%= t("overviews.kpis.table.last_measurement") %></th>
               <th><%= t("overviews.kpis.table.next_measurement") %></th>
+              <% if can_manage_kpis? %>
+                <th><%= t(:button_actions) %></th>
+              <% end %>
             </tr>
           </thead>
           <tbody>
@@ -169,6 +172,16 @@
                 <td><%= t("kpis.frequencies.#{kpi.measurement_frequency}") %></td>
                 <td><%= kpi.latest_measurement ? format_time(kpi.latest_measurement.measured_at) : "-" %></td>
                 <td><%= kpi.next_measurement_at ? format_time(kpi.next_measurement_at) : "-" %></td>
+                <% if can_manage_kpis? %>
+                  <td class="buttons">
+                    <%= link_to helpers.project_kpi_path(project, kpi, anchor: "new-kpi-measurement"),
+                                class: "button -small -with-icon icon-chart1",
+                                title: t("kpis.measurements.add"),
+                                "aria-label": t("kpis.measurements.add") do %>
+                      <%= t("kpis.measurements.add") %>
+                    <% end %>
+                  </td>
+                <% end %>
               </tr>
             <% end %>
           </tbody>

@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe Grids::Widgets::KpiChartsController do
   shared_let(:project) { create(:project, enabled_module_names: %w[kpis]) }
-  shared_let(:user) { create(:user, member_with_permissions: { project => %i[view_kpis] }) }
+  shared_let(:user) { create(:user, member_with_permissions: { project => %i[view_kpis edit_project] }) }
   shared_let(:kpi) do
     create(
       :kpi,

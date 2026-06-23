@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe KpisController do
   shared_let(:project) { create(:project, enabled_module_names: %w[kpis]) }
   shared_let(:user) do
-    create(:user, member_with_permissions: { project => %i[view_kpis manage_kpis] })
+    create(:user, member_with_permissions: { project => %i[view_kpis manage_kpis edit_project] })
   end
 
   shared_current_user { user }
@@ -31,6 +31,31 @@ RSpec.describe KpisController do
       expect(kpi.measurement_frequency).to eq("monthly")
       expect(kpi.latest_measurement).to have_attributes(value: 98.5, author: user)
       expect(response).to redirect_to(project_kpi_path(project, kpi))
+    end
+
+    context "without project management permission" do
+      let(:user) do
+        create(:user, member_with_permissions: { project => %i[view_kpis manage_kpis] })
+      end
+
+      it "does not create a KPI" do
+        expect do
+          post :create,
+               params: {
+                 project_id: project.id,
+                 kpi: {
+                   name: "Service availability",
+                   current_value: 98.5,
+                   target_value: 99.9,
+                   direction: "increase",
+                   measurement_frequency: "monthly",
+                   status: "on_track"
+                 }
+               }
+        end.not_to change(Kpi, :count)
+
+        expect(response).to have_http_status(:forbidden)
+      end
     end
   end
 

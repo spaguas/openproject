@@ -27,7 +27,9 @@ module Overviews
         period_options: PERIODS,
         budgets:,
         summary:,
+        insights:,
         comparison_chart:,
+        consumption_chart:,
         trend_chart:,
         alerts:,
         rows:
@@ -57,6 +59,7 @@ module Overviews
     def comparison_chart
       {
         type: "bar",
+        valueType: "currency",
         labels: comparison_labels,
         datasets: [
           {
@@ -68,6 +71,21 @@ module Overviews
             label: I18n.t("overviews.budget.charts.actual"),
             data: actual_comparison_values,
             backgroundColor: "#2da44e"
+          }
+        ]
+      }
+    end
+
+    def consumption_chart
+      {
+        type: "bar",
+        valueType: "percentage",
+        labels: rows.map { |row| row[:budget].subject },
+        datasets: [
+          {
+            label: I18n.t("overviews.budget.charts.consumption"),
+            data: rows.map { |row| row[:ratio] },
+            backgroundColor: rows.map { |row| ratio_color(row[:ratio]) }
           }
         ]
       }
@@ -92,6 +110,7 @@ module Overviews
     def trend_chart
       {
         type: "bar",
+        valueType: "currency",
         labels: aggregated_costs_period.months.map { |month| I18n.l(month, format: "%b/%y") },
         datasets: [labor_dataset, *material_datasets]
       }
@@ -129,6 +148,16 @@ module Overviews
       { over_budget:, near_limit:, without_spending: }
     end
 
+    def insights
+      {
+        highest_consumption: rows.max_by { |row| row[:ratio] },
+        largest_spend: rows.max_by { |row| row[:spent] },
+        average_monthly_spend: average_monthly_spend,
+        projected_months_remaining: projected_months_remaining,
+        budgets_without_work_packages: rows.count { |row| row[:work_packages].zero? }
+      }
+    end
+
     def rows
       @rows ||= budgets.map do |budget|
         planned = budget.budget
@@ -143,6 +172,29 @@ module Overviews
           work_packages: budget.work_packages.size
         }
       end
+    end
+
+    def average_monthly_spend
+      return 0 if period.zero?
+
+      (period_spending / period).round(2)
+    end
+
+    def projected_months_remaining
+      return if average_monthly_spend.zero? || summary[:remaining] <= 0
+
+      (summary[:remaining] / average_monthly_spend).round(1)
+    end
+
+    def period_spending
+      aggregated_costs_period.spent_total
+    end
+
+    def ratio_color(ratio)
+      return "#cf222e" if ratio > 100
+      return "#bf8700" if ratio >= 80
+
+      "#2da44e"
     end
 
     def aggregated_budgets

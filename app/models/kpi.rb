@@ -35,7 +35,10 @@ class Kpi < ApplicationRecord
       .distinct
   }
   scope :visible, ->(user = User.current) {
-    allowed_project_ids = Project.allowed_to(user, :view_kpis).select(:id)
+    allowed_project_ids = Project
+      .allowed_to(user, :view_kpis)
+      .where(id: Project.allowed_to(user, :edit_project).select(:id))
+      .select(:id)
 
     left_outer_joins(:projects)
       .where(project_id: allowed_project_ids)
@@ -46,7 +49,11 @@ class Kpi < ApplicationRecord
   after_save :ensure_primary_project_association
 
   def visible?(user = User.current)
-    user.present? && associated_projects.any? { |associated_project| user.allowed_in_project?(:view_kpis, associated_project) }
+    user.present? &&
+      associated_projects.any? do |associated_project|
+        user.allowed_in_project?(:view_kpis, associated_project) &&
+          user.allowed_in_project?(:edit_project, associated_project)
+      end
   end
 
   def associated_projects

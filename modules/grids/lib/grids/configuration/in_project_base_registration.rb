@@ -62,7 +62,10 @@ module Grids::Configuration
     end
 
     widget_strategy "kpi_chart" do
-      allowed ->(user, project) { user.allowed_in_project?(:view_kpis, project) }
+      allowed lambda { |user, project|
+        user.allowed_in_project?(:view_kpis, project) &&
+          user.allowed_in_project?(:edit_project, project)
+      }
 
       options_representer "::API::V3::Grids::Widgets::KpiChartOptionsRepresenter"
     end

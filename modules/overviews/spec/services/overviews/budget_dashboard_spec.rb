@@ -20,6 +20,12 @@ RSpec.describe Overviews::BudgetDashboard do
       expect(dashboard[:summary][:spent]).to eq(0)
       expect(dashboard[:summary][:remaining]).to eq(250_000)
       expect(dashboard[:rows].first[:budget]).to eq(budget)
+      expect(dashboard[:insights][:highest_consumption][:budget]).to eq(budget)
+      expect(dashboard[:consumption_chart]).to include(
+        type: "bar",
+        valueType: "percentage",
+        labels: [budget.subject]
+      )
       expect(dashboard[:trend_chart][:labels]).to have_attributes(size: 3)
     end
 

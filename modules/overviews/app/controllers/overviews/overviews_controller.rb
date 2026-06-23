@@ -32,6 +32,7 @@ module ::Overviews
   class OverviewsController < ::Grids::BaseInProjectController
     before_action :jump_to_project_menu_item, only: [:show] # rubocop:disable Rails/LexicallyScopedActionFilter
     before_action :ensure_budget_dashboard_permissions, only: :budget
+    before_action :ensure_kpi_dashboard_permissions, only: :kpis
 
     menu_item :overview
 
@@ -77,6 +78,13 @@ module ::Overviews
       allowed = Overviews::BudgetDashboard::REQUIRED_PERMISSIONS.all? do |permission|
         current_user.allowed_in_project?(permission, @project)
       end
+
+      render_403 unless allowed
+    end
+
+    def ensure_kpi_dashboard_permissions
+      allowed = current_user.allowed_in_project?(:view_kpis, @project) &&
+        current_user.allowed_in_project?(:edit_project, @project)
 
       render_403 unless allowed
     end

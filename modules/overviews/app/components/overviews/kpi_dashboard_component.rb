@@ -24,6 +24,11 @@ module Overviews
       dashboard[:kpis]
     end
 
+    def can_manage_kpis?
+      User.current.allowed_in_project?(:manage_kpis, project) &&
+        User.current.allowed_in_project?(:edit_project, project)
+    end
+
     def chart_config(key)
       ERB::Util.json_escape(dashboard.fetch(key).to_json)
     end

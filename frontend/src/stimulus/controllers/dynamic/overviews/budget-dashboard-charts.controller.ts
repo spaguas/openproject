@@ -4,12 +4,13 @@ import type { Chart as ChartInstance, ChartConfiguration } from 'chart.js';
 interface BudgetChartDataset {
   label:string;
   data:number[];
-  backgroundColor:string;
+  backgroundColor:string|string[];
   stack?:string;
 }
 
 interface BudgetChartConfig {
   type:'bar';
+  valueType?:'currency'|'percentage';
   labels:string[];
   datasets:BudgetChartDataset[];
 }
@@ -47,6 +48,7 @@ export default class BudgetDashboardChartsController extends Controller {
       currency: this.currencyCode(),
       maximumFractionDigits: 0,
     });
+    const valueType = config.valueType ?? 'currency';
 
     return {
       type: 'bar',
@@ -67,7 +69,7 @@ export default class BudgetDashboardChartsController extends Controller {
           tooltip: {
             callbacks: {
               label: (item:{ dataset:{ label?:string }; raw:unknown }) =>
-                `${item.dataset.label}: ${currency.format(Number(item.raw))}`,
+                `${item.dataset.label}: ${this.formattedValue(Number(item.raw), valueType, currency)}`,
             },
           },
         },
@@ -78,7 +80,7 @@ export default class BudgetDashboardChartsController extends Controller {
             stacked: !isComparison,
             grid: { display: isComparison },
             ticks: isComparison ? {
-              callback: (value:string|number) => this.compactCurrency(Number(value)),
+              callback: (value:string|number) => this.compactValue(Number(value), valueType),
             } : undefined,
           },
           y: {
@@ -91,12 +93,35 @@ export default class BudgetDashboardChartsController extends Controller {
                 callback: (value:string|number) => config.labels[Number(value)] ?? String(value),
               }
               : {
-                callback: (value:string|number) => this.compactCurrency(Number(value)),
+                callback: (value:string|number) => this.compactValue(Number(value), valueType),
               },
           },
         },
       },
     };
+  }
+
+  private formattedValue(
+    value:number,
+    valueType:BudgetChartConfig['valueType'],
+    currency:Intl.NumberFormat,
+  ) {
+    if (valueType === 'percentage') {
+      return `${value.toLocaleString(
+        document.documentElement.lang || 'pt-BR',
+        { maximumFractionDigits: 1 },
+      )}%`;
+    }
+
+    return currency.format(value);
+  }
+
+  private compactValue(value:number, valueType:BudgetChartConfig['valueType']) {
+    if (valueType === 'percentage') {
+      return `${value}%`;
+    }
+
+    return this.compactCurrency(value);
   }
 
   private compactCurrency(value:number) {

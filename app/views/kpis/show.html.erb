@@ -1,6 +1,7 @@
 <% html_title @kpi.name %>
 
-<% can_manage = User.current.allowed_in_project?(:manage_kpis, @project) %>
+<% can_manage = User.current.allowed_in_project?(:manage_kpis, @project) &&
+                User.current.allowed_in_project?(:edit_project, @project) %>
 
 <%=
   render Primer::OpenProject::PageHeader.new do |header|
@@ -18,6 +19,16 @@
 <% if can_manage %>
   <%=
     render(Primer::OpenProject::SubHeader.new) do |subheader|
+      subheader.with_action_button(
+        scheme: :primary,
+        leading_icon: :pulse,
+        label: t("kpis.measurements.add"),
+        tag: :a,
+        href: "#new-kpi-measurement"
+      ) do
+        t("kpis.measurements.add")
+      end
+
       subheader.with_action_button(
         leading_icon: :pencil,
         label: t(:button_edit),
@@ -103,7 +114,7 @@
 <% end %>
 
 <% if can_manage %>
-  <h3><%= t("kpis.measurements.new") %></h3>
+  <h3 id="new-kpi-measurement"><%= t("kpis.measurements.new") %></h3>
   <%= error_messages_for "measurement" %>
 
   <%= form_with model: @measurement,
@@ -131,7 +142,7 @@
       </span>
     </div>
 
-    <%= styled_button_tag t("kpis.measurements.add"), class: "-primary" %>
+    <%= styled_button_tag t("kpis.measurements.add"), class: "-primary -with-icon icon-checkmark" %>
   <% end %>
 <% end %>
 

@@ -19,6 +19,10 @@ module Overviews
       dashboard[:summary]
     end
 
+    def insights
+      dashboard[:insights]
+    end
+
     def budgets
       dashboard[:budgets]
     end
@@ -35,6 +39,12 @@ module Overviews
 
     def percentage(value)
       number_to_percentage(value, precision: 1)
+    end
+
+    def months(value)
+      return t("overviews.budget.insights.runway.no_projection") if value.blank?
+
+      t("overviews.budget.insights.runway.months", count: value)
     end
 
     def chart_config(key)

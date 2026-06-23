@@ -54,6 +54,56 @@
       <% end %>
     </div>
 
+    <div class="op-budget-dashboard--insights"
+         role="region"
+         aria-label="<%= t("overviews.budget.insights.title") %>">
+      <% if insights[:highest_consumption] %>
+        <article class="op-budget-dashboard--insight" data-tone="<%= ratio_tone(insights[:highest_consumption][:ratio]) %>">
+          <span aria-hidden="true"><%= render Primer::Beta::Octicon.new(icon: :graph) %></span>
+          <div>
+            <h3><%= t("overviews.budget.insights.highest_consumption.title") %></h3>
+            <strong><%= percentage(insights[:highest_consumption][:ratio]) %></strong>
+            <p>
+              <%= link_to insights[:highest_consumption][:budget].subject,
+                          helpers.budget_path(insights[:highest_consumption][:budget]) %>
+            </p>
+          </div>
+        </article>
+      <% end %>
+
+      <% if insights[:largest_spend] %>
+        <article class="op-budget-dashboard--insight" data-tone="primary">
+          <span aria-hidden="true"><%= render Primer::Beta::Octicon.new(icon: :"credit-card") %></span>
+          <div>
+            <h3><%= t("overviews.budget.insights.largest_spend.title") %></h3>
+            <strong><%= money(insights[:largest_spend][:spent]) %></strong>
+            <p>
+              <%= link_to insights[:largest_spend][:budget].subject,
+                          helpers.budget_path(insights[:largest_spend][:budget]) %>
+            </p>
+          </div>
+        </article>
+      <% end %>
+
+      <article class="op-budget-dashboard--insight" data-tone="<%= summary[:remaining].negative? ? "danger" : "primary" %>">
+        <span aria-hidden="true"><%= render Primer::Beta::Octicon.new(icon: :pulse) %></span>
+        <div>
+          <h3><%= t("overviews.budget.insights.burn_rate.title") %></h3>
+          <strong><%= money(insights[:average_monthly_spend]) %></strong>
+          <p><%= t("overviews.budget.insights.burn_rate.description", months: dashboard[:period]) %></p>
+        </div>
+      </article>
+
+      <article class="op-budget-dashboard--insight" data-tone="<%= summary[:remaining].negative? ? "danger" : "success" %>">
+        <span aria-hidden="true"><%= render Primer::Beta::Octicon.new(icon: :clock) %></span>
+        <div>
+          <h3><%= t("overviews.budget.insights.runway.title") %></h3>
+          <strong><%= months(insights[:projected_months_remaining]) %></strong>
+          <p><%= t("overviews.budget.insights.runway.description") %></p>
+        </div>
+      </article>
+    </div>
+
     <div class="op-budget-dashboard--primary-grid">
       <article class="op-budget-dashboard--panel">
         <h3><%= t("overviews.budget.charts.comparison") %></h3>
@@ -106,6 +156,16 @@
         <% end %>
       </article>
     </div>
+
+    <article class="op-budget-dashboard--panel op-budget-dashboard--consumption-panel">
+      <h3><%= t("overviews.budget.charts.consumption") %></h3>
+      <div class="op-budget-dashboard--chart">
+        <canvas data-overviews--budget-dashboard-charts-target="chart"
+                data-chart-config="<%= chart_config(:consumption_chart) %>"
+                aria-label="<%= t("overviews.budget.charts.consumption") %>"
+                role="img"></canvas>
+      </div>
+    </article>
 
     <article class="op-budget-dashboard--panel op-budget-dashboard--trend-panel">
       <h3><%= t("overviews.budget.charts.trend") %></h3>

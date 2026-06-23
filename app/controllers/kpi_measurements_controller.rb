@@ -4,6 +4,7 @@ class KpiMeasurementsController < ApplicationController
   before_action :find_project
   before_action :find_kpi
   before_action :authorize
+  before_action :authorize_project_management
 
   def create
     @measurement = @kpi.measurements.build(measurement_params.merge(author: current_user))
@@ -29,5 +30,9 @@ class KpiMeasurementsController < ApplicationController
 
   def measurement_params
     params.expect(kpi_measurement: %i[value measured_at note])
+  end
+
+  def authorize_project_management
+    deny_access unless User.current.allowed_in_project?(:edit_project, @project)
   end
 end

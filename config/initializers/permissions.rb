@@ -546,7 +546,8 @@ Rails.application.reloader.to_prepare do
                         "grids/widgets/kpi_charts": [:show]
                       },
                       permissible_on: :project,
-                      public: true
+                      require: :member,
+                      dependencies: :edit_project
 
       kpis.permission :manage_kpis,
                       {
@@ -555,7 +556,7 @@ Rails.application.reloader.to_prepare do
                       },
                       permissible_on: :project,
                       require: :member,
-                      dependencies: :view_kpis
+                      dependencies: %i[view_kpis edit_project]
     end
 
     map.project_module :wiki do |wiki|

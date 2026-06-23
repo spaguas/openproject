@@ -1,6 +1,7 @@
 <% html_title t(:label_kpi_plural) %>
 
-<% can_manage = User.current.allowed_in_project?(:manage_kpis, @project) %>
+<% can_manage = User.current.allowed_in_project?(:manage_kpis, @project) &&
+                User.current.allowed_in_project?(:edit_project, @project) %>
 
 <%=
   render Primer::OpenProject::PageHeader.new do |header|
@@ -63,6 +64,9 @@
         <th><%= Kpi.human_attribute_name(:owner) %></th>
         <th><%= Kpi.human_attribute_name(:projects) %></th>
         <th><%= Kpi.human_attribute_name(:groups) %></th>
+        <% if can_manage %>
+          <th><%= t(:button_actions) %></th>
+        <% end %>
       </tr>
     </thead>
     <tbody>
@@ -86,6 +90,22 @@
           <td><%= kpi.owner&.name || "-" %></td>
           <td><%= kpi.associated_projects.map(&:name).join(", ") %></td>
           <td><%= kpi.groups.map(&:name).join(", ").presence || "-" %></td>
+          <% if can_manage %>
+            <td class="buttons">
+              <%= link_to project_kpi_path(@project, kpi, anchor: "new-kpi-measurement"),
+                          class: "button -small -with-icon icon-chart1",
+                          title: t("kpis.measurements.add"),
+                          "aria-label": t("kpis.measurements.add") do %>
+                <%= t("kpis.measurements.add") %>
+              <% end %>
+              <%= link_to edit_project_kpi_path(@project, kpi),
+                          class: "button -small -with-icon icon-edit",
+                          title: t(:button_edit),
+                          "aria-label": t(:button_edit) do %>
+                <%= t(:button_edit) %>
+              <% end %>
+            </td>
+          <% end %>
         </tr>
       <% end %>
     </tbody>

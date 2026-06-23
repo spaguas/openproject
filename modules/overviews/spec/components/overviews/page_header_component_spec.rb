@@ -234,6 +234,7 @@ RSpec.describe Overviews::PageHeaderComponent, type: :component do
         allow(project).to receive(:module_enabled?).with("kpis").and_return(true)
         allow(user).to receive(:allowed_in_project?).and_call_original
         allow(user).to receive(:allowed_in_project?).with(:view_kpis, project).and_return(true)
+        allow(user).to receive(:allowed_in_project?).with(:edit_project, project).and_return(true)
       end
 
       it "renders the KPI indicators tab" do

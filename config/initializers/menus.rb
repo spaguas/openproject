@@ -743,7 +743,11 @@ Redmine::MenuManager.map :project_menu do |menu|
   menu.push :kpis,
             { controller: "/kpis", action: "index" },
             caption: :label_kpi_plural,
-            if: ->(project) { project.module_enabled?("kpis") },
+            if: ->(project) {
+              project.module_enabled?("kpis") &&
+                User.current.allowed_in_project?(:manage_kpis, project) &&
+                User.current.allowed_in_project?(:edit_project, project)
+            },
             icon: "meter"
 
   menu.push :forums,

@@ -82,12 +82,29 @@ pt-BR:
         spent: "Custos registrados até o momento"
         remaining: "Recursos ainda disponíveis"
         ratio: "Custo realizado sobre o planejado"
+      insights:
+        title: "Insights do orçamento"
+        highest_consumption:
+          title: "Maior consumo"
+        largest_spend:
+          title: "Maior custo realizado"
+        burn_rate:
+          title: "Custo médio mensal"
+          description: "Com base no período selecionado de %{months} meses"
+        runway:
+          title: "Projeção de duração do saldo"
+          description: "No ritmo médio mensal atual"
+          no_projection: "Sem projeção"
+          months:
+            one: "%{count} mês"
+            other: "%{count} meses"
       categories:
         base: "Base"
         labor: "Mão de obra"
         material: "Materiais"
       charts:
         comparison: "Planejado x realizado por natureza"
+        consumption: "Consumo do orçamento por orçamento"
         planned: "Planejado"
         actual: "Realizado"
         trend: "Evolução mensal dos custos"

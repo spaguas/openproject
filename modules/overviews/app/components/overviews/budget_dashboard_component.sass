@@ -87,6 +87,62 @@
     color: var(--budget-muted)
     font-size: 0.875rem
 
+  &--insights
+    display: grid
+    gap: 12px
+    grid-template-columns: repeat(4, minmax(0, 1fr))
+    margin-bottom: 12px
+
+  &--insight
+    align-items: start
+    border: 1px solid var(--budget-border)
+    border-radius: 8px
+    display: flex
+    gap: 12px
+    min-width: 0
+    padding: 14px
+
+    > span
+      align-items: center
+      background: var(--bgColor-muted)
+      border-radius: 50%
+      color: var(--budget-primary)
+      display: flex
+      flex: 0 0 36px
+      height: 36px
+      justify-content: center
+
+    h3,
+    p
+      margin: 0
+
+    h3
+      color: var(--budget-muted)
+      font-size: 0.8125rem
+      font-weight: 600
+
+    strong
+      display: block
+      font-size: 1.25rem
+      line-height: 1.2
+      margin: 4px 0
+
+    p
+      color: var(--budget-muted)
+      font-size: 0.8125rem
+
+    &[data-tone="success"] > span,
+    &[data-tone="success"] strong
+      color: var(--budget-success)
+
+    &[data-tone="warning"] > span,
+    &[data-tone="warning"] strong
+      color: var(--budget-warning)
+
+    &[data-tone="danger"] > span,
+    &[data-tone="danger"] strong
+      color: var(--budget-danger)
+
   &--primary-grid
     display: grid
     gap: 12px
@@ -120,6 +176,9 @@
     text-align: center
 
   &--trend-panel
+    margin-bottom: 12px
+
+  &--consumption-panel
     margin-bottom: 12px
 
   &--attention
@@ -227,7 +286,8 @@
       background: var(--budget-danger)
 
   @media screen and (max-width: 1000px)
-    &--summary
+    &--summary,
+    &--insights
       grid-template-columns: repeat(2, minmax(0, 1fr))
 
     &--primary-grid
@@ -243,7 +303,8 @@
     &--period-form
       justify-content: space-between
 
-    &--summary
+    &--summary,
+    &--insights
       grid-template-columns: 1fr
 
     &--table-heading

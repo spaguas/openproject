@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe KpiMeasurementsController do
   shared_let(:project) { create(:project, enabled_module_names: %w[kpis]) }
   shared_let(:user) do
-    create(:user, member_with_permissions: { project => %i[view_kpis manage_kpis] })
+    create(:user, member_with_permissions: { project => %i[view_kpis manage_kpis edit_project] })
   end
   shared_let(:kpi) { create(:kpi, project:) }
 
@@ -39,6 +39,29 @@ RSpec.describe KpiMeasurementsController do
       expect(measurement.created_at).to be_present
       expect(kpi.reload.current_value).to eq(72.5)
       expect(response).to redirect_to(project_kpi_path(project, kpi))
+    end
+
+    context "without project management permission" do
+      let(:user) do
+        create(:user, member_with_permissions: { project => %i[view_kpis manage_kpis] })
+      end
+
+      it "does not record the measurement" do
+        expect do
+          post :create,
+               params: {
+                 project_id: project.id,
+                 kpi_id: kpi.id,
+                 kpi_measurement: {
+                   value: 72.5,
+                   measured_at: Time.zone.local(2026, 6, 18, 9, 30),
+                   note: "Monthly result"
+                 }
+               }
+        end.not_to change(KpiMeasurement, :count)
+
+        expect(response).to have_http_status(:forbidden)
+      end
     end
   end
 end

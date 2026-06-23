@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Grids::Widgets::KpiChartsController < Grids::WidgetController
+  before_action :authorize_project_management
+
   def show
     kpis = Kpi
       .associated_with_project(@project)
@@ -13,6 +15,10 @@ class Grids::Widgets::KpiChartsController < Grids::WidgetController
   end
 
   private
+
+  def authorize_project_management
+    render_403 unless User.current.allowed_in_project?(:edit_project, @project)
+  end
 
   def serialize_kpi(kpi)
     {

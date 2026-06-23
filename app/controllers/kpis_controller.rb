@@ -8,6 +8,7 @@ class KpisController < ApplicationController
   before_action :find_project
   before_action :find_kpi, only: %i[show edit update destroy]
   before_action :authorize
+  before_action :authorize_project_management
   before_action :set_form_options, only: %i[new edit create update]
 
   def index
@@ -152,6 +153,10 @@ class KpisController < ApplicationController
     end
 
     scope.ordered
+  end
+
+  def authorize_project_management
+    deny_access unless User.current.allowed_in_project?(:edit_project, @project)
   end
 
   def build_summary(scope)
