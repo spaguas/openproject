@@ -60,7 +60,7 @@ module RecurringMeetings
 
     def send_cancellation_for_future_instantiated_occurrences
       upcoming_non_cancelled_meetings.find_each do |meeting|
-        meeting.participants.where(invited: true).find_each do |participant|
+        meeting.participants.where(invited: true).where.not(user_id: nil).find_each do |participant|
           MeetingMailer
             .cancelled(meeting, participant.user, current_user)
             .deliver_now
@@ -92,7 +92,7 @@ module RecurringMeetings
     end
 
     def send_ended_mail # rubocop:disable Metrics/AbcSize
-      recurring_meeting.template.participants.where(invited: true).find_each do |participant|
+      recurring_meeting.template.participants.where(invited: true).where.not(user_id: nil).find_each do |participant|
         MeetingMailer
           .ended_series(recurring_meeting, participant.user, User.current)
           .deliver_now

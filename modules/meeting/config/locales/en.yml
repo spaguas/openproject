@@ -251,10 +251,16 @@ en:
         no_participants: "No participants"
         show_all: "Show all"
         apply_to_upcoming_meetings: "Apply these changes to all upcoming meetings in this series"
+        external_name: "External participant name"
+        external_email: "External participant email"
       text:
         template: "These participants will be invited automatically to all future meetings as they are created."
-        manage_participants: "Search for and add project members as participants to this meeting."
+        manage_participants: "Search for project members or add an external participant by name and email."
         search_for_members: "Search for project members"
+      placeholder:
+        external_name: "Name"
+        external_email: "name@example.com"
+      external_participant: "External participant"
       blankslate:
         heading: "No participants"
         description: "There are no participants yet."
@@ -262,6 +268,50 @@ en:
       onetime_template: "These attached files will be included in all future meetings using this template."
       series_template: "These attached files will be included in all future meetings in the series."
       text: "Attached files are available to all meeting participants. You can also drag and drop these into agenda item notes."
+    ai_analysis:
+      title: "Meeting AI"
+      provider: "AI provider"
+      model: "Model"
+      recording_reference: "Recording reference"
+      recording_file: "Recording file"
+      transcript: "Transcript"
+      recording_hint: "Upload the audio or video recording in the attachments section, then reference the file name or link here."
+      transcription_hint: "Optionally upload a recording here to let the selected AI provider transcribe it before generating insights."
+      transcription_prompt: "Transcribe this meeting recording faithfully. Keep speaker names when they are clear and return only the transcript text."
+      providers:
+        openai: "ChatGPT / OpenAI"
+        gemini: "Gemini"
+      placeholders:
+        model: "Use the configured default model"
+        recording_reference: "Recording file name or link"
+        transcript: "Paste or edit the meeting transcript before generating insights."
+      status:
+        draft: "Draft"
+        processing: "Processing"
+        completed: "Completed"
+        failed: "Failed"
+      actions:
+        generate: "Generate insights"
+      results:
+        insights: "Insights"
+        conclusions: "Conclusions"
+        next_steps: "Suggested next steps"
+        empty: "No content generated."
+      settings:
+        title: "Meeting AI transcription and insights"
+        description: "Configure the provider used to generate meeting insights from saved transcripts. API tokens can also be provided through OPENAI_API_KEY or GEMINI_API_KEY environment variables."
+        openai_model: "OpenAI model"
+        openai_transcription_model: "OpenAI transcription model"
+        openai_api_token: "OpenAI API token"
+        gemini_model: "Gemini model"
+        gemini_api_token: "Gemini API token"
+      notice:
+        generated: "Meeting AI insights were generated successfully."
+      errors:
+        invalid_provider: "Select a valid AI provider before generating insights."
+        missing_input: "Paste a transcript or upload a recording file before generating insights."
+        missing_token: "Configure an API token for the selected AI provider before generating insights."
+        provider_error: "The AI provider returned an error (HTTP %{status})."
     copy:
       title: "Copy meeting: %{title}"
       attachments: "Copy attachments"

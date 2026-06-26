@@ -9,6 +9,22 @@
           render(Meeting::Participant.new(form))
         end
 
+        grid.with_area(:external_name) do
+          render(Primer::Alpha::TextField.new(
+            name: "meeting_participant[name]",
+            label: I18n.t("meeting.participants.label.external_name"),
+            placeholder: I18n.t("meeting.participants.placeholder.external_name")
+          ))
+        end
+
+        grid.with_area(:external_email) do
+          render(Primer::Alpha::TextField.new(
+            name: "meeting_participant[email]",
+            label: I18n.t("meeting.participants.label.external_email"),
+            placeholder: I18n.t("meeting.participants.placeholder.external_email")
+          ))
+        end
+
         grid.with_area(:submit) do
           render(Primer::Beta::Button.new(scheme: :primary, type: :submit)) do
             I18n.t(:button_add)

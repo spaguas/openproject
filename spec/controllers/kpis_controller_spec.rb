@@ -10,6 +10,32 @@ RSpec.describe KpisController do
 
   shared_current_user { user }
 
+  describe "GET #index" do
+    let(:user) do
+      create(:user, member_with_permissions: { project => %i[view_kpis edit_project] })
+    end
+
+    it "allows users with view permission to access the KPI management area" do
+      get :index, params: { project_id: project.id }
+
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "GET #show" do
+    let(:user) do
+      create(:user, member_with_permissions: { project => %i[view_kpis edit_project] })
+    end
+
+    it "allows users with view permission to inspect a KPI" do
+      kpi = create(:kpi, project:)
+
+      get :show, params: { project_id: project.id, id: kpi.id }
+
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
   describe "POST #create" do
     it "creates the KPI and its initial measurement in one operation" do
       expect do

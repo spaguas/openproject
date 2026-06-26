@@ -49,7 +49,7 @@ module Meetings
           href: toggle_attendance_project_meeting_participant_path(@meeting.project, @meeting, @participant),
           data: {
             turbo_method: :post,
-            test_selector: "attendance_button_#{@participant.user_id}"
+            test_selector: "attendance_button_#{@participant.user_id || "external_#{@participant.id}"}"
           },
           align_self: :center
         )

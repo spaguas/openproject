@@ -131,7 +131,7 @@ module API
         associated_resources :users,
                              as: :participants,
                              getter: ->(*) {
-                               represented.participants.map do |participant|
+                               represented.participants.select { |participant| participant.user.present? }.map do |participant|
                                  ::API::V3::Users::UserRepresenter.create(participant.user, current_user:)
                                end
                              },
@@ -141,7 +141,7 @@ module API
                                  ids.map { |id| { user_id: id, invited: true } }
                              },
                              link: ->(*) {
-                               represented.participants.map do |participant|
+                               represented.participants.select { |participant| participant.user.present? }.map do |participant|
                                  ::API::Decorators::LinkObject
                                    .new(participant.user,
                                         property_name: :itself,

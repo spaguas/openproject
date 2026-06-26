@@ -50,6 +50,10 @@ class Meeting < ApplicationRecord
   has_many :agenda_items, dependent: :destroy, class_name: "MeetingAgendaItem", inverse_of: :meeting
   has_many :sections, -> { where(backlog: false) }, dependent: :delete_all, class_name: "MeetingSection"
   has_one :own_backlog, -> { where(backlog: true) }, dependent: :destroy, class_name: "MeetingSection"
+  has_one :ai_analysis,
+          dependent: :destroy,
+          class_name: "::MeetingAiAnalysis",
+          inverse_of: :meeting
 
   accepts_nested_attributes_for :agenda_items
 
@@ -339,7 +343,7 @@ class Meeting < ApplicationRecord
   private
 
   def add_new_participants_as_watcher
-    participants.select(&:new_record?).each do |p|
+    participants.select { |participant| participant.new_record? && participant.user.present? }.each do |p|
       add_watcher(p.user)
     end
   end
@@ -350,7 +354,7 @@ class Meeting < ApplicationRecord
     Meetings::NotificationDebounceJob.debounce(
       self,
       since_journal_id: last_journal&.predecessor&.id,
-      since_invited_ids: participants.invited.pluck(:user_id),
+      since_invited_ids: participants.invited.where.not(user_id: nil).pluck(:user_id),
       since_attributes: updated_mail_since_attributes
     )
   end

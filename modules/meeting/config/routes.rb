@@ -141,6 +141,8 @@ Rails.application.routes.draw do
         end
       end
 
+      resource :ai_analysis, controller: "meeting_ai_analyses", only: %i[update]
+
       resource :presentation, only: %i[show edit], controller: "meeting_presentation" do
         collection do
           get :check_for_updates

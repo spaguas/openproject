@@ -176,6 +176,30 @@ RSpec.describe "MeetingParticipants requests",
       end
     end
 
+    context "when adding an external participant" do
+      let(:params) do
+        base_params.deep_merge(
+          meeting_participant: {
+            name: "External Advisor",
+            email: "advisor@example.com"
+          }
+        )
+      end
+
+      it "creates an external participant" do
+        expect do
+          post project_meeting_participants_path(project, meeting), params: params, as: :turbo_stream
+        end.to change { meeting.participants.count }.by(1)
+
+        expect(response).to have_http_status(:ok)
+
+        participant = meeting.participants.reload.last
+        expect(participant).to be_external
+        expect(participant.name).to eq("External Advisor")
+        expect(participant.email).to eq("advisor@example.com")
+      end
+    end
+
     context "when providing nil user_ids" do
       let(:params) { base_params.deep_merge(meeting_participant: { user_id: nil }) }
 

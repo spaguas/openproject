@@ -63,6 +63,7 @@ class Journals::CreateService
         WHERE
           #{only_if_created_sql}
           AND participants.meeting_id = :journable_id
+          AND participants.user_id IS NOT NULL
         ON CONFLICT (journal_id, user_id) DO UPDATE SET
           invited = EXCLUDED.invited,
           attended = EXCLUDED.attended,
@@ -83,7 +84,8 @@ class Journals::CreateService
         FULL JOIN
           (SELECT *
            FROM meeting_participants
-           WHERE meeting_participants.meeting_id = :journable_id) participants
+           WHERE meeting_participants.meeting_id = :journable_id
+             AND meeting_participants.user_id IS NOT NULL) participants
         ON
           participants.user_id = meeting_participant_journals.user_id
         WHERE

@@ -89,8 +89,8 @@ class Kpi < ApplicationRecord
   end
 
   def refresh_current_value!
-    latest_value = latest_measurement&.value
-    update_column(:current_value, latest_value) if latest_value.present? && current_value != latest_value
+    latest_value = latest_measurement&.value || 0
+    update_column(:current_value, latest_value) if current_value != latest_value
   end
 
   def next_measurement_at

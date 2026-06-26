@@ -118,6 +118,23 @@ RSpec.describe MeetingParticipants::CreateService do
       end
     end
 
+    context "when creating an external participant" do
+      subject do
+        described_class
+          .new(user: current_user, notify: false)
+          .call(meeting:, name: "External Advisor", email: "advisor@example.com", invited: true, attended: false)
+      end
+
+      it "creates a participant without a user" do
+        expect { subject }.to change { meeting.participants.count }.by(1)
+
+        expect(subject).to be_success
+        expect(subject.result).to be_external
+        expect(subject.result.name).to eq("External Advisor")
+        expect(subject.result.mail).to eq("advisor@example.com")
+      end
+    end
+
     context "when user_id is nil" do
       let(:user_id) { nil }
 

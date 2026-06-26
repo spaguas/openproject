@@ -42,6 +42,12 @@ FactoryBot.define do
       attended { true }
     end
 
+    trait :external do
+      user { nil }
+      name { "External Advisor" }
+      email { "advisor@example.com" }
+    end
+
     traits_for_enum(:participation_status)
   end
 end

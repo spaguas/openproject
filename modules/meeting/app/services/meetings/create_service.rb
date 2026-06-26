@@ -39,7 +39,7 @@ module Meetings
       return call if meeting.onetime_template?
 
       if call.success? && Journal::NotificationConfiguration.active? && meeting.send_emails?
-        meeting.participants.where(invited: true).find_each do |participant|
+        meeting.participants.where(invited: true).where.not(user_id: nil).find_each do |participant|
           MeetingMailer
             .invited(meeting, participant.user, User.current)
             .deliver_later

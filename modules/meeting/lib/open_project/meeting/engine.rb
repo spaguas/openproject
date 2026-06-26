@@ -39,6 +39,18 @@ module OpenProject::Meeting
 
     register "openproject-meeting",
              author_url: "https://www.openproject.org",
+             settings: {
+               default: {
+                 "provider" => "openai",
+                 "openai_model" => "gpt-4.1-mini",
+                 "openai_transcription_model" => "gpt-4o-mini-transcribe",
+                 "gemini_model" => "gemini-3.5-flash",
+                 "openai_api_token" => "",
+                 "gemini_api_token" => ""
+               },
+               partial: "settings/openproject_meeting",
+               menu_item: :settings
+             },
              bundled: true do
       project_module :meetings do
         permission :view_meetings,
@@ -70,7 +82,8 @@ module OpenProject::Meeting
                      recurring_meetings: %i[edit cancel_edit update update_title details_dialog update_details
                                             notify end_series end_series_dialog],
                      work_package_meetings_tab: %i[add_work_package_to_meeting_dialog add_work_package_to_meeting refresh_form],
-                     meeting_participants: %i[create destroy mark_all_attended toggle_attendance manage_participants_dialog]
+                     meeting_participants: %i[create destroy mark_all_attended toggle_attendance manage_participants_dialog],
+                     meeting_ai_analyses: %i[update]
                    },
                    permissible_on: :project,
                    dependencies: :view_meetings,

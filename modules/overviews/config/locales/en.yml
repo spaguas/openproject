@@ -3,6 +3,26 @@ en:
     label_home: "%{workspace_type} home"
     label_dashboard: "Dashboard"
     label_overview: "Overview"
+    project_insights:
+      type: "Type"
+      status: "Status"
+      date: "Date"
+      status_not_set: "Status not set"
+      statuses:
+        on_track: "On track"
+        overdue: "Overdue"
+      graph:
+        title: "Project relationship graph"
+        aria_label: "Graph showing the relationship between this project, child projects, and work packages"
+        empty: "No related projects or work packages found."
+        relations:
+          child_project: "Child project"
+          task: "Work package"
+      calendar:
+        title: "Project and task calendar"
+        aria_label: "Calendar heatmap showing child projects and work packages by schedule status"
+        empty: "No dated child projects or work packages found for this year."
+        items: "Items"
     team_allocation:
       label: "Team allocation"
       title: "Team allocation"

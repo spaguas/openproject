@@ -101,7 +101,7 @@ module Meetings
     def invited_user_ids_from(journal)
       return [] unless journal
 
-      journal.participant_journals.where(invited: true).pluck(:user_id)
+      journal.participant_journals.where(invited: true).pluck(:user_id).compact
     end
 
     def compute_attribute_changes

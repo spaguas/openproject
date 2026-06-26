@@ -232,10 +232,16 @@ pt-BR:
         no_participants: Sem participantes
         show_all: Mostrar todos
         apply_to_upcoming_meetings: Aplique essas alterações a todas as próximas reuniões desta série
+        external_name: Nome do participante externo
+        external_email: E-mail do participante externo
       text:
         template: Esses participantes serão convidados automaticamente para todas as futuras reuniões à medida que forem criadas.
-        manage_participants: Pesquisar e adicionar membros do projeto como participantes desta reunião.
+        manage_participants: Pesquise membros do projeto ou adicione um participante externo por nome e e-mail.
         search_for_members: Pesquisar membros do projeto
+      placeholder:
+        external_name: Nome
+        external_email: nome@exemplo.com
+      external_participant: Participante externo
       blankslate:
         heading: Sem participantes
         description: Ainda não há participantes.
@@ -243,6 +249,50 @@ pt-BR:
       onetime_template: Esses arquivos anexados serão adicionados a todas as reuniões futuras usando este modelo.
       series_template: Esses arquivos anexados serão adicionados a todas as reuniões futuras da série.
       text: Os arquivos anexados estão disponíveis para todos os participantes da reunião. Você também pode arrastá-los e soltá-los nas anotações dos itens da pauta.
+    ai_analysis:
+      title: IA da reunião
+      provider: Provedor de IA
+      model: Modelo
+      recording_reference: Referência da gravação
+      recording_file: Arquivo da gravação
+      transcript: Transcrição
+      recording_hint: Envie o áudio ou vídeo da gravação na seção de anexos e informe aqui o nome do arquivo ou link.
+      transcription_hint: Opcionalmente envie uma gravação aqui para que o provedor de IA selecionado faça a transcrição antes de gerar os insights.
+      transcription_prompt: Transcreva esta gravação de reunião com fidelidade. Mantenha nomes de falantes quando estiverem claros e retorne apenas o texto da transcrição.
+      providers:
+        openai: ChatGPT / OpenAI
+        gemini: Gemini
+      placeholders:
+        model: Use o modelo padrão configurado
+        recording_reference: Nome do arquivo de gravação ou link
+        transcript: Cole ou edite a transcrição da reunião antes de gerar os insights.
+      status:
+        draft: Rascunho
+        processing: Processando
+        completed: Concluído
+        failed: Falhou
+      actions:
+        generate: Gerar insights
+      results:
+        insights: Insights
+        conclusions: Conclusões
+        next_steps: Próximos passos sugeridos
+        empty: Nenhum conteúdo gerado.
+      settings:
+        title: Transcrição e insights de reuniões com IA
+        description: Configure o provedor usado para gerar insights de reuniões a partir das transcrições salvas. Os tokens também podem ser informados pelas variáveis de ambiente OPENAI_API_KEY ou GEMINI_API_KEY.
+        openai_model: Modelo da OpenAI
+        openai_transcription_model: Modelo de transcrição da OpenAI
+        openai_api_token: Token de API da OpenAI
+        gemini_model: Modelo do Gemini
+        gemini_api_token: Token de API do Gemini
+      notice:
+        generated: Insights da reunião gerados com sucesso.
+      errors:
+        invalid_provider: Selecione um provedor de IA válido antes de gerar os insights.
+        missing_input: Cole uma transcrição ou envie um arquivo de gravação antes de gerar os insights.
+        missing_token: Configure um token de API para o provedor de IA selecionado antes de gerar insights.
+        provider_error: O provedor de IA retornou um erro (HTTP %{status}).
     copy:
       title: 'Copiar reunião: %{title}'
       attachments: Copiar anexos

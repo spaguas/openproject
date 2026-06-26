@@ -1,0 +1,104 @@
+<% html_title t(:label_administration), t(:label_branding) %>
+
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { t(:label_branding) }
+    header.with_breadcrumbs(
+      [{ href: admin_index_path, text: t(:label_administration) },
+       t(:label_branding)]
+    )
+    header.with_description { t(:label_branding_description) }
+  end
+%>
+
+<%= error_messages_for "branding_setting" %>
+
+<%= form_for @branding_setting, url: admin_branding_path, method: :patch, html: { multipart: true, class: "form -vertical" } do |f| %>
+  <section class="form--section">
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend"><%= t(:label_branding_light_logo) %></legend>
+      <p class="form--field-instructions"><%= t(:text_branding_light_logo_instructions) %></p>
+
+      <% if @branding_setting.persisted? && @branding_setting.light_logo.present? %>
+        <%= tag.img(
+              src: branding_light_logo_path(digest: @branding_setting.digest, filename: @branding_setting.light_logo_identifier),
+              class: "custom-logo-preview",
+              alt: t(:label_branding_light_logo)
+            ) %>
+      <% end %>
+
+      <div class="form--field">
+        <div class="attachment_field form--field-container -vertical -shrink">
+          <div class="form--file-container">
+            <%= f.file_field :light_logo, class: "attachment_choose_file", accept: "image/*", size: "15" %>
+          </div>
+        </div>
+      </div>
+
+      <%=
+        render(Primer::Beta::Button.new(type: :submit)) do |button|
+          button.with_leading_visual_icon(icon: @branding_setting.light_logo.present? ? :upload : :plus)
+          t(@branding_setting.light_logo.present? ? :button_replace : :button_upload)
+        end
+      %>
+
+      <% if @branding_setting.persisted? && @branding_setting.light_logo.present? %>
+        <%=
+          render(Primer::Beta::Button.new(
+            tag: :a,
+            href: branding_light_logo_delete_path,
+            data: { turbo_method: :delete }
+          )) do |button|
+            button.with_leading_visual_icon(icon: :trash)
+            t(:button_delete)
+          end
+        %>
+      <% end %>
+    </fieldset>
+  </section>
+<% end %>
+
+<%= form_for @branding_setting, url: admin_branding_path, method: :patch, html: { multipart: true, class: "form -vertical" } do |f| %>
+  <section class="form--section">
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend"><%= t(:label_branding_dark_logo) %></legend>
+      <p class="form--field-instructions"><%= t(:text_branding_dark_logo_instructions) %></p>
+
+      <% if @branding_setting.persisted? && @branding_setting.dark_logo.present? %>
+        <%= tag.img(
+              src: branding_dark_logo_path(digest: @branding_setting.digest, filename: @branding_setting.dark_logo_identifier),
+              class: "custom-logo-preview",
+              alt: t(:label_branding_dark_logo)
+            ) %>
+      <% end %>
+
+      <div class="form--field">
+        <div class="attachment_field form--field-container -vertical -shrink">
+          <div class="form--file-container">
+            <%= f.file_field :dark_logo, class: "attachment_choose_file", accept: "image/*", size: "15" %>
+          </div>
+        </div>
+      </div>
+
+      <%=
+        render(Primer::Beta::Button.new(type: :submit)) do |button|
+          button.with_leading_visual_icon(icon: @branding_setting.dark_logo.present? ? :upload : :plus)
+          t(@branding_setting.dark_logo.present? ? :button_replace : :button_upload)
+        end
+      %>
+
+      <% if @branding_setting.persisted? && @branding_setting.dark_logo.present? %>
+        <%=
+          render(Primer::Beta::Button.new(
+            tag: :a,
+            href: branding_dark_logo_delete_path,
+            data: { turbo_method: :delete }
+          )) do |button|
+            button.with_leading_visual_icon(icon: :trash)
+            t(:button_delete)
+          end
+        %>
+      <% end %>
+    </fieldset>
+  </section>
+<% end %>

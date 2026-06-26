@@ -112,6 +112,20 @@ module Homescreen
       rows.sort_by { |row| [row[:days], row[:project].name.downcase] }
     end
 
+    def project_graph_data
+      {
+        nodes: project_graph_nodes,
+        links: project_graph_links
+      }
+    end
+
+    def project_calendar_heatmap_data
+      {
+        year: Date.current.year,
+        entries: project_calendar_entries
+      }
+    end
+
     private
 
     def visible_work_packages
@@ -123,6 +137,116 @@ module Homescreen
         .where(project_id: project_ids)
         .includes(:project, :status, :type, :assigned_to, :responsible)
         .to_a
+    end
+
+    def project_calendar_entries
+      work_packages_by_project = work_packages.group_by(&:project_id)
+
+      projects.filter_map do |project|
+        items = work_packages_by_project[project.id] || []
+        due_dates = items.filter_map(&:due_date).select { |date| date.year == Date.current.year }
+        next if due_dates.empty?
+
+        calendar_entry_for(project, items, due_dates.min)
+      end
+    end
+
+    def calendar_entry_for(project, work_packages_for_project, date)
+      status = calendar_status_for(project, work_packages_for_project)
+
+      {
+        date: date.iso8601,
+        project: project.name,
+        status:,
+        status_label: I18n.t("homescreen.project_calendar.statuses.#{status}"),
+        url: Rails.application.routes.url_helpers.project_path(project)
+      }
+    end
+
+    def calendar_status_for(project, work_packages_for_project)
+      return :completed if calendar_project_completed?(project, work_packages_for_project)
+      return :overdue if work_packages_for_project.any? { |work_package| overdue?(work_package) }
+
+      :on_track
+    end
+
+    def calendar_project_completed?(project, work_packages_for_project)
+      project.finished? ||
+        (work_packages_for_project.any? && work_packages_for_project.all? { |work_package| work_package.status.is_closed? })
+    end
+
+    def project_graph_nodes
+      grouped_work_packages = work_packages.group_by(&:project_id)
+
+      projects.map do |project|
+        project_work_packages = grouped_work_packages[project.id] || []
+        open_count = project_work_packages.count { |work_package| !work_package.status.is_closed? }
+        closed_count = project_work_packages.size - open_count
+
+        {
+          id: project.id,
+          name: project.name,
+          workspace_type: project.workspace_type,
+          workspace_label: project.workspace_label,
+          status: project_status_label(project),
+          area: area_for(project).name,
+          parent_id: project.parent_id,
+          work_packages: project_work_packages.size,
+          open_work_packages: open_count,
+          closed_work_packages: closed_count,
+          completion: percentage(closed_count, project_work_packages.size)
+        }
+      end
+    end
+
+    def project_graph_links
+      (project_hierarchy_links + shared_kpi_links)
+        .uniq { |link| [link[:source], link[:target], link[:kind]] }
+    end
+
+    def project_hierarchy_links
+      projects.filter_map do |project|
+        next if project.parent_id.blank? || !projects_by_id.key?(project.parent_id)
+
+        {
+          source: project.parent_id,
+          target: project.id,
+          kind: "hierarchy",
+          label: I18n.t("homescreen.project_graph.relations.hierarchy")
+        }
+      end
+    end
+
+    def shared_kpi_links
+      kpis_with_visible_projects.flat_map do |kpi|
+        visible_kpi_project_ids(kpi).combination(2).map do |source_id, target_id|
+          {
+            source: source_id,
+            target: target_id,
+            kind: "kpi",
+            label: I18n.t("homescreen.project_graph.relations.kpi", name: kpi.name)
+          }
+        end
+      end
+    end
+
+    def kpis_with_visible_projects
+      project_ids = projects.select { |project| user.allowed_in_project?(:view_kpis, project) }.map(&:id)
+      return Kpi.none if project_ids.empty?
+
+      Kpi
+        .left_outer_joins(:projects)
+        .where(project_id: project_ids)
+        .or(Kpi.left_outer_joins(:projects).where(projects: { id: project_ids }))
+        .includes(:project, :projects)
+        .distinct
+    end
+
+    def visible_kpi_project_ids(kpi)
+      ([kpi.project_id] + kpi.projects.map(&:id))
+        .select { |project_id| projects_by_id.key?(project_id) }
+        .uniq
+        .sort
     end
 
     def projects_by_id

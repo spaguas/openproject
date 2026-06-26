@@ -1,0 +1,47 @@
+<% html_title t("kpis.measurements.edit") %>
+
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { t("kpis.measurements.edit") }
+    header.with_breadcrumbs(
+      [
+        { href: project_overview_path(@project.id), text: @project.name },
+        { href: project_kpis_path(@project), text: t(:label_kpi_plural) },
+        { href: project_kpi_path(@project, @kpi), text: @kpi.name },
+        t("kpis.measurements.edit")
+      ]
+    )
+  end
+%>
+
+<%= error_messages_for "measurement" %>
+
+<%= form_with model: @measurement,
+              url: project_kpi_measurement_path(@project, @kpi, @measurement),
+              method: :patch,
+              local: true,
+              html: { class: "form" } do |form| %>
+  <div class="form--field -required">
+    <%= form.label :value, class: "form--label" %>
+    <span class="form--field-container">
+      <%= form.number_field :value, step: "0.0001", required: true, class: "form--text-field" %>
+    </span>
+  </div>
+
+  <div class="form--field -required">
+    <%= form.label :measured_at, class: "form--label" %>
+    <span class="form--field-container">
+      <%= form.date_field :measured_at, max: Date.current.iso8601, required: true, class: "form--text-field" %>
+    </span>
+  </div>
+
+  <div class="form--field">
+    <%= form.label :note, class: "form--label" %>
+    <span class="form--field-container">
+      <%= form.text_area :note, rows: 3, class: "form--text-field" %>
+    </span>
+  </div>
+
+  <%= styled_button_tag t(:button_save), class: "-primary -with-icon icon-checkmark" %>
+  <%= link_to t(:button_cancel), project_kpi_path(@project, @kpi), class: "button" %>
+<% end %>

@@ -44,7 +44,7 @@ module RecurringMeetings
     end
 
     def send_cancellation_mail(meeting)
-      meeting.template.participants.where(invited: true).find_each do |participant|
+      meeting.template.participants.where(invited: true).where.not(user_id: nil).find_each do |participant|
         MeetingMailer
           .cancelled_series(meeting, participant.user, User.current)
           .deliver_now

@@ -429,6 +429,7 @@ class MeetingsController < ApplicationController
     @meeting
       .participants
       .invited
+      .where.not(user_id: nil)
       .find_each do |participant|
       MeetingMailer.invited(
         @meeting,
@@ -683,6 +684,7 @@ class MeetingsController < ApplicationController
     @meeting
       .participants
       .invited
+      .where.not(user_id: nil)
       .find_each do |participant|
       MeetingSeriesMailer.invited(
         recurring_meeting,

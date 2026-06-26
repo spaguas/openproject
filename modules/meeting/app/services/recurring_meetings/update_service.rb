@@ -199,6 +199,7 @@ module RecurringMeetings
         .template
         .participants
         .invited
+        .where.not(user_id: nil)
         .find_each do |participant|
           # Generate old schedule in each participant's locale
           old_schedule = User.execute_as(participant.user) do

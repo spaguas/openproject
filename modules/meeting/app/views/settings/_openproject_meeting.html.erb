@@ -1,0 +1,79 @@
+<fieldset class="form--fieldset">
+  <legend class="form--fieldset-legend"><%= t("meeting.ai_analysis.settings.title") %></legend>
+
+  <p><%= t("meeting.ai_analysis.settings.description") %></p>
+
+  <div class="form--field">
+    <%= styled_label_tag "settings-provider", t("meeting.ai_analysis.provider") %>
+    <div class="form--field-container">
+      <%= styled_select_tag(
+            "settings[provider]",
+            options_for_select(
+              MeetingAiAnalysis::PROVIDERS.map { |provider| [t("meeting.ai_analysis.providers.#{provider}"), provider] },
+              settings["provider"]
+            ),
+            id: "settings-provider"
+          ) %>
+    </div>
+  </div>
+
+  <div class="form--field">
+    <%= styled_label_tag "settings-openai-model", t("meeting.ai_analysis.settings.openai_model") %>
+    <div class="form--field-container">
+      <%= styled_text_field_tag(
+            "settings[openai_model]",
+            settings["openai_model"],
+            id: "settings-openai-model",
+            placeholder: Meetings::AiAnalysis::Settings::DEFAULT_OPENAI_MODEL
+          ) %>
+    </div>
+  </div>
+
+  <div class="form--field">
+    <%= styled_label_tag "settings-openai-api-token", t("meeting.ai_analysis.settings.openai_api_token") %>
+    <div class="form--field-container">
+      <%= password_field_tag(
+            "settings[openai_api_token]",
+            settings["openai_api_token"],
+            id: "settings-openai-api-token",
+            class: "form--text-field"
+          ) %>
+    </div>
+  </div>
+
+  <div class="form--field">
+    <%= styled_label_tag "settings-openai-transcription-model", t("meeting.ai_analysis.settings.openai_transcription_model") %>
+    <div class="form--field-container">
+      <%= styled_text_field_tag(
+            "settings[openai_transcription_model]",
+            settings["openai_transcription_model"],
+            id: "settings-openai-transcription-model",
+            placeholder: Meetings::AiAnalysis::Settings::DEFAULT_OPENAI_TRANSCRIPTION_MODEL
+          ) %>
+    </div>
+  </div>
+
+  <div class="form--field">
+    <%= styled_label_tag "settings-gemini-model", t("meeting.ai_analysis.settings.gemini_model") %>
+    <div class="form--field-container">
+      <%= styled_text_field_tag(
+            "settings[gemini_model]",
+            settings["gemini_model"],
+            id: "settings-gemini-model",
+            placeholder: Meetings::AiAnalysis::Settings::DEFAULT_GEMINI_MODEL
+          ) %>
+    </div>
+  </div>
+
+  <div class="form--field">
+    <%= styled_label_tag "settings-gemini-api-token", t("meeting.ai_analysis.settings.gemini_api_token") %>
+    <div class="form--field-container">
+      <%= password_field_tag(
+            "settings[gemini_api_token]",
+            settings["gemini_api_token"],
+            id: "settings-gemini-api-token",
+            class: "form--text-field"
+          ) %>
+    </div>
+  </div>
+</fieldset>

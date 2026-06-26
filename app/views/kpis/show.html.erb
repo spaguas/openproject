@@ -72,7 +72,7 @@
   <div class="attributes-key-value">
     <div class="attributes-key-value--key"><%= t("kpis.next_measurement") %></div>
     <div class="attributes-key-value--value-container">
-      <%= @kpi.next_measurement_at ? format_time(@kpi.next_measurement_at) : "-" %>
+      <%= @kpi.next_measurement_at ? format_date(@kpi.next_measurement_at) : "-" %>
     </div>
   </div>
   <div class="attributes-key-value">
@@ -131,7 +131,7 @@
     <div class="form--field -required">
       <%= form.label :measured_at, class: "form--label" %>
       <span class="form--field-container">
-        <%= form.datetime_local_field :measured_at, required: true, class: "form--text-field" %>
+        <%= form.date_field :measured_at, max: Date.current.iso8601, required: true, class: "form--text-field" %>
       </span>
     </div>
 
@@ -157,16 +157,36 @@
         <th><%= KpiMeasurement.human_attribute_name(:note) %></th>
         <th><%= KpiMeasurement.human_attribute_name(:author) %></th>
         <th><%= KpiMeasurement.human_attribute_name(:created_at) %></th>
+        <% if can_manage %>
+          <th><%= t(:button_actions) %></th>
+        <% end %>
       </tr>
     </thead>
     <tbody>
       <% @measurements.each do |measurement| %>
         <tr>
-          <td><%= format_time(measurement.measured_at) %></td>
+          <td><%= format_date(measurement.measured_at) %></td>
           <td><%= @kpi.display_value(measurement.value) %></td>
           <td><%= simple_format(measurement.note) %></td>
           <td><%= measurement.author&.name || t("kpis.measurements.legacy_author") %></td>
           <td><%= format_time(measurement.created_at) %></td>
+          <% if can_manage %>
+            <td class="buttons">
+              <%= link_to edit_project_kpi_measurement_path(@project, @kpi, measurement),
+                          class: "button -small -with-icon icon-edit",
+                          title: t(:button_edit),
+                          "aria-label": t(:button_edit) do %>
+                <%= t(:button_edit) %>
+              <% end %>
+              <%= link_to project_kpi_measurement_path(@project, @kpi, measurement),
+                          data: { turbo_method: :delete, turbo_confirm: t(:text_are_you_sure) },
+                          class: "button -small -danger -with-icon icon-delete",
+                          title: t(:button_delete),
+                          "aria-label": t(:button_delete) do %>
+                <%= t(:button_delete) %>
+              <% end %>
+            </td>
+          <% end %>
         </tr>
       <% end %>
     </tbody>

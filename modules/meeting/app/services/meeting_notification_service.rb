@@ -11,7 +11,7 @@ class MeetingNotificationService
       recipients_with_errors = send_notifications!(action, **)
       ServiceResult.new(success: recipients_with_errors.empty?, errors: recipients_with_errors)
     else
-      ServiceResult.failure(errors: meeting.participants.includes(:user))
+      ServiceResult.failure(errors: meeting.participants.includes(:user).where.not(user_id: nil))
     end
   end
 
@@ -19,7 +19,7 @@ class MeetingNotificationService
 
   def send_notifications!(action, **)
     recipients_with_errors = []
-    meeting.participants.includes(:user).find_each do |recipient|
+    meeting.participants.includes(:user).where.not(user_id: nil).find_each do |recipient|
       MeetingMailer.send(action, meeting, recipient.user, User.current, **).deliver_later
     rescue StandardError => e
       Rails.logger.error do

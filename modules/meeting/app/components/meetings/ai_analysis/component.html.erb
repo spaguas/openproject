@@ -1,0 +1,102 @@
+<section id="meeting-ai-analysis" class="meeting-ai-analysis hide-when-print">
+  <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <% box.with_header do %>
+      <%= flex_layout(justify_content: :space_between, align_items: :center) do |header| %>
+        <% header.with_column do %>
+          <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4)) do %>
+            <%= render(Primer::Beta::Octicon.new(icon: :zap, mr: 2)) %>
+            <%= t("meeting.ai_analysis.title") %>
+          <% end %>
+        <% end %>
+
+        <% header.with_column do %>
+          <%= render(Primer::Beta::Label.new(scheme: @analysis.completed? ? :success : :secondary)) do %>
+            <%= t("meeting.ai_analysis.status.#{@analysis.status}") %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% box.with_body do %>
+      <%= render(BaseErrorsComponent.new(@analysis, mb: 3)) %>
+
+      <% unless configured? %>
+        <%= render(Primer::Alpha::Banner.new(scheme: :warning, mb: 3)) do %>
+          <%= t("meeting.ai_analysis.errors.missing_token") %>
+        <% end %>
+      <% end %>
+
+      <%= form_with(
+            model: @analysis,
+            url: project_meeting_ai_analysis_path(@project, @meeting),
+            method: :put,
+            data: { turbo: false }
+          ) do |form| %>
+        <div class="form--field">
+          <%= form.label :provider, t("meeting.ai_analysis.provider"), class: "form--label" %>
+          <div class="form--field-container">
+            <%= form.select :provider, options_for_select(provider_options, @analysis.provider), {}, class: "form--select" %>
+          </div>
+        </div>
+
+        <div class="form--field">
+          <%= form.label :model, t("meeting.ai_analysis.model"), class: "form--label" %>
+          <div class="form--field-container">
+            <%= form.text_field :model, class: "form--text-field", placeholder: t("meeting.ai_analysis.placeholders.model") %>
+          </div>
+        </div>
+
+        <div class="form--field">
+          <%= form.label :recording_reference, t("meeting.ai_analysis.recording_reference"), class: "form--label" %>
+          <div class="form--field-container">
+            <%= form.text_field(
+                  :recording_reference,
+                  class: "form--text-field",
+                  placeholder: t("meeting.ai_analysis.placeholders.recording_reference")
+                ) %>
+          </div>
+          <p class="form--field-instructions"><%= t("meeting.ai_analysis.recording_hint") %></p>
+        </div>
+
+        <div class="form--field">
+          <%= form.label :recording_file, t("meeting.ai_analysis.recording_file"), class: "form--label" %>
+          <div class="form--field-container">
+            <%= form.file_field :recording_file, class: "form--file-field", accept: "audio/*,video/*" %>
+          </div>
+          <p class="form--field-instructions"><%= t("meeting.ai_analysis.transcription_hint") %></p>
+        </div>
+
+        <div class="form--field">
+          <%= form.label :transcript, t("meeting.ai_analysis.transcript"), class: "form--label" %>
+          <div class="form--field-container">
+            <%= form.text_area(
+                  :transcript,
+                  class: "form--text-area",
+                  rows: 8,
+                  placeholder: t("meeting.ai_analysis.placeholders.transcript")
+                ) %>
+          </div>
+        </div>
+
+        <%= render(Primer::Beta::Button.new(type: :submit, scheme: :primary, mt: 2)) do |button| %>
+          <% button.with_leading_visual_icon(icon: :zap) %>
+          <%= t("meeting.ai_analysis.actions.generate") %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% if @analysis.completed? || @analysis.failed? %>
+      <% box.with_row do %>
+        <% if @analysis.failed? %>
+          <%= render(Primer::Alpha::Banner.new(scheme: :danger)) { @analysis.error_message } %>
+        <% else %>
+          <div class="meeting-ai-analysis--results">
+            <%= render_result(:"light-bulb", "insights", @analysis.insights) %>
+            <%= render_result(:"check-circle", "conclusions", @analysis.conclusions) %>
+            <%= render_result(:tasklist, "next_steps", @analysis.next_steps) %>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+</section>

@@ -104,6 +104,71 @@
       grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
     }
 
+    .homescreen-project-overview--graph-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+      margin-bottom: 1rem;
+    }
+
+    .homescreen-project-overview--graph {
+      height: min(64vh, 520px);
+      min-height: 360px;
+    }
+
+    .homescreen-project-overview--calendar {
+      height: min(58vh, 460px);
+      min-height: 320px;
+    }
+
+    .homescreen-project-overview--calendar-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .homescreen-project-overview--calendar-legend-item {
+      align-items: center;
+      color: var(--fgColor-muted);
+      display: inline-flex;
+      gap: 0.35rem;
+    }
+
+    .homescreen-project-overview--calendar-swatch {
+      border-radius: 3px;
+      display: inline-block;
+      height: 0.75rem;
+      width: 0.75rem;
+    }
+
+    .homescreen-project-overview--graph-detail {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .homescreen-project-overview--graph-detail h4 {
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    .homescreen-project-overview--graph-detail dl {
+      display: grid;
+      gap: 0.45rem 0.75rem;
+      grid-template-columns: max-content minmax(0, 1fr);
+      margin: 0;
+    }
+
+    .homescreen-project-overview--graph-detail dt {
+      color: var(--fgColor-muted);
+      font-weight: 600;
+    }
+
+    .homescreen-project-overview--graph-empty {
+      color: var(--fgColor-muted);
+      margin: 0;
+    }
+
     .homescreen-project-overview--detail-description {
       color: var(--fgColor-muted);
       margin-top: 0;
@@ -133,6 +198,7 @@
 
     @media screen and (max-width: 900px) {
       .homescreen-project-overview--header,
+      .homescreen-project-overview--graph-grid,
       .homescreen-project-overview--tables {
         display: block;
       }
@@ -144,6 +210,16 @@
       .homescreen-project-overview--chart-container {
         height: 320px;
         min-height: 240px;
+      }
+
+      .homescreen-project-overview--graph {
+        height: 360px;
+        min-height: 300px;
+      }
+
+      .homescreen-project-overview--calendar {
+        height: 360px;
+        min-height: 300px;
       }
 
       .homescreen-project-overview--detail-table {
@@ -245,6 +321,45 @@
                  title: t("homescreen.project_overview.by_area"),
                  entries: overview.area_distribution
                } %>
+  </div>
+
+  <div class="homescreen-project-overview--panel"
+       data-controller="homescreen--project-overview-charts"
+       data-homescreen--project-overview-charts-calendar-config-value="<%= project_calendar_config_json %>">
+    <h3><%= t("homescreen.project_calendar.title") %></h3>
+    <p class="homescreen-project-overview--detail-description"><%= t("homescreen.project_calendar.description") %></p>
+    <div class="homescreen-project-overview--calendar-legend">
+      <% project_calendar_config[:legend].each do |item| %>
+        <span class="homescreen-project-overview--calendar-legend-item">
+          <span class="homescreen-project-overview--calendar-swatch" style="background-color: <%= item[:color] %>"></span>
+          <%= item[:label] %>
+        </span>
+      <% end %>
+    </div>
+    <div class="homescreen-project-overview--calendar"
+         role="img"
+         aria-label="<%= t("homescreen.project_calendar.aria_label") %>"
+         data-homescreen--project-overview-charts-target="calendar"></div>
+  </div>
+
+  <div class="homescreen-project-overview--graph-grid"
+       data-controller="homescreen--project-overview-charts"
+       data-homescreen--project-overview-charts-graph-config-value="<%= project_graph_config_json %>">
+    <div class="homescreen-project-overview--panel">
+      <h3><%= t("homescreen.project_graph.title") %></h3>
+      <p class="homescreen-project-overview--detail-description"><%= t("homescreen.project_graph.description") %></p>
+      <div class="homescreen-project-overview--graph"
+           role="img"
+           aria-label="<%= t("homescreen.project_graph.aria_label") %>"
+           data-homescreen--project-overview-charts-target="graph"></div>
+    </div>
+
+    <div class="homescreen-project-overview--panel">
+      <h3><%= t("homescreen.project_graph.details.title") %></h3>
+      <div class="homescreen-project-overview--graph-detail" data-homescreen--project-overview-charts-target="detail">
+        <p class="homescreen-project-overview--graph-empty"><%= t("homescreen.project_graph.details.empty") %></p>
+      </div>
+    </div>
   </div>
 
   <div class="homescreen-project-overview--tables">

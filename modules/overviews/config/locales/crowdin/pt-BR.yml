@@ -4,6 +4,26 @@ pt-BR:
     label_home: "%{workspace_type} inicial"
     label_dashboard: Painel
     label_overview: Visão geral
+    project_insights:
+      type: "Tipo"
+      status: "Status"
+      date: "Data"
+      status_not_set: "Status não definido"
+      statuses:
+        on_track: "No prazo"
+        overdue: "Fora do prazo"
+      graph:
+        title: "Grafo de relação do projeto"
+        aria_label: "Grafo exibindo a relação entre este projeto, projetos filhos e tarefas"
+        empty: "Nenhum projeto ou tarefa relacionada encontrada."
+        relations:
+          child_project: "Projeto filho"
+          task: "Tarefa"
+      calendar:
+        title: "Calendário de projetos e tarefas"
+        aria_label: "Mapa de calor em calendário exibindo projetos filhos e tarefas por situação de prazo"
+        empty: "Nenhum projeto filho ou tarefa com data encontrada para este ano."
+        items: "Itens"
     team_allocation:
       label: "Alocação da equipe"
       title: "Alocação da equipe"

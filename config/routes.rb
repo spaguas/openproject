@@ -227,6 +227,14 @@ Rails.application.routes.draw do
       as: "custom_style_touch_icon",
       constraints: { filename: /[^\/]*/ }
 
+  get "branding/:digest/light-logo/:filename" => "admin/branding#light_logo_download",
+      as: "branding_light_logo",
+      constraints: { filename: /[^\/]*/ }
+
+  get "branding/:digest/dark-logo/:filename" => "admin/branding#dark_logo_download",
+      as: "branding_dark_logo",
+      constraints: { filename: /[^\/]*/ }
+
   get "highlighting/styles(/:version_tag)" => "highlighting#styles",
       as: "highlighting_css_styles"
 
@@ -414,7 +422,7 @@ Rails.application.routes.draw do
       resources :comments, controller: "news/comments", only: %i[create destroy]
     end
     resources :kpis do
-      resources :measurements, controller: "kpi_measurements", only: :create
+      resources :measurements, controller: "kpi_measurements", except: %i[index show new]
     end
 
     # Match everything to be the ID of the wiki page except the part that
@@ -617,6 +625,10 @@ Rails.application.routes.draw do
     resource :custom_style, only: %i[update show create], path: "design" do
       get :export_demo_pdf_download
     end
+
+    resource :branding, only: %i[show update], controller: "admin/branding", as: "admin_branding"
+    delete "branding/light_logo" => "admin/branding#light_logo_delete", as: "branding_light_logo_delete"
+    delete "branding/dark_logo" => "admin/branding#dark_logo_delete", as: "branding_dark_logo_delete"
 
     resources :attribute_help_texts, only: %i(index new create edit update destroy)
 

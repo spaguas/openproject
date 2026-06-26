@@ -38,8 +38,17 @@ RSpec.describe MeetingParticipant do
       expect(subject).to be_valid
     end
 
-    it "is not valid without a user" do
+    it "is valid without a user when external name is present" do
       subject.user = nil
+      subject.name = "External Advisor"
+
+      expect(subject).to be_valid
+    end
+
+    it "is not valid without a user or external name" do
+      subject.user = nil
+      subject.name = nil
+
       expect(subject).not_to be_valid
     end
 
@@ -54,9 +63,11 @@ RSpec.describe MeetingParticipant do
       expect(subject.name).to eq(subject.user.name)
     end
 
-    it "returns 'user.deleted' if user is nil" do
+    it "returns the external name if user is nil" do
       subject.user = nil
-      expect(subject.name).to eq(I18n.t("user.deleted"))
+      subject.name = "External Advisor"
+
+      expect(subject.name).to eq("External Advisor")
     end
   end
 
@@ -65,9 +76,11 @@ RSpec.describe MeetingParticipant do
       expect(subject.mail).to eq(subject.user.mail)
     end
 
-    it "returns 'user.deleted' if user is nil" do
+    it "returns the external email if user is nil" do
       subject.user = nil
-      expect(subject.mail).to eq(I18n.t("user.deleted"))
+      subject.email = "advisor@example.com"
+
+      expect(subject.mail).to eq("advisor@example.com")
     end
   end
 

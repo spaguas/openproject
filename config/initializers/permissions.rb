@@ -552,7 +552,7 @@ Rails.application.reloader.to_prepare do
       kpis.permission :manage_kpis,
                       {
                         kpis: %i[new create edit update destroy],
-                        kpi_measurements: [:create]
+                        kpi_measurements: %i[create edit update destroy]
                       },
                       permissible_on: :project,
                       require: :member,

@@ -1,0 +1,18 @@
+<%=
+  widget_wrapper do
+    helpers.tag.div(
+      class: "project-insights-widget project-insights-widget--graph",
+      data: {
+        controller: "overviews--project-insights",
+        "overviews--project-insights-graph-config-value": config_json
+      }
+    ) do
+      helpers.tag.div(
+        class: "project-insights-widget--canvas",
+        role: "img",
+        aria: { label: I18n.t("overviews.project_insights.graph.aria_label") },
+        data: { "overviews--project-insights-target": "graph" }
+      )
+    end
+  end
+%>

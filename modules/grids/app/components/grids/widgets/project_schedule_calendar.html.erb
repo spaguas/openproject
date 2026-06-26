@@ -1,0 +1,39 @@
+<%=
+  widget_wrapper do
+    helpers.tag.div(
+      class: "project-insights-widget project-insights-widget--calendar",
+      data: {
+        controller: "overviews--project-insights",
+        "overviews--project-insights-calendar-config-value": config_json
+      }
+    ) do
+      safe_join(
+        [
+          helpers.tag.div(class: "project-insights-widget--legend") do
+            safe_join(
+              legend.map do |item|
+                helpers.tag.span(class: "project-insights-widget--legend-item") do
+                  safe_join(
+                    [
+                      helpers.tag.span(
+                        class: "project-insights-widget--swatch",
+                        style: "background-color: #{item[:color]}"
+                      ),
+                      item[:label]
+                    ]
+                  )
+                end
+              end
+            )
+          end,
+          helpers.tag.div(
+            class: "project-insights-widget--canvas",
+            role: "img",
+            aria: { label: I18n.t("overviews.project_insights.calendar.aria_label") },
+            data: { "overviews--project-insights-target": "calendar" }
+          )
+        ]
+      )
+    end
+  end
+%>

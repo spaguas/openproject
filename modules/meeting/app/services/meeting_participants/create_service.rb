@@ -41,7 +41,7 @@ module MeetingParticipants
       meeting.touch_and_save_journals
 
       if @notify
-        since_invited_ids = meeting.participants.where(invited: true).where.not(id: call.result.id).pluck(:user_id)
+        since_invited_ids = meeting.participants.where(invited: true).where.not(id: call.result.id).where.not(user_id: nil).pluck(:user_id)
         Meetings::NotificationDebounceJob.debounce(meeting, since_invited_ids:)
       end
 

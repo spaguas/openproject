@@ -30,9 +30,12 @@
 
 class MeetingParticipant < ApplicationRecord
   belongs_to :meeting
-  belongs_to :user
+  belongs_to :user, optional: true
 
-  validates :user, :meeting, presence: true
+  validates :meeting, presence: true
+  validates :name, presence: true, if: :external?
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP, allow_blank: true }
+  validate :user_or_external_name_present
 
   scope :invited, -> { where(invited: true) }
   scope :attended, -> { where(attended: true) }
@@ -47,11 +50,19 @@ class MeetingParticipant < ApplicationRecord
   }, prefix: :participation
 
   def name
-    user.present? ? user.name : I18n.t("user.deleted")
+    return user.name if user.present?
+
+    self[:name].presence || I18n.t("meeting.participants.external_participant")
   end
 
   def mail
-    user.present? ? user.mail : I18n.t("user.deleted")
+    return user.mail if user.present?
+
+    email.presence || I18n.t("meeting.participants.external_participant")
+  end
+
+  def external?
+    user_id.blank?
   end
 
   def status_sorting_value
@@ -69,5 +80,13 @@ class MeetingParticipant < ApplicationRecord
   def copy_attributes
     # create a clean attribute set allowing to attach participants to different meetings
     attributes.except("id", "meeting_id", "attended", "created_at", "updated_at", "comment")
+  end
+
+  private
+
+  def user_or_external_name_present
+    return if user.present? || self[:name].present?
+
+    errors.add(:name, :blank)
   end
 end

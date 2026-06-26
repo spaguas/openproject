@@ -48,7 +48,7 @@ module Redmine::MenuManager::TopMenuHelper
     ]
 
     cs = CustomStyle.current
-    if cs&.logo_mobile.present? || !custom_logo?
+    if cs&.logo_mobile.present? || (!custom_logo? && !custom_branding_logo?)
       items << render_logo_icon
     end
 
@@ -121,6 +121,10 @@ module Redmine::MenuManager::TopMenuHelper
   end
 
   private
+
+  def custom_branding_logo?
+    BrandingSetting.current&.logo_present?
+  end
 
   def render_notification_top_menu_node
     return "".html_safe unless User.current.logged?

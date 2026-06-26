@@ -1,5 +1,11 @@
 .meeting-participant-form
   display: grid
-  grid-template-columns: 1fr auto
-  grid-template-areas: "participant submit"
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto
+  grid-template-areas: "participant participant submit" "external_name external_email submit"
   grid-column-gap: 0.5rem
+  grid-row-gap: 0.75rem
+  align-items: end
+
+  @media screen and (max-width: 679px)
+    grid-template-columns: 1fr
+    grid-template-areas: "participant" "external_name" "external_email" "submit"

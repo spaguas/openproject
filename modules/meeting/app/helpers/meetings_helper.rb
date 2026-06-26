@@ -96,7 +96,9 @@ module MeetingsHelper
       {
         "attended" => false,
         "invited" => p.invited ? "1" : false,
-        "user_id" => p.user_id.to_s
+        "user_id" => p.user_id.to_s,
+        "name" => p[:name],
+        "email" => p[:email]
       }
     end
   end

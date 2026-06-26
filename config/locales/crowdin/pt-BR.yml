@@ -1059,7 +1059,7 @@ pt-BR:
       kpi_measurement:
         author: "Inserido por"
         created_at: "Inserido em"
-        measured_at: "Data e hora da medição"
+        measured_at: "Data da medição"
         note: "Observação"
         value: "Valor"
       kpi_category:
@@ -1384,6 +1384,7 @@ pt-BR:
         not_an_integer: "não é um número inteiro."
         not_an_iso_date: "não é uma data válida. Formato exigido: AAAA-MM-DD."
         not_same_project: "não pertence ao mesmo projeto."
+        not_in_future: "não pode estar no futuro."
         datetime_must_be_in_future: "deve ser no futuro."
         deadline_alert_must_be_in_future: "deve resultar em um alerta futuro. Escolha um intervalo menor ou um aviso recorrente."
         odd: "deve ser ímpar."
@@ -2621,6 +2622,38 @@ pt-BR:
   gui_validation_error: "1 erro"
   gui_validation_error_plural: "%{count} erros"
   homescreen:
+    project_calendar:
+      title: "Mapa de calor dos projetos"
+      description: "Visão anual dos projetos visíveis pela próxima data de vencimento no ano, classificados como no prazo, atrasados ou concluídos."
+      aria_label: "Mapa de calor em calendário dos projetos ao longo do ano por status"
+      empty: "Nenhuma data de vencimento de projeto encontrada para este ano."
+      projects: "Projetos"
+      status: "Status"
+      statuses:
+        on_track: "No prazo"
+        overdue: "Atrasado"
+        completed: "Concluído"
+    project_graph:
+      title: "Grafo de relacionamento entre projetos"
+      description: "Grafo interativo da hierarquia dos projetos e das relações por KPIs compartilhados. Arraste para reposicionar, use o zoom e selecione um projeto para inspecioná-lo."
+      aria_label: "Grafo interativo exibindo relações entre projetos visíveis"
+      categories:
+        portfolio: "Portfólio"
+        program: "Programa"
+        project: "Projeto"
+      relations:
+        hierarchy: "Hierarquia de projetos"
+        kpi: "KPI compartilhado: %{name}"
+      details:
+        title: "Informações do projeto"
+        empty: "Selecione um projeto no grafo para ver suas informações básicas."
+        area: "Área"
+        type: "Tipo"
+        status: "Situação"
+        work_packages: "Pacotes de trabalho"
+        open_work_packages: "Pacotes de trabalho abertos"
+        completion: "Conclusão"
+        open_project: "Abrir projeto"
     project_overview:
       title: "Visão geral do portfólio de projetos"
       description: "Uma visão consolidada dos projetos visíveis, saúde dos pacotes de trabalho, áreas, progresso e atividade recente."
@@ -2983,6 +3016,10 @@ pt-BR:
   label_custom_field_default_type: "Tipo vazio"
   label_custom_style: "Design"
   label_custom_style_description: "Escolha como o OpenProject será exibido para você com os temas, selecione suas cores padrão para usar no aplicativo e defina a aparência das exportações."
+  label_branding: "Marca"
+  label_branding_description: "Configure os logotipos da aplicação de forma independente dos recursos de estilo personalizado."
+  label_branding_light_logo: "Logotipo para tema claro"
+  label_branding_dark_logo: "Logotipo para tema escuro"
   label_dashboard: "Painel"
   label_database_version: "Versão do PostgreSQL"
   label_date: "Data"
@@ -3997,6 +4034,7 @@ pt-BR:
     measurement: "Medição"
     measurements:
       add: "Adicionar medição"
+      edit: "Editar medição"
       history: "Histórico de medições"
       legacy_author: "Dado legado"
       new: "Nova medição"
@@ -4482,6 +4520,10 @@ pt-BR:
     A edição Enterprise (Edição corporativa) contará com estes complementos adicionais para campos personalizados dos Projetos: <br> <ul> <li><b>Adicionar campos personalizados para projetos a sua Lista de projetos para criar uma visão do portfólio de projetos</b></li> </ul>
   text_custom_logo_instructions: >
     Recomenda-se um logotipo branco sobre fundo transparente. Para obter melhores resultados em telas convencionais e de retina, certifique-se de que as dimensões de sua imagem são de 460px por 60px.
+  text_branding_light_logo_instructions: >
+    Envie o logotipo usado no tema claro e nas visualizações claras de alto contraste. A imagem é pública e deve funcionar sobre o fundo escuro do cabeçalho.
+  text_branding_dark_logo_instructions: >
+    Envie o logotipo usado quando o usuário selecionar um tema escuro. Se não for informado, o logotipo do tema claro será reutilizado.
   text_custom_export_logo_instructions: >
     Este é o logotipo que aparece nas exportações de PDF. O arquivo de imagem precisa ser PNG ou JPEG. Recomenda-se um logotipo colorido ou preto em plano de fundo transparente ou branco.
   text_custom_export_cover_instructions: >

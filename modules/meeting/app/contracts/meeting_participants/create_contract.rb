@@ -31,6 +31,8 @@ module MeetingParticipants
   class CreateContract < ::ModelContract
     attribute :meeting
     attribute :user_id
+    attribute :name
+    attribute :email
     attribute :invited
     attribute :attended
 
@@ -48,7 +50,7 @@ module MeetingParticipants
     end
 
     def user_can_see_meetings_in_project
-      return if model.user.nil? || model.meeting.nil?
+      return if model.user.nil? || model.meeting.nil? || model.external?
 
       unless model.user.allowed_in_project?(:view_meetings, model.meeting.project)
         errors.add(:user, :user_invalid)

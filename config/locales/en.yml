@@ -1893,7 +1893,7 @@ en:
       kpi_measurement:
         author: "Entered by"
         created_at: "Entered at"
-        measured_at: "Measurement date and time"
+        measured_at: "Measurement date"
         note: "Note"
         value: "Value"
       kpi_category:
@@ -2294,6 +2294,7 @@ en:
         not_an_integer: "is not an integer."
         not_an_iso_date: "is not a valid date. Required format: YYYY-MM-DD."
         not_same_project: "doesn't belong to the same project."
+        not_in_future: "must not be in the future."
         datetime_must_be_in_future: "must be in the future."
         deadline_alert_must_be_in_future: "must result in an alert in the future. Choose a shorter interval or a recurring alert."
         odd: "must be odd."
@@ -3685,6 +3686,38 @@ en:
         warning: Warning
 
   homescreen:
+    project_calendar:
+      title: "Project calendar heatmap"
+      description: "Annual view of visible projects by their next due date in the year, classified as on track, delayed, or completed."
+      aria_label: "Calendar heatmap of projects throughout the year by status"
+      empty: "No project due dates found for this year."
+      projects: "Projects"
+      status: "Status"
+      statuses:
+        on_track: "On track"
+        overdue: "Delayed"
+        completed: "Completed"
+    project_graph:
+      title: "Project relationship graph"
+      description: "Interactive graph of project hierarchy and shared KPI relationships. Drag to reposition, scroll to zoom, and select a project to inspect it."
+      aria_label: "Interactive graph showing relationships between visible projects"
+      categories:
+        portfolio: "Portfolio"
+        program: "Program"
+        project: "Project"
+      relations:
+        hierarchy: "Project hierarchy"
+        kpi: "Shared KPI: %{name}"
+      details:
+        title: "Project information"
+        empty: "Select a project in the graph to see its basic information."
+        area: "Area"
+        type: "Type"
+        status: "Status"
+        work_packages: "Work packages"
+        open_work_packages: "Open work packages"
+        completion: "Completion"
+        open_project: "Open project"
     project_overview:
       title: "Project portfolio overview"
       description: "A consolidated view of visible projects, work package health, areas, progress, and recent activity."
@@ -4176,6 +4209,10 @@ en:
   label_custom_field_default_type: "Empty type"
   label_custom_style: "Design"
   label_custom_style_description: "Choose how OpenProject looks to you with themes, select your default colors to use in the app and how exports look like."
+  label_branding: "Branding"
+  label_branding_description: "Configure the application logos independently from custom style features."
+  label_branding_light_logo: "Logo for light theme"
+  label_branding_dark_logo: "Logo for dark theme"
   label_dashboard: "Dashboard"
   label_database_version: "PostgreSQL version"
   label_date: "Date"
@@ -5293,6 +5330,7 @@ en:
     measurement: "Measurement"
     measurements:
       add: "Add measurement"
+      edit: "Edit measurement"
       history: "Measurement history"
       legacy_author: "Legacy data"
       new: "New measurement"
@@ -5961,6 +5999,10 @@ en:
     The logo automatically scales to fit the header.
     For best results, upload a white logo on a transparent 130×33px image.
     You can add as much spacing inside that image as you like.
+  text_branding_light_logo_instructions: >
+    Upload the logo used in light theme and high contrast light views. The image is public and should work on a dark header background.
+  text_branding_dark_logo_instructions: >
+    Upload the logo used when the user selects a dark theme. If omitted, the light theme logo will be reused.
   text_custom_export_logo_instructions: >
     This is the logo that appears in your PDF exports.
     It needs to be a PNG or JPEG image file.

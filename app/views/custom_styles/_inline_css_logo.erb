@@ -74,6 +74,28 @@ See COPYRIGHT and LICENSE files for more details.
       logo_icon_white_url = mobile_logo_url
     end
   end
+
+  branding = BrandingSetting.current
+  if branding&.logo_present?
+    light_branding_logo_url = if branding.light_logo.present?
+                                branding_light_logo_path(
+                                  digest: branding.digest,
+                                  filename: branding.light_logo_identifier
+                                )
+                              end
+
+    dark_branding_logo_url = if branding.dark_logo.present?
+                               branding_dark_logo_path(
+                                 digest: branding.digest,
+                                 filename: branding.dark_logo_identifier
+                               )
+                             end
+
+    logo_url = light_branding_logo_url || dark_branding_logo_url
+    high_contrast_logo_url = light_branding_logo_url || dark_branding_logo_url
+    logo_icon_url = light_branding_logo_url || dark_branding_logo_url
+    logo_icon_white_url = dark_branding_logo_url || light_branding_logo_url
+  end
   %>
 
   .op-logo--link {
@@ -91,4 +113,11 @@ See COPYRIGHT and LICENSE files for more details.
   .op-logo--link_high_contrast {
     background-image: url(<%= OpenProject::Configuration.bim? ? high_contrast_bim_logo_url : high_contrast_logo_url %>);
   }
+
+  <% if branding&.logo_present? && dark_branding_logo_url.present? %>
+    body[data-color-mode="dark"] .op-logo--link,
+    body[data-color-mode="dark"] .op-logo--link_high_contrast {
+      background-image: url(<%= dark_branding_logo_url %>);
+    }
+  <% end %>
 </style>

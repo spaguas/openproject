@@ -40,12 +40,14 @@ class MeetingParticipantsController < ApplicationController
 
   def create
     user_ids = Array(params.dig(:meeting_participant, :user_id)).compact_blank
+    external_participant_params = params.fetch(:meeting_participant, {}).permit(:name, :email)
 
-    if user_ids.empty?
+    if user_ids.empty? && external_participant_params.values.all?(&:blank?)
       update_add_user_form_component_via_turbo_stream
       update_list_component_via_turbo_stream
     else
       create_new_participants(user_ids)
+      create_external_participant(external_participant_params) if external_participant_params[:name].present?
     end
 
     respond_with_turbo_streams
@@ -113,6 +115,27 @@ class MeetingParticipantsController < ApplicationController
     if @meeting.series_template? && params.dig(:meeting_participant, :apply_to_upcoming) == "1"
       add_to_upcoming_occurrences(user_ids)
     end
+
+    update_list_component_via_turbo_stream
+    update_add_user_form_component_via_turbo_stream
+    update_sidebar_participants_component_via_turbo_stream(meeting: @meeting)
+  end
+
+  def create_external_participant(external_participant_params)
+    MeetingParticipants::CreateService
+      .new(user: User.current, notify: false)
+      .call(
+        meeting: @meeting,
+        name: external_participant_params[:name],
+        email: external_participant_params[:email],
+        invited: true,
+        attended: false
+      )
+      .on_failure do |call|
+        call.errors.full_messages.each do |msg|
+          @meeting.errors.add(:base, msg)
+        end
+      end
 
     update_list_component_via_turbo_stream
     update_add_user_form_component_via_turbo_stream

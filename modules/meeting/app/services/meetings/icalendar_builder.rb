@@ -215,7 +215,7 @@ module Meetings
     end
 
     def add_attendees(event:, meeting:, override_participation_status: {})
-      meeting.participants.includes(:user).find_each do |participant|
+      meeting.participants.includes(:user).where.not(user_id: nil).find_each do |participant|
         user = participant.user
         next unless user
 

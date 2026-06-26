@@ -670,6 +670,12 @@ Redmine::MenuManager.map :admin_menu do |menu|
             caption: :label_custom_style,
             icon: "paintbrush"
 
+  menu.push :branding,
+            { controller: "/admin/branding", action: :show },
+            if: ->(_) { User.current.admin? },
+            caption: :label_branding,
+            icon: "image"
+
   menu.push :colors,
             { controller: "/colors", action: "index" },
             if: ->(_) { User.current.admin? },
@@ -745,8 +751,7 @@ Redmine::MenuManager.map :project_menu do |menu|
             caption: :label_kpi_plural,
             if: ->(project) {
               project.module_enabled?("kpis") &&
-                User.current.allowed_in_project?(:manage_kpis, project) &&
-                User.current.allowed_in_project?(:edit_project, project)
+                User.current.allowed_in_project?(:view_kpis, project)
             },
             icon: "meter"
 
