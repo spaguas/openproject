@@ -3,6 +3,8 @@
 module Homescreen
   class ProjectOverview
     SOON_DAYS = 14
+    DEFAULT_LATITUDE = -23.54619236849366
+    DEFAULT_LONGITUDE = -46.63357686866857
 
     attr_reader :user, :projects, :work_packages
 
@@ -126,6 +128,17 @@ module Homescreen
       }
     end
 
+    def project_map_data
+      {
+        center: [DEFAULT_LATITUDE, DEFAULT_LONGITUDE],
+        projects: projects.map do |project|
+          project_work_packages = work_packages_by_project[project.id] || []
+          project_map_entry(project, project_work_packages)
+        end,
+        work_packages: work_packages.map { |work_package| work_package_map_entry(work_package) }
+      }
+    end
+
     private
 
     def visible_work_packages
@@ -135,13 +148,96 @@ module Homescreen
       WorkPackage
         .visible(user)
         .where(project_id: project_ids)
-        .includes(:project, :status, :type, :assigned_to, :responsible)
+        .includes(:project, :status, :type, :assigned_to, :responsible, :priority, :project_phase_definition)
         .to_a
     end
 
-    def project_calendar_entries
-      work_packages_by_project = work_packages.group_by(&:project_id)
+    def project_map_entry(project, project_work_packages)
+      open_count = project_work_packages.count { |work_package| !work_package.status.is_closed? }
+      closed_count = project_work_packages.size - open_count
+      status = map_status_for(project, project_work_packages)
 
+      {
+        id: project.id,
+        kind: "project",
+        title: project.name,
+        latitude: coordinate_value(project.latitude, DEFAULT_LATITUDE),
+        longitude: coordinate_value(project.longitude, DEFAULT_LONGITUDE),
+        georeferenced: georeferenced?(project),
+        responsible: project_responsibles(project).map(&:name).to_sentence.presence ||
+          I18n.t("homescreen.project_map.unassigned"),
+        phase: current_phase_label(project),
+        progress: percentage(closed_count, project_work_packages.size),
+        priority: project_priority(project_work_packages),
+        status: project_status_label(project),
+        status_key: status,
+        url: Rails.application.routes.url_helpers.project_path(project)
+      }
+    end
+
+    def work_package_map_entry(work_package)
+      project = projects_by_id.fetch(work_package.project_id)
+      project_work_packages = work_packages_by_project[project.id] || []
+      status = map_status_for(project, project_work_packages)
+
+      {
+        id: work_package.id,
+        kind: "work_package",
+        title: work_package.subject,
+        project: project.name,
+        latitude: coordinate_value(work_package.latitude, DEFAULT_LATITUDE),
+        longitude: coordinate_value(work_package.longitude, DEFAULT_LONGITUDE),
+        georeferenced: georeferenced?(work_package),
+        responsible: work_package.responsible&.name || work_package.assigned_to&.name ||
+          I18n.t("homescreen.project_map.unassigned"),
+        phase: work_package.project_phase_definition&.name || current_phase_label(project),
+        progress: work_package.done_ratio || 0,
+        priority: work_package.priority&.name || I18n.t("homescreen.project_map.priority_not_set"),
+        status: work_package.status.name,
+        status_key: status,
+        url: Rails.application.routes.url_helpers.work_package_path(work_package)
+      }
+    end
+
+    def coordinate_value(value, fallback)
+      value.present? ? value.to_f : fallback
+    end
+
+    def georeferenced?(record)
+      record.latitude.present? && record.longitude.present?
+    end
+
+    def map_status_for(project, work_packages_for_project)
+      return "completed" if calendar_project_completed?(project, work_packages_for_project)
+      return "overdue" if work_packages_for_project.any? { |work_package| overdue?(work_package) }
+
+      "on_track"
+    end
+
+    def current_phase_label(project)
+      phases = project.available_phases.select(&:active?)
+      phase = phases.find do |candidate|
+        candidate.start_date.present? &&
+          candidate.finish_date.present? &&
+          candidate.start_date <= Date.current &&
+          candidate.finish_date >= Date.current
+      end
+      phase ||= phases.find { |candidate| candidate.start_date.present? && candidate.start_date >= Date.current }
+      phase ||= phases.last
+
+      phase&.name || I18n.t("homescreen.project_map.phase_not_set")
+    end
+
+    def project_priority(project_work_packages)
+      priority = project_work_packages
+        .reject { |work_package| work_package.status.is_closed? }
+        .filter_map(&:priority)
+        .max_by(&:position)
+
+      priority&.name || I18n.t("homescreen.project_map.priority_not_set")
+    end
+
+    def project_calendar_entries
       projects.filter_map do |project|
         items = work_packages_by_project[project.id] || []
         due_dates = items.filter_map(&:due_date).select { |date| date.year == Date.current.year }
@@ -251,6 +347,10 @@ module Homescreen
 
     def projects_by_id
       @projects_by_id ||= projects.index_by(&:id)
+    end
+
+    def work_packages_by_project
+      @work_packages_by_project ||= work_packages.group_by(&:project_id)
     end
 
     def areas

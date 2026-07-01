@@ -39,6 +39,10 @@
       padding: 1rem;
     }
 
+    .homescreen-project-overview--panel {
+      margin-bottom: 1rem;
+    }
+
     .homescreen-project-overview--metric {
       color: var(--fgColor-default);
       cursor: pointer;
@@ -108,7 +112,7 @@
       display: grid;
       gap: 1rem;
       grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
-      margin-bottom: 1rem;
+      margin-bottom: 0;
     }
 
     .homescreen-project-overview--graph {
@@ -119,6 +123,56 @@
     .homescreen-project-overview--calendar {
       height: min(58vh, 460px);
       min-height: 320px;
+    }
+
+    .homescreen-project-overview--map {
+      border-radius: 6px;
+      height: min(66vh, 560px);
+      min-height: 380px;
+      overflow: hidden;
+    }
+
+    .homescreen-project-overview--map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .homescreen-project-overview--map-legend-item {
+      align-items: center;
+      color: var(--fgColor-muted);
+      display: inline-flex;
+      gap: 0.35rem;
+    }
+
+    .homescreen-project-overview--map-swatch {
+      border: 2px solid currentColor;
+      border-radius: 999px;
+      display: inline-block;
+      height: 0.85rem;
+      width: 0.85rem;
+    }
+
+    .homescreen-project-overview--map-popup {
+      min-width: 220px;
+    }
+
+    .homescreen-project-overview--map-popup h4 {
+      font-size: 0.95rem;
+      margin: 0 0 0.5rem;
+    }
+
+    .homescreen-project-overview--map-popup dl {
+      display: grid;
+      gap: 0.3rem 0.6rem;
+      grid-template-columns: max-content minmax(0, 1fr);
+      margin: 0 0 0.75rem;
+    }
+
+    .homescreen-project-overview--map-popup dt {
+      color: #57606a;
+      font-weight: 600;
     }
 
     .homescreen-project-overview--calendar-legend {
@@ -222,6 +276,11 @@
         min-height: 300px;
       }
 
+      .homescreen-project-overview--map {
+        height: 420px;
+        min-height: 320px;
+      }
+
       .homescreen-project-overview--detail-table {
         max-height: none;
         overflow-x: auto;
@@ -321,6 +380,25 @@
                  title: t("homescreen.project_overview.by_area"),
                  entries: overview.area_distribution
                } %>
+  </div>
+
+  <div class="homescreen-project-overview--panel"
+       data-controller="homescreen--project-overview-charts"
+       data-homescreen--project-overview-charts-map-config-value="<%= project_map_config_json %>">
+    <h3><%= t("homescreen.project_map.title") %></h3>
+    <p class="homescreen-project-overview--detail-description"><%= t("homescreen.project_map.description") %></p>
+    <div class="homescreen-project-overview--map-legend">
+      <% project_map_config[:legend].each_value do |item| %>
+        <span class="homescreen-project-overview--map-legend-item">
+          <span class="homescreen-project-overview--map-swatch" style="color: <%= item[:color] %>"></span>
+          <%= item[:label] %>
+        </span>
+      <% end %>
+    </div>
+    <div class="homescreen-project-overview--map"
+         role="application"
+         aria-label="<%= t("homescreen.project_map.aria_label") %>"
+         data-homescreen--project-overview-charts-target="map"></div>
   </div>
 
   <div class="homescreen-project-overview--panel"

@@ -40,6 +40,7 @@ group :opf_plugins do
   gem 'openproject-gantt',                     path: 'modules/gantt'
   gem 'openproject-calendar',                  path: 'modules/calendar'
   gem 'openproject-okr',                       path: 'modules/okr'
+  gem 'openproject-project_initiation_request', path: 'modules/project_initiation_request'
   gem 'openproject-resource_management',       path: 'modules/resource_management'
   gem 'openproject-storages',                  path: 'modules/storages'
   gem 'openproject-wikis',                     path: 'modules/wikis'

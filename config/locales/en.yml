@@ -989,6 +989,12 @@ en:
       button_update_details: Update details
       button_update_status_description: Update status description
       button_update_parent_project: Update parent project
+      georeference:
+        header: "Georeferencing"
+        description: "Set the project coordinates used by the project map on the homescreen."
+        latitude_caption: "Decimal latitude between -90 and 90."
+        longitude_caption: "Decimal longitude between -180 and 180."
+        submit: "Update coordinates"
       public_warning: >
         This project is public.
         Anyone who has access to this instance will be able to view and interact with this project depending on their role and associated permissions.
@@ -1965,6 +1971,8 @@ en:
         enabled_modules: "Enabled modules"
         identifier: "Identifier"
         latest_activity_at: "Latest activity at"
+        latitude: "Latitude"
+        longitude: "Longitude"
         parent: "Subproject of"
         project_creation_wizard_enabled: "Project initiation request"
         public_value:
@@ -2182,6 +2190,8 @@ en:
         end_insertion: "End of the insertion"
         end_deletion: "End of the deletion"
         identifier: "Identifier"
+        latitude: "Latitude"
+        longitude: "Longitude"
         ignore_non_working_days: "Ignore non working days"
         include_non_working_days:
           title: "Working days"
@@ -3697,6 +3707,31 @@ en:
         on_track: "On track"
         overdue: "Delayed"
         completed: "Completed"
+    project_map:
+      title: "Project geospatial overview"
+      description: "Leaflet map of visible projects and work packages. Items without coordinates are placed at the default reference coordinate."
+      aria_label: "Interactive map with project and work package locations"
+      layers:
+        projects: "Projects"
+        work_packages: "Work packages"
+      statuses:
+        on_track: "On track"
+        overdue: "Delayed"
+        completed: "Completed"
+      tooltip:
+        type: "Type"
+        responsible: "Responsible"
+        phase: "Current phase"
+        progress: "Progress"
+        priority: "Priority"
+        status: "Status"
+        georeferenced: "Location"
+        georeferenced_yes: "Georeferenced"
+        fallback_location: "Default reference coordinate"
+        open: "Open"
+      unassigned: "Unassigned"
+      phase_not_set: "Phase not set"
+      priority_not_set: "Priority not set"
     project_graph:
       title: "Project relationship graph"
       description: "Interactive graph of project hierarchy and shared KPI relationships. Drag to reposition, scroll to zoom, and select a project to inspect it."

@@ -1,0 +1,40 @@
+en:
+  activerecord:
+    models:
+      project_initiation_request: "Project initiation request"
+    attributes:
+      project_initiation_request:
+        author: "Author"
+        business_case: "Business case"
+        created_project: "Created project"
+        description: "Description"
+        estimated_budget: "Estimated budget"
+        identifier: "Identifier"
+        rejection_reason: "Reason"
+        status: "Status"
+        target_end_date: "Target end date"
+        target_start_date: "Target start date"
+        template_project: "Template project"
+        template_project_id: "Template project"
+        title: "Title"
+  project_initiation_requests:
+    actions:
+      approve: "Approve and create project"
+      reject: "Reject"
+      request_info: "Request information"
+      review: "Start review"
+      submit: "Submit"
+    copy_failed: "The project could not be copied from the selected template."
+    details: "Request details"
+    edit: "Edit project initiation request"
+    label_plural: "Project initiation requests"
+    new: "New project initiation request"
+    status_updated: "Project initiation request status was updated."
+    statuses:
+      approved: "Approved"
+      draft: "Draft"
+      needs_info: "Needs information"
+      rejected: "Rejected"
+      submitted: "Submitted"
+      under_review: "Under review"
+    workflow_actions: "Workflow actions"

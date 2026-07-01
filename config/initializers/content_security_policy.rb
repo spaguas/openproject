@@ -127,6 +127,7 @@ Rails.application.config.after_initialize do
       policy.frame_src(*frame_src, "'self'")
       policy.frame_ancestors("'self'")
       img_src = %w('self') + Array(OpenProject::Configuration.csp_img_src)
+      img_src << "https://*.tile.openstreetmap.org"
       img_src << asset_host if asset_host.present?
       policy.img_src(*img_src.compact.uniq)
       policy.script_src(*script_src)

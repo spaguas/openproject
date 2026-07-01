@@ -1,0 +1,11 @@
+<% html_title @project_initiation_request.title %>
+
+<div class="toolbar-container">
+  <div class="toolbar">
+    <div class="title-container">
+      <h2><%= t("project_initiation_requests.edit") %></h2>
+    </div>
+  </div>
+</div>
+
+<%= render "form", project_initiation_request: @project_initiation_request %>

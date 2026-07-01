@@ -36,6 +36,12 @@ module Projects
     attribute :name
     attribute :identifier
     attribute :description
+    attribute :latitude do
+      validate_latitude
+    end
+    attribute :longitude do
+      validate_longitude
+    end
     attribute :public
     attribute :settings
     attribute :active do
@@ -109,6 +115,22 @@ module Projects
       with_unchanged_id do
         errors.add :base, :error_unauthorized unless user.allowed_in_project?(manage_permission, model)
       end
+    end
+
+    def validate_latitude
+      validate_coordinate(:latitude, -90, 90)
+    end
+
+    def validate_longitude
+      validate_coordinate(:longitude, -180, 180)
+    end
+
+    def validate_coordinate(attribute, minimum, maximum)
+      value = model.public_send(attribute)
+      return if value.blank?
+      return if value >= minimum && value <= maximum
+
+      errors.add(attribute, :inclusion)
     end
 
     def validate_status_code_included

@@ -87,7 +87,50 @@ module Homescreen
       ERB::Util.json_escape(project_calendar_config.to_json)
     end
 
+    def project_map_config
+      map_data = overview.project_map_data
+
+      {
+        center: map_data[:center],
+        labels: project_map_labels,
+        legend: project_map_legend,
+        projects: map_data[:projects],
+        work_packages: map_data[:work_packages]
+      }
+    end
+
+    def project_map_config_json
+      ERB::Util.json_escape(project_map_config.to_json)
+    end
+
     private
+
+    def project_map_labels
+      {
+        project_layer: t("homescreen.project_map.layers.projects"),
+        work_package_layer: t("homescreen.project_map.layers.work_packages"),
+        project: Project.model_name.human,
+        work_package: WorkPackage.model_name.human,
+        type: t("homescreen.project_map.tooltip.type"),
+        responsible: t("homescreen.project_map.tooltip.responsible"),
+        phase: t("homescreen.project_map.tooltip.phase"),
+        progress: t("homescreen.project_map.tooltip.progress"),
+        priority: t("homescreen.project_map.tooltip.priority"),
+        status: t("homescreen.project_map.tooltip.status"),
+        georeferenced: t("homescreen.project_map.tooltip.georeferenced"),
+        fallback_location: t("homescreen.project_map.tooltip.fallback_location"),
+        georeferenced_yes: t("homescreen.project_map.tooltip.georeferenced_yes"),
+        open: t("homescreen.project_map.tooltip.open")
+      }
+    end
+
+    def project_map_legend
+      {
+        on_track: { label: t("homescreen.project_map.statuses.on_track"), color: "#0969da" },
+        overdue: { label: t("homescreen.project_map.statuses.overdue"), color: "#bf8700" },
+        completed: { label: t("homescreen.project_map.statuses.completed"), color: "#1a7f37" }
+      }
+    end
 
     def project_graph_labels
       {

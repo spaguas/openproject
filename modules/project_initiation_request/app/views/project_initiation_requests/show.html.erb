@@ -1,0 +1,111 @@
+<% html_title @project_initiation_request.title %>
+
+<div class="toolbar-container">
+  <div class="toolbar">
+    <div class="title-container">
+      <h2><%= @project_initiation_request.title %></h2>
+    </div>
+    <ul class="toolbar-items">
+      <% if @project_initiation_request.author == current_user &&
+            ProjectInitiationRequest::EDITABLE_STATUSES.include?(@project_initiation_request.status) %>
+        <li class="toolbar-item">
+          <%= link_to t(:button_edit), edit_project_initiation_request_path(@project_initiation_request), class: "button" %>
+        </li>
+      <% end %>
+      <li class="toolbar-item">
+        <%= link_to t(:button_back), project_initiation_requests_path, class: "button" %>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<section class="form--section">
+  <h3><%= t("project_initiation_requests.details") %></h3>
+  <dl class="attributes-group">
+    <dt><%= ProjectInitiationRequest.human_attribute_name(:status) %></dt>
+    <dd><%= t("project_initiation_requests.statuses.#{@project_initiation_request.status}") %></dd>
+    <dt><%= ProjectInitiationRequest.human_attribute_name(:author) %></dt>
+    <dd><%= @project_initiation_request.author.name %></dd>
+    <dt><%= ProjectInitiationRequest.human_attribute_name(:identifier) %></dt>
+    <dd><%= @project_initiation_request.identifier %></dd>
+    <dt><%= ProjectInitiationRequest.human_attribute_name(:template_project) %></dt>
+    <dd><%= link_to_project @project_initiation_request.template_project %></dd>
+    <% if @project_initiation_request.created_project %>
+      <dt><%= ProjectInitiationRequest.human_attribute_name(:created_project) %></dt>
+      <dd><%= link_to_project @project_initiation_request.created_project %></dd>
+    <% end %>
+    <dt><%= ProjectInitiationRequest.human_attribute_name(:estimated_budget) %></dt>
+    <dd><%= number_to_currency(@project_initiation_request.estimated_budget) %></dd>
+    <dt><%= ProjectInitiationRequest.human_attribute_name(:target_start_date) %></dt>
+    <dd><%= format_date(@project_initiation_request.target_start_date) %></dd>
+    <dt><%= ProjectInitiationRequest.human_attribute_name(:target_end_date) %></dt>
+    <dd><%= format_date(@project_initiation_request.target_end_date) %></dd>
+  </dl>
+</section>
+
+<section class="form--section">
+  <h3><%= ProjectInitiationRequest.human_attribute_name(:description) %></h3>
+  <div class="wiki"><%= format_text(@project_initiation_request.description) %></div>
+</section>
+
+<section class="form--section">
+  <h3><%= ProjectInitiationRequest.human_attribute_name(:business_case) %></h3>
+  <div class="wiki"><%= format_text(@project_initiation_request.business_case) %></div>
+</section>
+
+<% if @project_initiation_request.rejection_reason.present? %>
+  <section class="form--section">
+    <h3><%= ProjectInitiationRequest.human_attribute_name(:rejection_reason) %></h3>
+    <div class="wiki"><%= format_text(@project_initiation_request.rejection_reason) %></div>
+  </section>
+<% end %>
+
+<section class="form--section">
+  <h3><%= t("project_initiation_requests.workflow_actions") %></h3>
+
+  <% if @project_initiation_request.author == current_user &&
+        %w[draft needs_info].include?(@project_initiation_request.status) %>
+    <%= button_to t("project_initiation_requests.actions.submit"),
+                  submit_project_initiation_request_path(@project_initiation_request),
+                  method: :post,
+                  class: "button -primary" %>
+  <% end %>
+
+  <% if current_user.allowed_globally?(:approve_project_initiation_requests) %>
+    <% if @project_initiation_request.status == "submitted" %>
+      <%= button_to t("project_initiation_requests.actions.review"),
+                    review_project_initiation_request_path(@project_initiation_request),
+                    method: :post,
+                    class: "button -primary" %>
+    <% end %>
+
+    <% if @project_initiation_request.status == "under_review" %>
+      <%= button_to t("project_initiation_requests.actions.approve"),
+                    approve_project_initiation_request_path(@project_initiation_request),
+                    method: :post,
+                    class: "button -primary" %>
+
+      <%= form_with model: @project_initiation_request,
+                    url: request_info_project_initiation_request_path(@project_initiation_request),
+                    method: :post,
+                    local: true do |f| %>
+        <div class="form--field">
+          <%= f.label :rejection_reason, t("project_initiation_requests.actions.request_info") %>
+          <%= f.text_area :rejection_reason, rows: 3, required: true %>
+        </div>
+        <%= f.submit t("project_initiation_requests.actions.request_info"), class: "button" %>
+      <% end %>
+
+      <%= form_with model: @project_initiation_request,
+                    url: reject_project_initiation_request_path(@project_initiation_request),
+                    method: :post,
+                    local: true do |f| %>
+        <div class="form--field">
+          <%= f.label :rejection_reason, t("project_initiation_requests.actions.reject") %>
+          <%= f.text_area :rejection_reason, rows: 3, required: true %>
+        </div>
+        <%= f.submit t("project_initiation_requests.actions.reject"), class: "button -danger" %>
+      <% end %>
+    <% end %>
+  <% end %>
+</section>

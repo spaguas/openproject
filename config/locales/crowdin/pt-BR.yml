@@ -490,6 +490,12 @@ pt-BR:
       button_update_details: Atualizar detalhes
       button_update_status_description: Atualizar descrição do status
       button_update_parent_project: Atualizar projeto pai
+      georeference:
+        header: "Georreferenciamento"
+        description: "Defina as coordenadas do projeto usadas no mapa da página inicial."
+        latitude_caption: "Latitude decimal entre -90 e 90."
+        longitude_caption: "Longitude decimal entre -180 e 180."
+        submit: "Atualizar coordenadas"
       public_warning: >
         Este projeto é público. Qualquer pessoa com acesso a esta instância poderá visualizar e interagir com o projeto, de acordo com seu papel e permissões associadas. Subprojetos não são afetados e possuem configurações próprias.
       public_confirmation:
@@ -1127,6 +1133,8 @@ pt-BR:
         enabled_modules: "Módulos habilitados"
         identifier: "Identificador"
         latest_activity_at: "Últimas atividades em"
+        latitude: "Latitude"
+        longitude: "Longitude"
         parent: "Subprojeto de"
         public_value:
           title: "Visibilidade"
@@ -1304,6 +1312,8 @@ pt-BR:
         duration: "Duração"
         end_insertion: "Final da inserção"
         end_deletion: "Final da exclusão"
+        latitude: "Latitude"
+        longitude: "Longitude"
         ignore_non_working_days: "Ignorar dias não-úteis"
         include_non_working_days:
           title: "Dias úteis"
@@ -2633,6 +2643,31 @@ pt-BR:
         on_track: "No prazo"
         overdue: "Atrasado"
         completed: "Concluído"
+    project_map:
+      title: "Visão geoespacial dos projetos"
+      description: "Mapa Leaflet dos projetos e pacotes de trabalho visíveis. Itens sem coordenadas são posicionados na coordenada padrão de referência."
+      aria_label: "Mapa interativo com localizações de projetos e pacotes de trabalho"
+      layers:
+        projects: "Projetos"
+        work_packages: "Pacotes de trabalho"
+      statuses:
+        on_track: "No prazo"
+        overdue: "Atrasado"
+        completed: "Concluído"
+      tooltip:
+        type: "Tipo"
+        responsible: "Responsável"
+        phase: "Fase atual"
+        progress: "Progresso"
+        priority: "Prioridade"
+        status: "Status"
+        georeferenced: "Localização"
+        georeferenced_yes: "Georreferenciada"
+        fallback_location: "Coordenada padrão de referência"
+        open: "Abrir"
+      unassigned: "Não atribuído"
+      phase_not_set: "Fase não definida"
+      priority_not_set: "Prioridade não definida"
     project_graph:
       title: "Grafo de relacionamento entre projetos"
       description: "Grafo interativo da hierarquia dos projetos e das relações por KPIs compartilhados. Arraste para reposicionar, use o zoom e selecione um projeto para inspecioná-lo."

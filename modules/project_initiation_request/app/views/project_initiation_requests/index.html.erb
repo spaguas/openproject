@@ -1,0 +1,45 @@
+<% html_title t("project_initiation_requests.label_plural") %>
+
+<div class="toolbar-container">
+  <div class="toolbar">
+    <div class="title-container">
+      <h2><%= t("project_initiation_requests.label_plural") %></h2>
+    </div>
+    <% if current_user.allowed_globally?(:create_project_initiation_requests) %>
+      <ul class="toolbar-items">
+        <li class="toolbar-item">
+          <%= link_to t("project_initiation_requests.new"),
+                      new_project_initiation_request_path,
+                      class: "button -primary" %>
+        </li>
+      </ul>
+    <% end %>
+  </div>
+</div>
+
+<% if @project_initiation_requests.any? %>
+  <table class="generic-table">
+    <thead>
+      <tr>
+        <th><%= ProjectInitiationRequest.human_attribute_name(:title) %></th>
+        <th><%= ProjectInitiationRequest.human_attribute_name(:status) %></th>
+        <th><%= ProjectInitiationRequest.human_attribute_name(:author) %></th>
+        <th><%= ProjectInitiationRequest.human_attribute_name(:template_project) %></th>
+        <th><%= ProjectInitiationRequest.human_attribute_name(:target_end_date) %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @project_initiation_requests.each do |request| %>
+        <tr>
+          <td><%= link_to request.title, project_initiation_request_path(request) %></td>
+          <td><%= t("project_initiation_requests.statuses.#{request.status}") %></td>
+          <td><%= request.author.name %></td>
+          <td><%= link_to_project request.template_project %></td>
+          <td><%= format_date(request.target_end_date) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="nodata"><%= t(:label_no_data) %></p>
+<% end %>

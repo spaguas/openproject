@@ -192,6 +192,11 @@ PATH
       grids
 
 PATH
+  remote: modules/project_initiation_request
+  specs:
+    openproject-project_initiation_request (1.0.0)
+
+PATH
   remote: modules/recaptcha
   specs:
     openproject-recaptcha (1.0.0)
@@ -1695,6 +1700,7 @@ DEPENDENCIES
   openproject-okr!
   openproject-openid_connect!
   openproject-primer_view_components (~> 0.85.0)
+  openproject-project_initiation_request!
   openproject-recaptcha!
   openproject-reporting!
   openproject-resource_management!
@@ -2077,6 +2083,7 @@ CHECKSUMS
   openproject-okr (1.0.0)
   openproject-openid_connect (1.0.0)
   openproject-primer_view_components (0.85.0) sha256=16bc8358ef600f0465488a2e3c86991a9c69ed84580bd450c2dbec6f268eeaca
+  openproject-project_initiation_request (1.0.0)
   openproject-recaptcha (1.0.0)
   openproject-reporting (1.0.0)
   openproject-resource_management (1.0.0)

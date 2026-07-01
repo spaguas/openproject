@@ -1,0 +1,37 @@
+<%= labelled_tabular_form_for project_initiation_request do |f| %>
+  <%= error_messages_for project_initiation_request %>
+
+  <div class="form--field -required">
+    <%= f.text_field :title, required: true, container_class: "-middle" %>
+  </div>
+
+  <div class="form--field -required">
+    <%= f.text_area :description, required: true, rows: 6, container_class: "-middle" %>
+  </div>
+
+  <div class="form--field -required">
+    <%= f.text_area :business_case, required: true, rows: 6, container_class: "-middle" %>
+  </div>
+
+  <div class="form--field -required">
+    <%= f.number_field :estimated_budget, required: true, step: "0.01", min: 0, container_class: "-slim" %>
+  </div>
+
+  <div class="form--field -required">
+    <%= f.date_field :target_start_date, required: true, container_class: "-slim" %>
+  </div>
+
+  <div class="form--field -required">
+    <%= f.date_field :target_end_date, required: true, container_class: "-slim" %>
+  </div>
+
+  <div class="form--field -required">
+    <%= f.select :template_project_id,
+                 options_from_collection_for_select(@template_projects, :id, :name, project_initiation_request.template_project_id),
+                 { required: true, include_blank: true },
+                 container_class: "-middle" %>
+  </div>
+
+  <%= styled_submit_tag t(:button_save), class: "-primary" %>
+  <%= link_to t(:button_cancel), project_initiation_requests_path, class: "button" %>
+<% end %>

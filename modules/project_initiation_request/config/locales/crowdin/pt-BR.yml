@@ -1,0 +1,40 @@
+pt-BR:
+  activerecord:
+    models:
+      project_initiation_request: "Solicitacao de iniciacao de projeto"
+    attributes:
+      project_initiation_request:
+        author: "Autor"
+        business_case: "Caso de negocio"
+        created_project: "Projeto criado"
+        description: "Descricao"
+        estimated_budget: "Orcamento estimado"
+        identifier: "Identificador"
+        rejection_reason: "Motivo"
+        status: "Status"
+        target_end_date: "Data alvo de termino"
+        target_start_date: "Data alvo de inicio"
+        template_project: "Projeto modelo"
+        template_project_id: "Projeto modelo"
+        title: "Titulo"
+  project_initiation_requests:
+    actions:
+      approve: "Aprovar e criar projeto"
+      reject: "Rejeitar"
+      request_info: "Solicitar informacoes"
+      review: "Iniciar analise"
+      submit: "Submeter"
+    copy_failed: "Nao foi possivel copiar o projeto a partir do modelo selecionado."
+    details: "Detalhes da solicitacao"
+    edit: "Editar solicitacao de iniciacao de projeto"
+    label_plural: "Solicitacoes de iniciacao de projeto"
+    new: "Nova solicitacao de iniciacao de projeto"
+    status_updated: "O status da solicitacao de iniciacao de projeto foi atualizado."
+    statuses:
+      approved: "Aprovada"
+      draft: "Rascunho"
+      needs_info: "Necessita informacoes"
+      rejected: "Rejeitada"
+      submitted: "Submetida"
+      under_review: "Em analise"
+    workflow_actions: "Acoes do workflow"

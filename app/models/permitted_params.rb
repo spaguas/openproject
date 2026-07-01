@@ -309,6 +309,8 @@ class PermittedParams
                                                 :identifier,
                                                 :project_type_id,
                                                 :parent_id,
+                                                :latitude,
+                                                :longitude,
                                                 :templated,
                                                 :status_code,
                                                 :status_explanation,
@@ -324,7 +326,7 @@ class PermittedParams
 
   def new_project
     params
-      .expect(project: %i[name description parent_id workspace_type identifier] + [{ custom_comments: {} }])
+      .expect(project: %i[name description parent_id workspace_type identifier latitude longitude] + [{ custom_comments: {} }])
       .merge(custom_field_values(:project))
   end
 
@@ -568,6 +570,8 @@ class PermittedParams
           :done_ratio,
           :due_date,
           :estimated_hours,
+          :latitude,
+          :longitude,
           :version_id,
           :budget_id,
           :parent_id,

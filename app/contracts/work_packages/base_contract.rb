@@ -55,6 +55,14 @@ module WorkPackages
 
     attribute :project_id
 
+    attribute :latitude do
+      validate_latitude
+    end
+
+    attribute :longitude do
+      validate_longitude
+    end
+
     attribute :done_ratio,
               writable: ->(*) {
                           WorkPackage.work_based_mode?
@@ -255,6 +263,22 @@ module WorkPackages
     end
 
     private
+
+    def validate_latitude
+      validate_coordinate(:latitude, -90, 90)
+    end
+
+    def validate_longitude
+      validate_coordinate(:longitude, -180, 180)
+    end
+
+    def validate_coordinate(attribute, minimum, maximum)
+      value = model.public_send(attribute)
+      return if value.blank?
+      return if value >= minimum && value <= maximum
+
+      errors.add(attribute, :inclusion)
+    end
 
     def validate_after_soonest_start(date_attribute)
       return if model.schedule_manually?

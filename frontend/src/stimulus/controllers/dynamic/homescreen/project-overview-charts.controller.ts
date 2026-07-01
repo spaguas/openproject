@@ -2,6 +2,8 @@ import { Controller } from '@hotwired/stimulus';
 import type { Chart as ChartInstance, ChartConfiguration, TooltipItem } from 'chart.js';
 
 const ECHARTS_URL = '/vendor/echarts/echarts.min.js';
+const LEAFLET_URL = '/vendor/leaflet/leaflet.js';
+const LEAFLET_CSS_URL = '/vendor/leaflet/leaflet.css';
 
 interface EChartsInstance {
   setOption(option:Record<string, unknown>):void;
@@ -14,9 +16,40 @@ interface EChartsNamespace {
   init(element:HTMLElement):EChartsInstance;
 }
 
+interface LeafletLatLngBounds {
+  isValid():boolean;
+}
+
+interface LeafletLayer {
+  addTo(target:LeafletMap|LeafletLayer):LeafletLayer;
+  bindPopup(content:string):LeafletLayer;
+}
+
+interface LeafletMap {
+  setView(center:[number, number], zoom:number):LeafletMap;
+  fitBounds(bounds:LeafletLatLngBounds, options?:Record<string, unknown>):LeafletMap;
+  remove():void;
+}
+
+interface LeafletNamespace {
+  map(element:HTMLElement, options?:Record<string, unknown>):LeafletMap;
+  tileLayer(url:string, options?:Record<string, unknown>):LeafletLayer;
+  circleMarker(latLng:[number, number], options?:Record<string, unknown>):LeafletLayer;
+  layerGroup(layers?:LeafletLayer[]):LeafletLayer;
+  latLngBounds(latLngs:[number, number][]):LeafletLatLngBounds;
+  control:{
+    layers(
+      baseLayers?:Record<string, LeafletLayer>,
+      overlays?:Record<string, LeafletLayer>,
+      options?:Record<string, unknown>
+    ):LeafletLayer;
+  };
+}
+
 declare global {
   interface Window {
     echarts?:EChartsNamespace;
+    L?:LeafletNamespace;
   }
 }
 
@@ -132,29 +165,82 @@ interface ProjectCalendarConfig {
   entries:ProjectCalendarEntry[];
 }
 
+interface ProjectMapLabels {
+  project_layer:string;
+  work_package_layer:string;
+  project:string;
+  work_package:string;
+  type:string;
+  responsible:string;
+  phase:string;
+  progress:string;
+  priority:string;
+  status:string;
+  georeferenced:string;
+  fallback_location:string;
+  georeferenced_yes:string;
+  open:string;
+}
+
+interface ProjectMapLegendItem {
+  label:string;
+  color:string;
+}
+
+interface ProjectMapItem {
+  id:number;
+  kind:'project'|'work_package';
+  title:string;
+  project?:string;
+  latitude:number;
+  longitude:number;
+  georeferenced:boolean;
+  responsible:string;
+  phase:string;
+  progress:number;
+  priority:string;
+  status:string;
+  status_key:'on_track'|'overdue'|'completed';
+  url:string;
+}
+
+interface ProjectMapConfig {
+  center:[number, number];
+  labels:ProjectMapLabels;
+  legend:Record<ProjectMapItem['status_key'], ProjectMapLegendItem>;
+  projects:ProjectMapItem[];
+  work_packages:ProjectMapItem[];
+}
+
 export default class ProjectOverviewChartsController extends Controller {
-  static targets = ['graph', 'detail', 'calendar'];
+  static targets = ['graph', 'detail', 'calendar', 'map'];
   static values = {
     graphConfig: Object,
     calendarConfig: Object,
+    mapConfig: Object,
   };
 
   declare readonly graphTarget:HTMLElement;
   declare readonly detailTarget:HTMLElement;
   declare readonly calendarTarget:HTMLElement;
+  declare readonly mapTarget:HTMLElement;
   declare readonly hasGraphTarget:boolean;
   declare readonly hasDetailTarget:boolean;
   declare readonly hasCalendarTarget:boolean;
+  declare readonly hasMapTarget:boolean;
   declare readonly hasGraphConfigValue:boolean;
   declare readonly hasCalendarConfigValue:boolean;
+  declare readonly hasMapConfigValue:boolean;
   declare readonly graphConfigValue:ProjectGraphConfig;
   declare readonly calendarConfigValue:ProjectCalendarConfig;
+  declare readonly mapConfigValue:ProjectMapConfig;
 
   private readonly charts = new Map<string, ChartInstance>();
   private graphChart:EChartsInstance|null = null;
   private graphResizeObserver:ResizeObserver|null = null;
   private calendarChart:EChartsInstance|null = null;
   private calendarResizeObserver:ResizeObserver|null = null;
+  private projectMap:LeafletMap|null = null;
 
   connect() {
     if (this.hasGraphTarget && this.hasGraphConfigValue) {
@@ -163,6 +249,10 @@ export default class ProjectOverviewChartsController extends Controller {
 
     if (this.hasCalendarTarget && this.hasCalendarConfigValue) {
       void this.renderProjectCalendar();
+    }
+
+    if (this.hasMapTarget && this.hasMapConfigValue) {
+      void this.renderProjectMap();
     }
   }
 
@@ -207,6 +297,8 @@ export default class ProjectOverviewChartsController extends Controller {
     this.calendarResizeObserver?.disconnect();
     this.calendarChart?.dispose();
     this.calendarChart = null;
+    this.projectMap?.remove();
+    this.projectMap = null;
   }
 
   private chartCanvas(key:string):HTMLCanvasElement|null {
@@ -313,6 +405,88 @@ export default class ProjectOverviewChartsController extends Controller {
 
     this.calendarResizeObserver = new ResizeObserver(() => this.calendarChart?.resize());
     this.calendarResizeObserver.observe(this.calendarTarget);
+  }
+
+  private async renderProjectMap() {
+    const leaflet = await this.loadLeaflet();
+    const map = leaflet.map(this.mapTarget, {
+      scrollWheelZoom: false,
+    }).setView(this.mapConfigValue.center, 11);
+
+    leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    const projectMarkers = this.mapConfigValue.projects.map((item) => this.mapMarker(leaflet, item, 9));
+    const workPackageMarkers = this.mapConfigValue.work_packages.map((item) => this.mapMarker(leaflet, item, 5));
+    const projectLayer = leaflet.layerGroup(projectMarkers).addTo(map);
+    const workPackageLayer = leaflet.layerGroup(workPackageMarkers).addTo(map);
+    const bounds = leaflet.latLngBounds(
+      [...this.mapConfigValue.projects, ...this.mapConfigValue.work_packages]
+        .map((item) => [item.latitude, item.longitude] as [number, number])
+    );
+
+    leaflet.control.layers(
+      undefined,
+      {
+        [this.mapConfigValue.labels.project_layer]: projectLayer,
+        [this.mapConfigValue.labels.work_package_layer]: workPackageLayer,
+      },
+      { collapsed: false }
+    ).addTo(map);
+
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14 });
+    }
+
+    this.projectMap = map;
+  }
+
+  private mapMarker(leaflet:LeafletNamespace, item:ProjectMapItem, radius:number):LeafletLayer {
+    const color = this.mapConfigValue.legend[item.status_key]?.color ?? '#57606a';
+    return leaflet
+      .circleMarker([item.latitude, item.longitude], {
+        radius,
+        color,
+        weight: item.georeferenced ? 2 : 1,
+        fillColor: color,
+        fillOpacity: item.kind === 'project' ? 0.78 : 0.52,
+        opacity: item.georeferenced ? 1 : 0.55,
+      })
+      .bindPopup(this.mapPopup(item));
+  }
+
+  private mapPopup(item:ProjectMapItem):string {
+    const title = item.kind === 'work_package' && item.project
+      ? `${item.project}: ${item.title}`
+      : item.title;
+    const typeLabel = item.kind === 'project'
+      ? this.mapConfigValue.labels.project
+      : this.mapConfigValue.labels.work_package;
+
+    return `
+      <div class="homescreen-project-overview--map-popup">
+        <h4>${this.escapeHtml(title)}</h4>
+        <dl>
+          <dt>${this.escapeHtml(this.mapConfigValue.labels.type)}</dt>
+          <dd>${this.escapeHtml(typeLabel)}</dd>
+          <dt>${this.escapeHtml(this.mapConfigValue.labels.responsible)}</dt>
+          <dd>${this.escapeHtml(item.responsible)}</dd>
+          <dt>${this.escapeHtml(this.mapConfigValue.labels.phase)}</dt>
+          <dd>${this.escapeHtml(item.phase)}</dd>
+          <dt>${this.escapeHtml(this.mapConfigValue.labels.progress)}</dt>
+          <dd>${item.progress}%</dd>
+          <dt>${this.escapeHtml(this.mapConfigValue.labels.priority)}</dt>
+          <dd>${this.escapeHtml(item.priority)}</dd>
+          <dt>${this.escapeHtml(this.mapConfigValue.labels.status)}</dt>
+          <dd>${this.escapeHtml(item.status)}</dd>
+          <dt>${this.escapeHtml(this.mapConfigValue.labels.georeferenced)}</dt>
+          <dd>${this.escapeHtml(item.georeferenced ? this.mapConfigValue.labels.georeferenced_yes : this.mapConfigValue.labels.fallback_location)}</dd>
+        </dl>
+        <a href="${this.escapeHtml(item.url)}">${this.escapeHtml(this.mapConfigValue.labels.open)}</a>
+      </div>
+    `;
   }
 
   private projectCalendarOption():Record<string, unknown> {
@@ -586,5 +760,47 @@ export default class ProjectOverviewChartsController extends Controller {
     }
 
     return window.echarts;
+  }
+
+  private async loadLeaflet():Promise<LeafletNamespace> {
+    this.loadStylesheet(LEAFLET_CSS_URL);
+
+    if (window.L) {
+      return window.L;
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${LEAFLET_URL}"]`);
+
+      if (existingScript) {
+        existingScript.addEventListener('load', () => resolve(), { once: true });
+        existingScript.addEventListener('error', () => reject(new Error('Unable to load Leaflet')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = LEAFLET_URL;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Unable to load Leaflet'));
+      document.head.appendChild(script);
+    });
+
+    if (!window.L) {
+      throw new Error('Leaflet did not initialize');
+    }
+
+    return window.L;
+  }
+
+  private loadStylesheet(href:string):void {
+    if (document.querySelector(`link[href="${href}"]`)) {
+      return;
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
   }
 }
