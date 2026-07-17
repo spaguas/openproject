@@ -85,8 +85,11 @@ pt-BR:
         description: "Adicione membros e alocações de recursos para começar a analisar a capacidade do projeto."
     budget:
       label: "Orçamento"
+      global_label: "Orçamentos"
       title: "Acompanhamento orçamentário"
+      global_title: "Consolidação dos orçamentos"
       description: "Monitore valores planejados e realizados, saldo disponível e orçamentos que exigem atenção."
+      global_description: "Monitore valores planejados e realizados, saldo disponível, pontos de atenção e concentração dos custos em todos os projetos visíveis."
       period: "Período"
       months:
         one: "Último mês"
@@ -118,6 +121,8 @@ pt-BR:
           months:
             one: "%{count} mês"
             other: "%{count} meses"
+        concentration:
+          title: "Concentração dos custos"
       categories:
         base: "Base"
         labor: "Mão de obra"
@@ -146,13 +151,18 @@ pt-BR:
         balance: "Saldo"
         consumption: "Consumo"
         work_packages: "Pacotes de trabalho"
+      global_project_table: "Orçamento por projeto"
       empty:
         title: "Nenhum orçamento configurado"
         description: "Crie o primeiro orçamento e associe pacotes de trabalho para começar a monitorar os custos do projeto."
+      global_empty_description: "Nenhum projeto visível possui orçamentos disponíveis para consolidação."
     kpis:
       label: "Indicadores (KPI's)"
+      global_label: "KPIs"
       title: "Monitoramento de KPIs"
+      global_title: "Consolidação dos KPIs"
       description: "Acompanhe o desempenho, a atualização das medições e os indicadores que exigem atenção."
+      global_description: "Acompanhe o desempenho, a atualização das medições e os indicadores que exigem atenção em todos os projetos visíveis."
       period: "Período"
       months:
         one: "Último mês"
@@ -185,6 +195,8 @@ pt-BR:
         title: "Detalhamento dos indicadores"
         last_measurement: "Última medição"
         next_measurement: "Próxima medição"
+      global_project_table: "KPIs por projeto"
       empty:
         title: "Nenhum KPI configurado"
         description: "Crie o primeiro KPI para começar a monitorar metas e medições deste projeto."
+      global_empty_description: "Nenhum projeto visível possui KPIs disponíveis para consolidação."

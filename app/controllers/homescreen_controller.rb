@@ -30,8 +30,8 @@
 
 class HomescreenController < ApplicationController
   skip_before_action :check_if_login_required, only: [:robots]
-  no_authorization_required! :index, :team_allocation, :robots
-  before_action :require_login, only: :team_allocation
+  no_authorization_required! :index, :team_allocation, :budget_monitoring, :kpi_monitoring, :robots
+  before_action :require_login, only: %i[team_allocation budget_monitoring kpi_monitoring]
   before_action :jump_to_module
 
   layout "global"
@@ -49,7 +49,21 @@ class HomescreenController < ApplicationController
     ).call
   end
 
-  current_menu_item %i[index team_allocation] do
+  def budget_monitoring
+    @budget_dashboard = Overviews::GlobalBudgetDashboard.new(
+      current_user:,
+      period: params[:period]
+    ).call
+  end
+
+  def kpi_monitoring
+    @kpi_dashboard = Overviews::GlobalKpiDashboard.new(
+      current_user:,
+      period: params[:period]
+    ).call
+  end
+
+  current_menu_item %i[index team_allocation budget_monitoring kpi_monitoring] do
     :home
   end
 

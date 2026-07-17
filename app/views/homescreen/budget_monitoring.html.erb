@@ -1,0 +1,8 @@
+<%= render "homescreen/page_header", selected: :budget_monitoring %>
+
+<%= render(
+      Overviews::GlobalBudgetDashboardComponent.new(
+        dashboard: @budget_dashboard,
+        form_url: global_budget_monitoring_path
+      )
+    ) %>

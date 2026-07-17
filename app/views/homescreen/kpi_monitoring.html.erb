@@ -1,0 +1,8 @@
+<%= render "homescreen/page_header", selected: :kpi_monitoring %>
+
+<%= render(
+      Overviews::GlobalKpiDashboardComponent.new(
+        dashboard: @kpi_dashboard,
+        form_url: global_kpi_monitoring_path
+      )
+    ) %>

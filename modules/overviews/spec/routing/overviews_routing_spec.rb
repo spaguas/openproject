@@ -40,6 +40,20 @@ RSpec.describe Overviews::OverviewsController do
     end
 
     it do
+      expect(get("/budget_monitoring"))
+        .to route_to(
+          controller: "homescreen", action: "budget_monitoring"
+        )
+    end
+
+    it do
+      expect(get("/kpi_monitoring"))
+        .to route_to(
+          controller: "homescreen", action: "kpi_monitoring"
+        )
+    end
+
+    it do
       expect(get("/projects/my-project"))
         .to route_to(
           controller: "overviews/overviews", action: "show", project_id: "my-project"
@@ -75,6 +89,20 @@ RSpec.describe Overviews::OverviewsController do
       expect(get(global_team_allocation_path))
         .to route_to(
           controller: "homescreen", action: "team_allocation"
+        )
+    end
+
+    it do
+      expect(get(global_budget_monitoring_path))
+        .to route_to(
+          controller: "homescreen", action: "budget_monitoring"
+        )
+    end
+
+    it do
+      expect(get(global_kpi_monitoring_path))
+        .to route_to(
+          controller: "homescreen", action: "kpi_monitoring"
         )
     end
 

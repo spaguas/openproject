@@ -1,0 +1,41 @@
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { organization_name }
+    header.with_breadcrumbs(nil)
+    header.with_tab_nav(label: nil) do |tab_nav|
+      tab_nav.with_tab(
+        selected: selected == :home,
+        href: home_path
+      ) do |tab|
+        tab.with_icon(icon: :home)
+        tab.with_text { t(:label_home) }
+      end
+
+      if User.current.logged?
+        tab_nav.with_tab(
+          selected: selected == :team_allocation,
+          href: global_team_allocation_path
+        ) do |tab|
+          tab.with_icon(icon: :people)
+          tab.with_text { t("overviews.team_allocation.label") }
+        end
+
+        tab_nav.with_tab(
+          selected: selected == :budget_monitoring,
+          href: global_budget_monitoring_path
+        ) do |tab|
+          tab.with_icon(icon: :"op-budget")
+          tab.with_text { t("overviews.budget.global_label") }
+        end
+
+        tab_nav.with_tab(
+          selected: selected == :kpi_monitoring,
+          href: global_kpi_monitoring_path
+        ) do |tab|
+          tab.with_icon(icon: :graph)
+          tab.with_text { t("overviews.kpis.global_label") }
+        end
+      end
+    end
+  end
+%>

@@ -84,8 +84,11 @@ en:
         description: "Add members and resource allocations to start analyzing project capacity."
     budget:
       label: "Budget"
+      global_label: "Budgets"
       title: "Budget monitoring"
+      global_title: "Budget consolidation"
       description: "Monitor planned and actual costs, available balance, and budgets that require attention."
+      global_description: "Monitor planned and actual costs, available balance, attention points, and spending concentration across all visible projects."
       period: "Period"
       months:
         one: "Last month"
@@ -117,6 +120,8 @@ en:
           months:
             one: "%{count} month"
             other: "%{count} months"
+        concentration:
+          title: "Spending concentration"
       categories:
         base: "Base"
         labor: "Labor"
@@ -145,13 +150,18 @@ en:
         balance: "Balance"
         consumption: "Consumption"
         work_packages: "Work packages"
+      global_project_table: "Budget by project"
       empty:
         title: "No budgets configured"
         description: "Create the first budget and associate work packages to start monitoring project costs."
+      global_empty_description: "No visible project has budgets available for consolidation."
     kpis:
       label: "Indicators (KPIs)"
+      global_label: "KPIs"
       title: "KPI monitoring"
+      global_title: "KPI consolidation"
       description: "Track performance, measurement freshness, and indicators that require attention."
+      global_description: "Track performance, measurement freshness, and indicators that require attention across all visible projects."
       period: "Period"
       months:
         one: "Last month"
@@ -184,6 +194,8 @@ en:
         title: "Indicator details"
         last_measurement: "Last measurement"
         next_measurement: "Next measurement"
+      global_project_table: "KPIs by project"
       empty:
         title: "No KPIs configured"
         description: "Create the first KPI to start monitoring targets and measurements for this project."
+      global_empty_description: "No visible project has KPIs available for consolidation."

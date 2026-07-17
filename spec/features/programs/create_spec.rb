@@ -107,15 +107,13 @@ RSpec.describe "Programs",
   end
 
   context "without enterprise feature enabled", with_ee: [] do
-    it "shows enterprise banner instead of the form", with_flag: { portfolio_models: true } do
+    it "shows the creation form", with_flag: { portfolio_models: true } do
       projects_page.visit!
       projects_page.create_new_workspace
 
       expect(page).to have_heading "New program"
-
-      expect(page).to have_no_button "Continue"
-
-      expect(page).to have_enterprise_banner(:premium, class: "op-enterprise-banner_large")
+      expect(page).to have_button "Continue"
+      expect(page).to have_no_enterprise_banner
     end
   end
 end

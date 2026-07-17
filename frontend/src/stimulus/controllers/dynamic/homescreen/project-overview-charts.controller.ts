@@ -28,6 +28,7 @@ interface LeafletLayer {
 interface LeafletMap {
   setView(center:[number, number], zoom:number):LeafletMap;
   fitBounds(bounds:LeafletLatLngBounds, options?:Record<string, unknown>):LeafletMap;
+  invalidateSize(options?:Record<string, unknown>):LeafletMap;
   remove():void;
 }
 
@@ -241,6 +242,10 @@ export default class ProjectOverviewChartsController extends Controller {
   private calendarChart:EChartsInstance|null = null;
   private calendarResizeObserver:ResizeObserver|null = null;
   private projectMap:LeafletMap|null = null;
+  private projectMapBounds:LeafletLatLngBounds|null = null;
+  private projectMapResizeObserver:ResizeObserver|null = null;
+  private projectMapResizeFrame:number|null = null;
+  private projectMapInitialBoundsApplied = false;
 
   connect() {
     if (this.hasGraphTarget && this.hasGraphConfigValue) {
@@ -297,8 +302,16 @@ export default class ProjectOverviewChartsController extends Controller {
     this.calendarResizeObserver?.disconnect();
     this.calendarChart?.dispose();
     this.calendarChart = null;
+    this.projectMapResizeObserver?.disconnect();
+    this.projectMapResizeObserver = null;
+    if (this.projectMapResizeFrame !== null) {
+      cancelAnimationFrame(this.projectMapResizeFrame);
+      this.projectMapResizeFrame = null;
+    }
     this.projectMap?.remove();
     this.projectMap = null;
+    this.projectMapBounds = null;
+    this.projectMapInitialBoundsApplied = false;
   }
 
   private chartCanvas(key:string):HTMLCanvasElement|null {
@@ -436,11 +449,44 @@ export default class ProjectOverviewChartsController extends Controller {
       { collapsed: false }
     ).addTo(map);
 
-    if (bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14 });
+    this.projectMap = map;
+    this.projectMapBounds = bounds;
+    this.projectMapInitialBoundsApplied = false;
+    this.observeProjectMapSize();
+    this.refreshProjectMapSize();
+  }
+
+  private observeProjectMapSize() {
+    this.projectMapResizeObserver?.disconnect();
+    this.projectMapResizeObserver = new ResizeObserver(() => this.refreshProjectMapSize());
+    this.projectMapResizeObserver.observe(this.mapTarget);
+  }
+
+  private refreshProjectMapSize() {
+    if (!this.projectMap) {
+      return;
     }
 
-    this.projectMap = map;
+    if (this.projectMapResizeFrame !== null) {
+      cancelAnimationFrame(this.projectMapResizeFrame);
+    }
+
+    this.projectMapResizeFrame = requestAnimationFrame(() => {
+      this.projectMapResizeFrame = requestAnimationFrame(() => {
+        this.projectMapResizeFrame = null;
+
+        if (!this.projectMap || this.mapTarget.offsetWidth === 0 || this.mapTarget.offsetHeight === 0) {
+          return;
+        }
+
+        this.projectMap.invalidateSize({ pan: false, debounceMoveend: true });
+
+        if (!this.projectMapInitialBoundsApplied && this.projectMapBounds?.isValid()) {
+          this.projectMap.fitBounds(this.projectMapBounds, { padding: [28, 28], maxZoom: 14 });
+          this.projectMapInitialBoundsApplied = true;
+        }
+      });
+    });
   }
 
   private mapMarker(leaflet:LeafletNamespace, item:ProjectMapItem, radius:number):LeafletLayer {

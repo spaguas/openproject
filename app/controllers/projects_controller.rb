@@ -335,11 +335,7 @@ class ProjectsController < ApplicationController
   end
 
   def layout_for_new
-    if portfolio_management_feature_missing?
-      "global"
-    else
-      "no_menu"
-    end
+    "no_menu"
   end
 
   def login_back_url_params

@@ -4,6 +4,12 @@ Rails.application.routes.draw do
   get "team_allocation",
       to: "homescreen#team_allocation",
       as: :global_team_allocation
+  get "budget_monitoring",
+      to: "homescreen#budget_monitoring",
+      as: :global_budget_monitoring
+  get "kpi_monitoring",
+      to: "homescreen#kpi_monitoring",
+      as: :global_kpi_monitoring
 
   constraints(Constraints::ProjectIdentifier) do
     scope "projects/:project_id", as: "project" do
