@@ -1,0 +1,19 @@
+pt-BR:
+  backup:
+    restore:
+      title: "Restaurar backup"
+      progress: "Progresso da restauração"
+      warning: "A restauração substituirá o banco de dados atual e sincronizará os anexos. Mantenha uma cópia separada da instalação atual antes de continuar."
+      file: "Arquivo de backup do OpenProject"
+      secret: "Token do backup ou hash SHA-256"
+      submit: "Carregar e restaurar"
+      confirm: "Esta ação substituirá os dados atuais do OpenProject. Deseja continuar?"
+      invalid_file: "Selecione um backup ZIP válido do OpenProject."
+      file_too_large: "O backup excede o limite de upload de 5 GB."
+      enqueue_failed: "Não foi possível iniciar a restauração."
+      steps:
+        upload: "Carregar backup"
+        validate: "Validar arquivo"
+        database: "Restaurar banco de dados"
+        attachments: "Sincronizar anexos"
+        finalize: "Finalizar restauração"

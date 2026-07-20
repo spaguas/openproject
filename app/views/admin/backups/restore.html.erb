@@ -1,0 +1,27 @@
+<% html_title t(:label_administration), t("backup.restore.title") %>
+<% content_for :header_tags do %>
+  <meta http-equiv="refresh" content="2">
+<% end unless @progress["status"].in?(%w[success failure]) %>
+
+<%= render Primer::OpenProject::PageHeader.new do |header| %>
+  <% header.with_title { t("backup.restore.title") } %>
+  <% header.with_breadcrumbs([{ href: admin_backups_path, text: t(:label_backup) }, t("backup.restore.progress")]) %>
+<% end %>
+
+<%= render Primer::Beta::ProgressBar.new(size: :large, mt: 4, mb: 4) do |bar| %>
+  <% bar.with_item(percentage: @progress.fetch("percent", 0)) %>
+<% end %>
+
+<ol class="op-backup-restore-steps">
+  <% Backups::RestoreProgress::STEPS.each do |step| %>
+    <li>
+      <%= t("backup.restore.steps.#{step}") %>
+    </li>
+  <% end %>
+</ol>
+
+<%= render(Primer::Beta::Flash.new(scheme: @progress["status"] == "failure" ? :danger : :default, mt: 4)) do %>
+  <%= @progress["message"] %>
+<% end %>
+
+<%= link_to t(:button_back), admin_backups_path, class: "button", style: "margin-top: 1rem" if @progress["status"].in?(%w[success failure]) %>

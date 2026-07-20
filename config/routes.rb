@@ -846,6 +846,8 @@ Rails.application.routes.draw do
         post :reset_token, action: :perform_token_reset
 
         post :delete_token
+        post :perform_restore
+        get "restore/:restore_id", action: :restore, as: :restore
       end
     end
 

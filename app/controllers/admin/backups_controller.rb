@@ -28,7 +28,11 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
+require "digest"
+
 class Admin::BackupsController < ApplicationController
+  MAX_RESTORE_SIZE = 5.gigabytes
+
   include PasswordConfirmation
   include ActionView::Helpers::TagHelper
   include BackupHelper
@@ -37,6 +41,8 @@ class Admin::BackupsController < ApplicationController
 
   before_action :check_enabled
   before_action :authorize_global
+  skip_before_action :authorize_global, only: %i[perform_restore restore]
+  before_action :authorize_backup_restore, only: %i[perform_restore restore]
 
   before_action :check_password_confirmation, only: %i[perform_token_reset]
 
@@ -79,11 +85,57 @@ class Admin::BackupsController < ApplicationController
     redirect_to action: "show"
   end
 
+  def restore
+    @progress = Backups::RestoreProgress.read(params[:restore_id])
+    render_404 and return if @progress.blank?
+
+    render :restore
+  end
+
+  def perform_restore # rubocop:disable Metrics/AbcSize
+    upload = params[:backup_file]
+
+    unless upload.respond_to?(:path) && upload.original_filename.to_s.downcase.end_with?(".zip")
+      return redirect_to(admin_backups_path, alert: t("backup.restore.invalid_file"))
+    end
+    if upload.size.to_i > MAX_RESTORE_SIZE
+      return redirect_to(admin_backups_path, alert: t("backup.restore.file_too_large"))
+    end
+    unless valid_restore_secret?(upload)
+      return redirect_to(admin_backups_path, alert: t("backup.error.invalid_token"))
+    end
+
+    restore_id = SecureRandom.uuid
+    destination = Backups::RestoreProgress.upload_path(restore_id)
+    FileUtils.cp(upload.path, destination)
+    FileUtils.chmod(0o600, destination)
+    Backups::RestoreProgress.start(id: restore_id, filename: upload.original_filename)
+    BackupRestoreJob.perform_later(restore_id:)
+
+    redirect_to restore_admin_backups_path(restore_id:)
+  rescue StandardError => e
+    Rails.logger.error("Could not enqueue backup restore: #{e.full_message}")
+    redirect_to admin_backups_path, alert: t("backup.restore.enqueue_failed")
+  end
+
   def check_enabled
     render_404 unless OpenProject::Configuration.backup_enabled?
   end
 
   private
+
+  def authorize_backup_restore
+    render_403 unless current_user.allowed_globally?(:create_backup)
+  end
+
+  def valid_restore_secret?(upload)
+    secret = params[:backup_secret].to_s.strip
+    return false if secret.blank?
+    return true if Token::Backup.find_by_plaintext_value(secret)
+
+    file_hash = Digest::SHA256.file(upload.path).hexdigest
+    ActiveSupport::SecurityUtils.secure_compare(secret.downcase, file_hash)
+  end
 
   def find_backup(status: :success, user: current_user)
     Backup
@@ -102,7 +154,7 @@ class Admin::BackupsController < ApplicationController
   def token_reset_successful!(token)
     notify_user_and_admins current_user, backup_token: token
 
-    flash[:warning] = token_reset_flash_message token
+    flash[:warning] = token_reset_flash_message token # rubocop:disable Rails/ActionControllerFlashBeforeRender
   end
 
   def token_reset_flash_message(token)
@@ -116,7 +168,7 @@ class Admin::BackupsController < ApplicationController
   def token_reset_failed!(error)
     Rails.logger.error "Failed to reset user ##{current_user.id}'s Backup token: #{error}"
 
-    flash[:error] = t("my.access_token.failed_to_reset_token", error: error.message)
+    flash[:error] = t("my.access_token.failed_to_reset_token", error: error.message) # rubocop:disable Rails/ActionControllerFlashBeforeRender
   end
 
   def may_include_attachments?

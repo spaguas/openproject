@@ -40,7 +40,7 @@ See COPYRIGHT and LICENSE files for more details.
 
   <div class="wiki">
     <ul>
-      <% Token::Backup.includes(:user).each do |token| %>
+      <% Token::Backup.includes(:user).find_each do |token| %>
         <li>
           <% if current_user.allowed_globally?(:manage_user) %>
             <%= link_to token.user.name, edit_user_path(token.user) %>
@@ -61,4 +61,24 @@ See COPYRIGHT and LICENSE files for more details.
       "last-backup-attachment-id": @last_backup_attachment_id,
       "may-include-attachments": @may_include_attachments
     } %>
+<% end %>
+
+<% if @backup_token.present? %>
+  <%= render Primer::Beta::BorderBox.new(mt: 5) do |box| %>
+    <% box.with_header { t("backup.restore.title") } %>
+    <% box.with_body do %>
+      <p><%= t("backup.restore.warning") %></p>
+      <%= form_with url: perform_restore_admin_backups_path, multipart: true do |form| %>
+        <div class="form--field">
+          <%= form.label :backup_file, t("backup.restore.file") %>
+          <%= form.file_field :backup_file, accept: ".zip,application/zip", required: true %>
+        </div>
+        <div class="form--field">
+          <%= form.label :backup_secret, t("backup.restore.secret") %>
+          <%= form.password_field :backup_secret, required: true, autocomplete: "off" %>
+        </div>
+        <%= form.submit t("backup.restore.submit"), class: "button -danger", data: { confirm: t("backup.restore.confirm") } %>
+      <% end %>
+    <% end %>
+  <% end %>
 <% end %>

@@ -2915,6 +2915,23 @@ en:
     work_package_id: "Work package"
 
   backup:
+    restore:
+      title: "Restore backup"
+      progress: "Restore progress"
+      warning: "Restoring replaces the current database and synchronizes attachments. Keep a separate copy of the current installation before continuing."
+      file: "OpenProject backup file"
+      secret: "Backup token or SHA-256 hash"
+      submit: "Upload and restore"
+      confirm: "This will replace the current OpenProject data. Do you want to continue?"
+      invalid_file: "Select a valid OpenProject ZIP backup."
+      file_too_large: "The backup exceeds the 5 GB upload limit."
+      enqueue_failed: "The restore could not be started."
+      steps:
+        upload: "Upload backup"
+        validate: "Validate archive"
+        database: "Restore database"
+        attachments: "Synchronize attachments"
+        finalize: "Finalize restoration"
     failed: "Backup failed"
     label_backup_token: "Backup token"
     label_create_token: "Create backup token"
