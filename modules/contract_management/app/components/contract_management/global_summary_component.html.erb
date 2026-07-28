@@ -1,0 +1,56 @@
+<section class="homescreen-project-overview">
+  <div class="homescreen-project-overview--header">
+    <div>
+      <h2><%= t("contract_management.portfolio.home_title") %></h2>
+      <p><%= t("contract_management.portfolio.home_description") %></p>
+    </div>
+  </div>
+
+  <div class="homescreen-project-overview--metrics">
+    <div class="homescreen-project-overview--metric">
+      <strong class="homescreen-project-overview--metric-value"><%= @portfolio.total_contracts %></strong>
+      <span class="homescreen-project-overview--metric-label"><%= t("contract_management.portfolio.metrics.contracts") %></span>
+    </div>
+    <div class="homescreen-project-overview--metric">
+      <strong class="homescreen-project-overview--metric-value"><%= @portfolio.expiring_contracts %></strong>
+      <span class="homescreen-project-overview--metric-label"><%= t("contract_management.portfolio.metrics.expiring") %></span>
+    </div>
+    <div class="homescreen-project-overview--metric">
+      <strong class="homescreen-project-overview--metric-value"><%= @portfolio.overdue_invoices %></strong>
+      <span class="homescreen-project-overview--metric-label"><%= t("contract_management.portfolio.metrics.overdue_invoices") %></span>
+    </div>
+    <div class="homescreen-project-overview--metric">
+      <strong class="homescreen-project-overview--metric-value"><%= number_to_currency(@portfolio.balance) %></strong>
+      <span class="homescreen-project-overview--metric-label"><%= t("contract_management.portfolio.metrics.balance") %></span>
+    </div>
+  </div>
+
+  <table class="generic-table">
+    <thead>
+      <tr>
+        <th><%= PublicContract.human_attribute_name(:number) %></th>
+        <th><%= t("contract_management.portfolio.project") %></th>
+        <th><%= t("contract_management.portfolio.status") %></th>
+        <th><%= PublicContract.human_attribute_name(:end_date) %></th>
+        <th><%= PublicContract.human_attribute_name(:balance) %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @portfolio.contracts.first(5).each do |contract| %>
+        <tr>
+          <td><%= link_to contract.number, project_contract_management_contract_path(contract.project, contract) %></td>
+          <td><%= contract.project.name %></td>
+          <td><%= t("contract_management.portfolio.statuses.#{@portfolio.status_for(contract)}") %></td>
+          <td><%= format_date(contract.effective_end_date) %></td>
+          <td><%= number_to_currency(contract.balance) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <p>
+    <%= link_to t("contract_management.portfolio.open"),
+                contract_management_portfolio_path,
+                class: "button -primary" %>
+  </p>
+</section>

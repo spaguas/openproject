@@ -1,0 +1,36 @@
+<% title = t("contract_management.invoices.new") %>
+<% html_title title %>
+
+<%= render(Primer::OpenProject::PageHeader.new) do |header|
+      header.with_title { title }
+      header.with_description { t("contract_management.invoice_extraction.description") }
+      header.with_breadcrumbs(
+        [{ href: project_contract_management_contracts_path(@project), text: t("contract_management.label_plural") },
+         { href: project_contract_management_contract_path(@project, @contract), text: @contract.number },
+         title]
+      )
+    end %>
+
+<%= form_with url: extract_project_contract_management_contract_invoices_path(@project, @contract),
+              method: :post,
+              multipart: true,
+              html: { class: "form contract-management-form" } do %>
+  <fieldset class="form--fieldset contract-management-form--section">
+    <legend class="form--fieldset-legend"><%= t("contract_management.invoice_extraction.upload_title") %></legend>
+    <div class="form--field -required">
+      <%= label_tag :invoice_file, t("contract_management.invoice_extraction.file"), class: "form--label" %>
+      <span class="form--field-container">
+        <%= styled_file_field_tag :invoice_file,
+                                  required: true,
+                                  accept: "application/pdf,image/jpeg,image/png,image/webp" %>
+      </span>
+      <span class="form--field-instructions"><%= t("contract_management.invoice_extraction.file_hint") %></span>
+      <span class="form--field-instructions"><%= t("contract_management.invoice_extraction.processing_notice") %></span>
+    </div>
+  </fieldset>
+
+  <div class="contract-management-form--actions">
+    <%= styled_button_tag t("contract_management.invoice_extraction.read_file"), class: "-primary" %>
+    <%= link_to t(:button_cancel), project_contract_management_contract_path(@project, @contract), class: "button" %>
+  </div>
+<% end %>

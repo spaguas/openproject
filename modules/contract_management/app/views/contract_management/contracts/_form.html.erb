@@ -1,0 +1,90 @@
+<%= error_messages_for @contract %>
+
+<%= form_with model: @contract,
+              url: @contract.persisted? ? project_contract_management_contract_path(@project, @contract) : project_contract_management_contracts_path(@project),
+              method: @contract.persisted? ? :patch : :post,
+              html: { class: "form contract-management-form" } do |form| %>
+  <fieldset class="form--fieldset contract-management-form--section">
+    <legend class="form--fieldset-legend"><%= t("contract_management.form.sections.identification") %></legend>
+    <div class="contract-management-form--grid">
+    <% %i[number sei_process_number payment_sei_process_number].each do |attribute| %>
+      <div class="form--field <%= "-required" unless attribute == :payment_sei_process_number %>">
+        <%= form.label attribute, class: "form--label" %>
+        <span class="form--field-container">
+          <%= form.text_field attribute,
+                              required: attribute != :payment_sei_process_number,
+                              class: "form--text-field" %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.public_contract.#{attribute}") %></span>
+      </div>
+    <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="form--fieldset contract-management-form--section">
+    <legend class="form--fieldset-legend"><%= t("contract_management.form.sections.term") %></legend>
+    <div class="contract-management-form--grid">
+    <% %i[start_date end_date].each do |attribute| %>
+      <div class="form--field -required">
+        <%= form.label attribute, class: "form--label" %>
+        <span class="form--field-container"><%= form.date_field attribute, required: true, class: "form--text-field" %></span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.public_contract.#{attribute}") %></span>
+      </div>
+    <% end %>
+    <div class="form--field -required">
+      <%= form.label :duration_months, class: "form--label" %>
+      <span class="form--field-container"><%= form.number_field :duration_months, required: true, min: 1, class: "form--text-field" %></span>
+      <span class="form--field-instructions"><%= t("contract_management.form.hints.public_contract.duration_months") %></span>
+    </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="form--fieldset contract-management-form--section">
+    <legend class="form--fieldset-legend"><%= t("contract_management.form.sections.financial") %></legend>
+    <div class="contract-management-form--grid">
+    <div class="form--field -required">
+      <%= form.label :amount, class: "form--label" %>
+      <span class="form--field-container"><%= form.number_field :amount, required: true, min: 0, step: "0.01", class: "form--text-field" %></span>
+      <span class="form--field-instructions"><%= t("contract_management.form.hints.public_contract.amount") %></span>
+    </div>
+    <div class="form--field">
+      <%= form.label :contract_adjustment_index_type_id, class: "form--label" %>
+      <span class="form--field-container">
+        <%= form.select :contract_adjustment_index_type_id,
+                        @adjustment_index_types.map { |index_type| ["#{index_type.name} — #{t("contract_management.periodicities.#{index_type.periodicity}")}", index_type.id] },
+                        { include_blank: t("contract_management.form.no_adjustment_index") },
+                        class: "form--select" %>
+      </span>
+      <span class="form--field-instructions"><%= t("contract_management.form.hints.public_contract.contract_adjustment_index_type_id") %></span>
+    </div>
+    <div class="form--field">
+      <%= form.label :adjustment_start_date, class: "form--label" %>
+      <span class="form--field-container"><%= form.date_field :adjustment_start_date, class: "form--text-field" %></span>
+      <span class="form--field-instructions"><%= t("contract_management.form.hints.public_contract.adjustment_start_date") %></span>
+    </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="form--fieldset contract-management-form--section">
+    <legend class="form--fieldset-legend"><%= t("contract_management.form.sections.details") %></legend>
+    <div class="contract-management-form--grid">
+    <div class="form--field -required contract-management-form--wide">
+      <%= form.label :description, class: "form--label" %>
+      <span class="form--field-container"><%= form.text_area :description, required: true, rows: 5, class: "form--text-area" %></span>
+      <span class="form--field-instructions"><%= t("contract_management.form.hints.public_contract.description") %></span>
+    </div>
+    <div class="form--field -required">
+      <%= form.label :deadline_notification_days, class: "form--label" %>
+      <span class="form--field-container"><%= form.number_field :deadline_notification_days, required: true, min: 0, class: "form--text-field" %></span>
+      <span class="form--field-instructions"><%= t("contract_management.form.hints.public_contract.deadline_notification_days") %></span>
+    </div>
+    </div>
+  </fieldset>
+
+  <div class="contract-management-form--actions">
+    <%= styled_button_tag t(@contract.persisted? ? :button_save : :button_create), class: "-primary" %>
+    <%= link_to t(:button_cancel),
+                @contract.persisted? ? project_contract_management_contract_path(@project, @contract) : project_contract_management_contracts_path(@project),
+                class: "button" %>
+  </div>
+<% end %>

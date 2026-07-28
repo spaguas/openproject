@@ -1,0 +1,10 @@
+<% html_title t("contract_management.actions.edit_contract") %>
+<%= render(Primer::OpenProject::PageHeader.new) do |header|
+      header.with_title { t("contract_management.actions.edit_contract") }
+      header.with_breadcrumbs(
+        [{ href: project_contract_management_contracts_path(@project), text: t("contract_management.label_plural") },
+         { href: project_contract_management_contract_path(@project, @contract), text: @contract.number },
+         t(:button_edit)]
+      )
+    end %>
+<%= render "form" %>

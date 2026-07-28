@@ -1,0 +1,98 @@
+<% html_title "#{t('contract_management.label_singular')} #{@contract.number}" %>
+
+<%= render(Primer::OpenProject::PageHeader.new) do |header|
+      header.with_title { "#{t('contract_management.label_singular')} #{@contract.number}" }
+      header.with_breadcrumbs(
+        [{ href: project_contract_management_contracts_path(@project), text: t("contract_management.label_plural") },
+         @contract.number]
+      )
+      if User.current.allowed_in_project?(:manage_contracts, @project)
+        header.with_action_button(
+          tag: :a,
+          leading_icon: :gear,
+          label: t("contract_management.settings.title"),
+          mobile_icon: :gear,
+          mobile_label: t("contract_management.settings.title"),
+          href: edit_project_contract_management_settings_path(@project)
+        ) { t("contract_management.settings.title") }
+      end
+    end %>
+
+<% if User.current.allowed_in_project?(:manage_contracts, @project) %>
+  <%= render(Primer::OpenProject::SubHeader.new) do |subheader|
+        subheader.with_action_button(
+          tag: :a, leading_icon: :pencil, label: t(:button_edit),
+          href: edit_project_contract_management_contract_path(@project, @contract)
+        ) { t(:button_edit) }
+      end %>
+  <p>
+    <%= link_to t(:button_delete),
+                project_contract_management_contract_path(@project, @contract),
+                class: "button -danger",
+                data: { turbo_confirm: t("contract_management.confirm_delete"), turbo_method: :delete } %>
+  </p>
+<% end %>
+
+<div class="attributes-group">
+  <div class="attributes-key-value"><div class="attributes-key-value--key"><%= PublicContract.human_attribute_name(:sei_process_number) %></div><div><%= @contract.sei_process_number %></div></div>
+  <div class="attributes-key-value"><div class="attributes-key-value--key"><%= PublicContract.human_attribute_name(:payment_sei_process_number) %></div><div><%= @contract.payment_sei_process_number.presence || "—" %></div></div>
+  <div class="attributes-key-value"><div class="attributes-key-value--key"><%= PublicContract.human_attribute_name(:period) %></div><div><%= format_date(@contract.start_date) %> – <%= format_date(@contract.end_date) %> (<%= @contract.duration_months %> <%= t("contract_management.months") %>)</div></div>
+  <div class="attributes-key-value"><div class="attributes-key-value--key"><%= PublicContract.human_attribute_name(:description) %></div><div><%= simple_format(@contract.description) %></div></div>
+  <div class="attributes-key-value"><div class="attributes-key-value--key"><%= PublicContract.human_attribute_name(:contract_adjustment_index_type) %></div><div><%= @contract.contract_adjustment_index_type&.name || @contract.contract_adjustment_index&.name || @contract.adjustment_index.presence || "—" %></div></div>
+  <div class="attributes-key-value"><div class="attributes-key-value--key"><%= PublicContract.human_attribute_name(:adjustment_start_date) %></div><div><%= format_date(@contract.adjustment_start_date) %></div></div>
+</div>
+
+<h2><%= t("contract_management.summary.title") %></h2>
+<table class="generic-table">
+  <thead><tr>
+    <th><%= t("contract_management.summary.updated_value") %></th>
+    <th><%= t("contract_management.summary.measured") %></th>
+    <th><%= t("contract_management.summary.invoiced") %></th>
+    <th><%= t("contract_management.summary.paid") %></th>
+    <th><%= t("contract_management.summary.adjustment") %></th>
+    <th><%= t("contract_management.summary.adjusted_total") %></th>
+    <th><%= t("contract_management.summary.balance") %></th>
+  </tr></thead>
+  <tbody><tr>
+    <td><%= number_to_currency(@contract.total_amount) %></td>
+    <td><%= number_to_currency(@contract.measured_amount) %></td>
+    <td><%= number_to_currency(@contract.invoiced_amount) %></td>
+    <td><%= number_to_currency(@contract.paid_amount) %></td>
+    <td><%= number_to_currency(@contract.adjustment_amount) %></td>
+    <td><%= number_to_currency(@contract.adjusted_total_amount) %></td>
+    <td><%= number_to_currency(@contract.balance) %></td>
+  </tr></tbody>
+</table>
+
+<%= render "contract_management/shared/section",
+           title: t("contract_management.measurements.label_plural"),
+           anchor: "measurements",
+           records: @measurements,
+           new_path: new_project_contract_management_contract_measurement_path(@project, @contract),
+           kind: :measurement %>
+<%= render "contract_management/shared/section",
+           title: t("contract_management.invoices.label_plural"),
+           anchor: "invoices",
+           records: @invoices,
+           new_path: new_project_contract_management_contract_invoice_path(@project, @contract),
+           kind: :invoice %>
+<%= render "contract_management/shared/section",
+           title: t("contract_management.amendments.label_plural"),
+           anchor: "amendments",
+           records: @amendments,
+           new_path: new_project_contract_management_contract_amendment_path(@project, @contract),
+           kind: :amendment %>
+<%= render "contract_management/shared/section",
+           title: t("contract_management.responsibilities.label_plural"),
+           anchor: "responsibilities",
+           records: @responsibilities,
+           new_path: new_project_contract_management_contract_responsibility_path(@project, @contract),
+           kind: :responsibility %>
+<%= render "contract_management/shared/commitments_section",
+           commitments: @budget_commitments %>
+<%= render "contract_management/shared/section",
+           title: t("contract_management.bank_orders.label_plural"),
+           anchor: "bank_orders",
+           records: @bank_orders,
+           new_path: new_project_contract_management_contract_bank_order_path(@project, @contract),
+           kind: :bank_order %>

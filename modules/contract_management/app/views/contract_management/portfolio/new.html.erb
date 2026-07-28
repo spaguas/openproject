@@ -1,0 +1,31 @@
+<% html_title t("contract_management.portfolio.new_contract") %>
+
+<%= render(Primer::OpenProject::PageHeader.new) do |header|
+      header.with_title { t("contract_management.portfolio.new_contract") }
+      header.with_description { t("contract_management.portfolio.select_project_description") }
+      header.with_breadcrumbs(
+        [{ href: contract_management_portfolio_path, text: t("contract_management.portfolio.title") },
+         t("contract_management.portfolio.new_contract")]
+      )
+    end %>
+
+<%= form_with url: new_contract_management_portfolio_contract_path,
+              method: :get,
+              local: true,
+              html: { class: "form" } do |form| %>
+  <fieldset class="form--fieldset">
+    <div class="form--field -required">
+      <%= form.label :project_id, t("contract_management.portfolio.filters.project"), class: "form--label" %>
+      <span class="form--field-container">
+        <%= form.select :project_id,
+                        @projects.map { |project| [project.name, project.id] },
+                        { include_blank: t("contract_management.portfolio.select_project") },
+                        required: true,
+                        class: "form--select" %>
+      </span>
+      <span class="form--field-instructions"><%= t("contract_management.portfolio.select_project_hint") %></span>
+    </div>
+    <%= styled_button_tag t(:button_continue), class: "-primary" %>
+    <%= link_to t(:button_cancel), contract_management_portfolio_path, class: "button" %>
+  </fieldset>
+<% end %>

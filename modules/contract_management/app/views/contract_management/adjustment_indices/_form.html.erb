@@ -1,0 +1,83 @@
+<%= error_messages_for @adjustment_index %>
+<% form_url = if @adjustment_index.persisted?
+                project_contract_management_adjustment_index_path(@project, @adjustment_index)
+              else
+                project_contract_management_adjustment_indices_path(@project)
+              end %>
+
+<%= form_with model: @adjustment_index,
+              url: form_url,
+              method: @adjustment_index.persisted? ? :patch : :post,
+              html: { class: "form contract-management-form" } do |form| %>
+  <fieldset class="form--fieldset contract-management-form--section">
+    <legend class="form--fieldset-legend"><%= t("contract_management.adjustment_indices.data") %></legend>
+    <div class="contract-management-form--grid">
+      <div class="form--field -required">
+        <%= form.label :name, class: "form--label" %>
+        <span class="form--field-container">
+          <%= form.text_field :name, required: true, class: "form--text-field" %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_adjustment_index.name") %></span>
+      </div>
+
+      <div class="form--field -required">
+        <%= form.label :year, class: "form--label" %>
+        <span class="form--field-container">
+          <%= form.number_field :year, required: true, min: 1901, max: 2999, class: "form--text-field" %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_adjustment_index.year") %></span>
+      </div>
+
+      <div class="form--field -required">
+        <%= form.label :month, class: "form--label" %>
+        <span class="form--field-container">
+          <%= form.select :month,
+                          I18n.t("date.month_names").each_with_index.filter_map { |name, month| [name, month] if name },
+                          {},
+                          required: true,
+                          class: "form--select" %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_adjustment_index.month") %></span>
+      </div>
+
+      <div class="form--field -required">
+        <%= form.label :percentage, class: "form--label" %>
+        <span class="form--field-container">
+          <%= form.number_field :percentage, required: true, step: "0.0001", class: "form--text-field" %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_adjustment_index.percentage") %></span>
+      </div>
+
+      <div class="form--field -required">
+        <%= form.label :periodicity, class: "form--label" %>
+        <span class="form--field-container">
+          <%= form.select :periodicity,
+                          ContractAdjustmentIndex::PERIODICITIES.map { |periodicity| [t("contract_management.periodicities.#{periodicity}"), periodicity] },
+                          {},
+                          required: true,
+                          class: "form--select" %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_adjustment_index.periodicity") %></span>
+      </div>
+
+      <div class="form--field">
+        <%= form.label :external_series_code, class: "form--label" %>
+        <span class="form--field-container">
+          <%= form.number_field :external_series_code, min: 1, class: "form--text-field" %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_adjustment_index.external_series_code") %></span>
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="contract-management-form--actions">
+    <%= styled_button_tag t(@adjustment_index.persisted? ? :button_save : :button_create), class: "-primary" %>
+    <%= link_to t(:button_cancel), project_contract_management_adjustment_indices_path(@project), class: "button" %>
+    <% if @adjustment_index.persisted? %>
+      <%= link_to t(:button_delete),
+                  project_contract_management_adjustment_index_path(@project, @adjustment_index),
+                  data: { turbo_confirm: t("contract_management.confirm_delete"), turbo_method: :delete },
+                  class: "button -danger" %>
+    <% end %>
+  </div>
+<% end %>

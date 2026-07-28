@@ -1,0 +1,9 @@
+<%= t("contract_management.mailer.greeting", name: @recipient.name) %>
+
+<% if @deadline_type == "contract" %>
+<%= t("contract_management.mailer.contract_body", contract: @contract.number, date: l(@deadline_on)) %>
+<% else %>
+<%= t("contract_management.mailer.invoice_body", invoice: @invoice.number, contract: @contract.number, date: l(@deadline_on)) %>
+<% end %>
+
+<%= @contract_url %>

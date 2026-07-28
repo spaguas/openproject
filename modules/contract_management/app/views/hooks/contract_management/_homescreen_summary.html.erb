@@ -1,0 +1,3 @@
+<% if User.current.logged? %>
+  <%= render ContractManagement::GlobalSummaryComponent.new(user: User.current) %>
+<% end %>

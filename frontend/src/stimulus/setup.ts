@@ -35,6 +35,8 @@ import ProjectOverviewChartsController from './controllers/dynamic/homescreen/pr
 import KpiDashboardChartsController from './controllers/dynamic/overviews/kpi-dashboard-charts.controller';
 import BudgetDashboardChartsController from './controllers/dynamic/overviews/budget-dashboard-charts.controller';
 import ProjectInsightsController from './controllers/dynamic/overviews/project-insights.controller';
+import ContractDashboardController from './controllers/dynamic/contract-dashboard.controller';
+import CommitmentDistributionController from './controllers/dynamic/commitment-distribution.controller';
 
 import AutoSubmit from '@stimulus-components/auto-submit';
 import RevealController from '@stimulus-components/reveal';
@@ -102,6 +104,8 @@ OpenProjectStimulusApplication.preregister('homescreen--project-overview-charts'
 OpenProjectStimulusApplication.preregister('overviews--kpi-dashboard-charts', KpiDashboardChartsController);
 OpenProjectStimulusApplication.preregister('overviews--budget-dashboard-charts', BudgetDashboardChartsController);
 OpenProjectStimulusApplication.preregister('overviews--project-insights', ProjectInsightsController);
+OpenProjectStimulusApplication.preregister('contract-dashboard', ContractDashboardController);
+OpenProjectStimulusApplication.preregister('commitment-distribution', CommitmentDistributionController);
 OpenProjectStimulusApplication.preregister('check-all', CheckAllController);
 OpenProjectStimulusApplication.preregister('checkable', CheckableController);
 OpenProjectStimulusApplication.preregister('truncation', TruncationController);

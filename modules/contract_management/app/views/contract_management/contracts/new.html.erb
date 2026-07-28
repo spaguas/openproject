@@ -1,0 +1,9 @@
+<% html_title t("contract_management.actions.new_contract") %>
+<%= render(Primer::OpenProject::PageHeader.new) do |header|
+      header.with_title { t("contract_management.actions.new_contract") }
+      header.with_breadcrumbs(
+        [{ href: project_contract_management_contracts_path(@project), text: t("contract_management.label_plural") },
+         t("contract_management.actions.new_contract")]
+      )
+    end %>
+<%= render "form" %>

@@ -1,0 +1,61 @@
+<section id="<%= anchor %>">
+  <h2><%= title %></h2>
+  <% if User.current.allowed_in_project?(:manage_contracts, @project) %>
+    <p><%= link_to t("contract_management.actions.add"), new_path, class: "button -primary" %></p>
+  <% end %>
+  <% if records.any? %>
+    <table class="generic-table">
+      <thead><tr>
+        <% case kind
+           when :measurement %>
+          <th><%= ContractMeasurement.human_attribute_name(:number) %></th><th><%= ContractMeasurement.human_attribute_name(:measured_on) %></th><th><%= ContractMeasurement.human_attribute_name(:amount) %></th><th><%= ContractMeasurement.human_attribute_name(:status) %></th><th><%= ContractMeasurement.human_attribute_name(:invoice) %></th>
+        <% when :invoice %>
+          <th><%= ContractInvoice.human_attribute_name(:number) %></th><th><%= ContractInvoice.human_attribute_name(:issued_on) %></th><th><%= ContractInvoice.human_attribute_name(:due_on) %></th><th><%= ContractInvoice.human_attribute_name(:gross_amount) %></th><th><%= ContractInvoice.human_attribute_name(:net_amount) %></th><th><%= ContractInvoice.human_attribute_name(:status) %></th><th><%= ContractInvoice.human_attribute_name(:file) %></th>
+        <% when :amendment %>
+          <th><%= ContractAmendment.human_attribute_name(:number) %></th><th><%= ContractAmendment.human_attribute_name(:start_date) %></th><th><%= ContractAmendment.human_attribute_name(:duration_months) %></th><th><%= ContractAmendment.human_attribute_name(:amount) %></th>
+        <% when :responsibility %>
+          <th><%= ContractResponsibility.human_attribute_name(:user) %></th><th><%= ContractResponsibility.human_attribute_name(:role) %></th><th><%= ContractResponsibility.human_attribute_name(:starts_on) %></th><th><%= ContractResponsibility.human_attribute_name(:ends_on) %></th>
+        <% when :bank_order %>
+          <th><%= ContractBankOrder.human_attribute_name(:number) %></th><th><%= ContractBankOrder.human_attribute_name(:issued_on) %></th><th><%= ContractBankOrder.human_attribute_name(:amount) %></th><th><%= ContractBankOrder.human_attribute_name(:invoices) %></th>
+        <% end %>
+        <th></th>
+      </tr></thead>
+      <tbody>
+        <% records.each do |record| %>
+          <tr>
+            <% case kind
+               when :measurement %>
+              <td><%= record.number %></td><td><%= format_date(record.measured_on) %></td><td><%= number_to_currency(record.amount) %></td><td><%= t("contract_management.statuses.#{record.status}") %></td><td><%= record.invoice&.number || "—" %></td>
+            <% when :invoice %>
+              <td><%= record.number %></td><td><%= format_date(record.issued_on) %></td><td><%= format_date(record.due_on) %></td><td><%= number_to_currency(record.gross_amount) %></td><td><%= number_to_currency(record.net_amount) %></td><td><%= t("contract_management.statuses.#{record.status}") %></td>
+              <td>
+                <% if (attachment = record.attachments.first) %>
+                  <%= link_to attachment.filename,
+                              controller: "/attachments",
+                              action: :download,
+                              id: attachment.id,
+                              filename: attachment.filename %>
+                <% else %>
+                  —
+                <% end %>
+              </td>
+            <% when :amendment %>
+              <td><%= record.number %></td><td><%= format_date(record.start_date) %></td><td><%= record.duration_months %></td><td><%= number_to_currency(record.amount) %></td>
+            <% when :responsibility %>
+              <td><%= record.user.name %></td><td><%= t("contract_management.roles.#{record.role}") %></td><td><%= format_date(record.starts_on) %></td><td><%= record.ends_on ? format_date(record.ends_on) : "—" %></td>
+            <% when :bank_order %>
+              <td><%= record.number %></td><td><%= format_date(record.issued_on) %></td><td><%= number_to_currency(record.amount) %></td><td><%= record.invoices.map(&:number).join(", ").presence || "—" %></td>
+            <% end %>
+            <td>
+              <% if User.current.allowed_in_project?(:manage_contracts, @project) %>
+                <%= link_to t(:button_edit), url_for(controller: "contract_management/#{anchor}", action: :edit, project_id: @project.id, contract_id: @contract.id, id: record.id) %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="op-uc-empty-state"><%= t("contract_management.no_records") %></p>
+  <% end %>
+</section>

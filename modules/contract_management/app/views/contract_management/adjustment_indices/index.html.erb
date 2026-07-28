@@ -1,0 +1,69 @@
+<% html_title t("contract_management.adjustment_indices.label_plural") %>
+
+<%= render(Primer::OpenProject::PageHeader.new) do |header|
+      header.with_title { t("contract_management.adjustment_indices.label_plural") }
+      header.with_breadcrumbs(
+        [{ href: project_contract_management_contracts_path(@project), text: t("contract_management.label_plural") },
+         t("contract_management.adjustment_indices.label_plural")]
+      )
+    end %>
+
+<% if User.current.allowed_in_project?(:manage_contracts, @project) %>
+  <%= render(Primer::OpenProject::SubHeader.new) do |subheader|
+        subheader.with_action_button(
+          tag: :a,
+          scheme: :primary,
+          leading_icon: :plus,
+          label: t("contract_management.adjustment_indices.new"),
+          href: new_project_contract_management_adjustment_index_path(@project)
+        ) { t("contract_management.adjustment_indices.new") }
+        subheader.with_action_button(
+          tag: :a,
+          leading_icon: :gear,
+          label: t("contract_management.adjustment_index_types.label_plural"),
+          href: project_contract_management_adjustment_index_types_path(@project)
+        ) { t("contract_management.adjustment_index_types.label_plural") }
+      end %>
+<% end %>
+
+<% if @adjustment_indices.any? %>
+  <table class="generic-table">
+    <thead>
+      <tr>
+        <th><%= ContractAdjustmentIndex.human_attribute_name(:name) %></th>
+        <th><%= ContractAdjustmentIndex.human_attribute_name(:period) %></th>
+        <th><%= ContractAdjustmentIndex.human_attribute_name(:percentage) %></th>
+        <th><%= ContractAdjustmentIndex.human_attribute_name(:periodicity) %></th>
+        <th><%= ContractAdjustmentIndex.human_attribute_name(:source) %></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @adjustment_indices.each do |adjustment_index| %>
+        <tr>
+          <td><%= adjustment_index.name %></td>
+          <td><%= l(adjustment_index.period, format: "%m/%Y") %></td>
+          <td><%= number_to_percentage(adjustment_index.percentage, precision: 4, strip_insignificant_zeros: true) %></td>
+          <td><%= t("contract_management.periodicities.#{adjustment_index.periodicity}") %></td>
+          <td>
+            <%= adjustment_index.source.presence || t("contract_management.adjustment_indices.manual") %>
+            <% if adjustment_index.last_synced_at.present? %>
+              <br>
+              <small><%= t("contract_management.adjustment_indices.synced_at", date: format_time(adjustment_index.last_synced_at)) %></small>
+            <% end %>
+          </td>
+          <td>
+            <% if User.current.allowed_in_project?(:manage_contracts, @project) %>
+              <%= link_to t(:button_edit), edit_project_contract_management_adjustment_index_path(@project, adjustment_index) %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <%= render(Primer::Beta::Blankslate.new) do |blankslate|
+        blankslate.with_visual_icon(icon: :graph)
+        blankslate.with_heading(tag: :h2) { t("contract_management.adjustment_indices.empty") }
+      end %>
+<% end %>
