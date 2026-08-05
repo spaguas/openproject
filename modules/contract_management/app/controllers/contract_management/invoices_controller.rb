@@ -8,12 +8,16 @@ module ContractManagement
 
     self.resource_class = ContractInvoice
     self.association_name = :invoices
-    self.permitted_attributes = %i[number gross_amount issued_on due_on tax_percentage net_amount status]
+    self.permitted_attributes = %i[number measurement_id gross_amount issued_on due_on tax_percentage net_amount status]
 
     def new
       return render_upload if params[:extraction_id].blank?
 
       prepare_invoice_from_extraction
+    end
+
+    def edit
+      prepare_form
     end
 
     def extract
@@ -40,6 +44,12 @@ module ContractManagement
 
     private
 
+    def prepare_form
+      @measurements = @contract.measurements
+        .where(invoice_id: [nil, resource&.id])
+        .order(measured_on: :desc, number: :asc)
+    end
+
     def render_upload
       self.resource = resource_class.new(public_contract: @contract)
       render :upload
@@ -51,6 +61,7 @@ module ContractManagement
 
       self.resource = resource_class.new(invoice_attributes_from_extraction)
       resource.recalculate_net_amount
+      prepare_form
     end
 
     def invoice_attributes_from_extraction
@@ -86,6 +97,7 @@ module ContractManagement
 
     def render_invalid_invoice
       @invoice_extraction = find_extraction(params[:extraction_id]) if params[:extraction_id].present?
+      prepare_form
       render :new, status: :unprocessable_entity
     end
 

@@ -27,7 +27,7 @@
     <div class="contract-management-form--grid">
   <% case resource
      when ContractMeasurement %>
-    <% %i[number measured_on amount status approved_on invoice_id description].each do |attribute| %>
+    <% %i[number measured_on amount status approved_on description].each do |attribute| %>
       <% required = %i[number measured_on amount status].include?(attribute) %>
       <div class="form--field <%= "-required" if required %> <%= "contract-management-form--wide" if attribute == :description %>">
         <%= form.label attribute, class: "form--label" %>
@@ -39,14 +39,9 @@
             <%= form.number_field attribute, required: true, min: 0, step: "0.01", class: "form--text-field" %>
           <% when :status %>
             <%= form.select attribute,
-                            ContractMeasurement::STATUSES.map { |status| [t("contract_management.statuses.#{status}"), status] },
+                            @measurement_statuses.map { |status| [t("contract_management.statuses.#{status}"), status] },
                             {},
                             required: true,
-                            class: "form--select" %>
-          <% when :invoice_id %>
-            <%= form.select attribute,
-                            @invoices.map { |invoice| [invoice.number, invoice.id] },
-                            { include_blank: t("contract_management.form.no_invoice") },
                             class: "form--select" %>
           <% when :description %>
             <%= form.text_area attribute, rows: 4, class: "form--text-area" %>
@@ -58,12 +53,18 @@
       </div>
     <% end %>
   <% when ContractInvoice %>
-    <% %i[number gross_amount issued_on due_on tax_percentage net_amount status].each do |attribute| %>
+    <% %i[measurement_id number gross_amount issued_on due_on tax_percentage net_amount status].each do |attribute| %>
       <div class="form--field -required">
         <%= form.label attribute, class: "form--label" %>
         <span class="form--field-container">
           <% case attribute
-             when :issued_on, :due_on %>
+             when :measurement_id %>
+            <%= form.select attribute,
+                            @measurements.map { |measurement| [measurement.number, measurement.id] },
+                            { include_blank: t("contract_management.form.select_measurement") },
+                            required: true,
+                            class: "form--select" %>
+          <% when :issued_on, :due_on %>
             <%= form.date_field attribute, required: true, class: "form--text-field" %>
           <% when :gross_amount %>
             <%= form.number_field attribute,

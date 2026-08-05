@@ -12,6 +12,7 @@ class PublicContract < ApplicationRecord
   has_many :bank_orders, class_name: "ContractBankOrder", dependent: :destroy
   has_many :budget_commitments, class_name: "ContractBudgetCommitment", dependent: :destroy
   has_many :deadline_notifications, class_name: "ContractDeadlineNotification", dependent: :destroy
+  has_many :contract_notifications, dependent: :destroy
 
   normalizes :number, :sei_process_number, :payment_sei_process_number,
              with: ->(value) { OpenProject::RemoveInvisibleCharacters.call(value)&.strip }
@@ -22,6 +23,7 @@ class PublicContract < ApplicationRecord
   validates :amount, numericality: { greater_than_or_equal_to: 0 }
   validates :duration_months, numericality: { only_integer: true, greater_than: 0 }
   validates :deadline_notification_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :measurement_evaluation_business_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :end_date_not_before_start_date
   validate :adjustment_index_belongs_to_project
   validate :adjustment_index_type_belongs_to_project
@@ -91,6 +93,10 @@ class PublicContract < ApplicationRecord
 
   def visible?(user = User.current)
     user&.allowed_in_project?(:view_contracts, project)
+  end
+
+  def manager_or_inspector?(user, on: Date.current)
+    responsibilities.active_on(on).exists?(user:)
   end
 
   private

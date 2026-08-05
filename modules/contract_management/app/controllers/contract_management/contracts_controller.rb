@@ -23,7 +23,7 @@ module ContractManagement
 
     def show
       @measurements = @contract.measurements.includes(:invoice).order(measured_on: :desc)
-      @invoices = @contract.invoices.includes(:bank_orders, :attachments).order(due_on: :desc)
+      @invoices = @contract.invoices.includes(:measurement, :bank_orders, :attachments).order(due_on: :desc)
       @amendments = @contract.amendments.order(start_date: :desc)
       @responsibilities = @contract.responsibilities.includes(:user).order(starts_on: :desc)
       @bank_orders = @contract.bank_orders.includes(:invoices).order(issued_on: :desc)
@@ -71,6 +71,7 @@ module ContractManagement
           duration_months description amount adjustment_index contract_adjustment_index_id
           contract_adjustment_index_type_id
           adjustment_start_date deadline_notification_days
+          measurement_evaluation_business_days
         ]
       )
     end

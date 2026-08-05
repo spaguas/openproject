@@ -1,0 +1,10 @@
+<%= t("contract_management.mailer.greeting", name: @recipient.name) %>
+
+<%= t("contract_management.mailer.#{@kind}_body",
+      contract: @contract.number,
+      measurement: @subject.respond_to?(:number) ? @subject.number : nil,
+      commitment: @subject.respond_to?(:number) ? @subject.number : nil,
+      percentage: @subject.respond_to?(:execution_percentage) ? @subject.execution_percentage : nil,
+      date: @subject.respond_to?(:evaluation_due_on) ? I18n.l(@subject.evaluation_due_on) : nil) %>
+
+<%= t("contract_management.mailer.open_contract") %>: <%= @contract_url %>

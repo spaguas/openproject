@@ -10,6 +10,7 @@ en:
       alert_hint: "The system highlights commitments when consumption reaches this percentage."
     commitments:
       label_plural: "Appropriations and future commitments"
+      tab_label: "Commitments"
       new: "New budget document"
       edit: "Edit budget document"
       new_appropriation: "Add appropriation note"
@@ -23,6 +24,10 @@ en:
         manual: "Configure monthly amounts manually"
       consumption_alert: "Consumption threshold reached"
       alert_configured: "Alert configured at %{percentage}% commitment consumption."
+      table:
+        year: "Year"
+        type: "Type"
+        total_consumption: "Total consumption %"
       kinds:
         appropriation: "Appropriation note"
         future: "Future commitment note"
@@ -101,7 +106,12 @@ en:
         operations: "Operational monitoring"
         view_details: "View details"
     form:
+      navigation: "Contract form sections"
+      tab_alerts:
+        one: "%{count} issue in this section"
+        other: "%{count} issues in this section"
       no_invoice: "No associated invoice"
+      select_measurement: "Select a measurement"
       no_adjustment_index: "No adjustment index"
       sections:
         identification: "Identification"
@@ -128,6 +138,7 @@ en:
           adjustment_start_date: "Date of the first adjustment. Calculation starts on this date, not on the contract start date."
           description: "Describe the contracted scope, supplier and other relevant identification information."
           deadline_notification_days: "Number of days in advance to notify managers and inspectors about contract and invoice deadlines."
+          measurement_evaluation_business_days: "Deadline, in business days (Monday through Friday), for a manager or inspector to review a new measurement."
         contract_measurement:
           number: "Sequential identifier or official measurement number."
           measured_on: "Reference or closing date for the measured services."
@@ -137,6 +148,7 @@ en:
           invoice_id: "Invoice issued for this measurement, if already registered."
           description: "Record the measured period, completed services, deductions or inspection notes."
         contract_invoice:
+          measurement_id: "Measurement that must be associated with this invoice."
           number: "Invoice number as shown on the supplier document."
           gross_amount: "Total invoice amount before tax withholding."
           issued_on: "Issue date shown on the invoice."
@@ -232,6 +244,11 @@ en:
       label_plural: "Measurements"
       new: "New measurement"
       edit: "Edit measurement"
+      approval_forbidden: "Only active managers or inspectors of this contract may positively attest the measurement."
+    adjustments:
+      label: "Adjustments"
+    operational_tabs:
+      navigation: "Contract records and monitoring"
     invoices:
       label_plural: "Invoices"
       new: "New invoice"
@@ -267,10 +284,16 @@ en:
       greeting: "Hello %{name},"
       contract_body: "Contract %{contract} will end on %{date}."
       invoice_body: "Invoice %{invoice} for contract %{contract} is due on %{date}."
+      measurement_created_body: "Measurement %{measurement} for contract %{contract} was registered and must be reviewed by %{date}."
+      measurement_evaluation_due_body: "The review deadline for measurement %{measurement} of contract %{contract} is %{date}."
+      commitment_consumption_body: "Commitment %{commitment} for contract %{contract} has reached %{percentage}% consumption."
       open_contract: "Open contract"
       subject:
         contract: "Contract %{contract} ends on %{date}"
         invoice: "Invoice %{invoice} for contract %{contract} is due on %{date}"
+        measurement_created: "New measurement %{measurement} for contract %{contract}"
+        measurement_evaluation_due: "Measurement %{measurement} awaits review by %{date}"
+        commitment_consumption: "Commitment %{commitment} reached %{percentage}% consumption"
   activerecord:
     errors:
       models:
@@ -280,6 +303,10 @@ en:
               greater_than_or_equal_to_issued_on: "must be on or after the issue date"
             net_amount:
               less_than_or_equal_to_gross_amount: "must be less than or equal to the gross amount"
+        contract_measurement:
+          attributes:
+            approved_by:
+              not_contract_responsible: "must be an active manager or inspector of the contract"
     models:
       contract_adjustment_index:
         one: "Adjustment index"
@@ -302,6 +329,7 @@ en:
         contract_adjustment_index_type_id: "Adjustment index type"
         adjustment_start_date: "Adjustment start date"
         deadline_notification_days: "Notify before (days)"
+        measurement_evaluation_business_days: "Measurement review deadline (business days)"
         total_amount: "Updated value"
         paid_amount: "Paid"
         balance: "Balance"
@@ -317,6 +345,8 @@ en:
         invoice_id: "Invoice"
         description: "Description"
       contract_invoice:
+        measurement: "Measurement"
+        measurement_id: "Measurement"
         number: "Invoice number"
         gross_amount: "Gross amount"
         issued_on: "Issue date"

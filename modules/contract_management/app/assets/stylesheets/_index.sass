@@ -1,12 +1,93 @@
 .contract-management-form
-  max-width: 1040px
+  max-width: 1100px
+
+  &__tabs
+    display: grid
+    gap: var(--base-size-16)
+
+  &__tab-list
+    background: var(--bgColor-muted)
+    border: 1px solid var(--borderColor-default)
+    border-radius: var(--borderRadius-large)
+    display: grid
+    gap: var(--base-size-4)
+    grid-template-columns: repeat(4, minmax(0, 1fr))
+    padding: var(--base-size-6)
+
+  &__tab
+    align-items: center
+    background: transparent
+    border: 1px solid transparent
+    border-radius: var(--borderRadius-medium)
+    color: var(--fgColor-muted)
+    cursor: pointer
+    display: flex
+    font: inherit
+    font-weight: var(--base-text-weight-semibold)
+    gap: var(--base-size-8)
+    justify-content: center
+    min-height: 44px
+    padding: var(--base-size-8) var(--base-size-12)
+    text-align: center
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease
+
+    &:hover
+      color: var(--fgColor-default)
+
+    &:focus-visible
+      outline: 2px solid var(--focus-outlineColor)
+      outline-offset: 2px
+
+    &[aria-selected="true"]
+      background: var(--bgColor-default)
+      border-color: var(--borderColor-default)
+      box-shadow: var(--shadow-resting-small)
+      color: var(--fgColor-accent)
+
+  &__tab-step
+    align-items: center
+    background: var(--bgColor-neutral-muted)
+    border-radius: 50%
+    display: inline-flex
+    flex: 0 0 auto
+    font-size: var(--text-body-size-small)
+    height: 24px
+    justify-content: center
+    width: 24px
+
+    [aria-selected="true"] &
+      background: var(--bgColor-accent-muted)
+      color: var(--fgColor-accent)
+
+  &__tab-badge
+    align-items: center
+    background: var(--bgColor-danger-emphasis)
+    border-radius: 999px
+    color: var(--fgColor-onEmphasis)
+    display: inline-flex
+    flex: 0 0 auto
+    font-size: var(--text-body-size-small)
+    font-weight: var(--base-text-weight-semibold)
+    gap: 3px
+    justify-content: center
+    line-height: 20px
+    min-width: 24px
+    padding-inline: var(--base-size-6)
+
+    &[hidden]
+      display: none
 
   &--section
     background: var(--bgColor-default)
     border: 1px solid var(--borderColor-default)
-    border-radius: var(--borderRadius-medium)
-    margin-block-end: var(--base-size-24)
-    padding: var(--base-size-24)
+    border-radius: var(--borderRadius-large)
+    box-shadow: var(--shadow-resting-small)
+    margin: 0
+    min-height: 280px
+    padding: var(--base-size-24) var(--base-size-32) var(--base-size-32)
+
+    &[hidden]
+      display: none
 
   &--grid
     display: grid
@@ -41,6 +122,105 @@
 
 .contract-management--period
   white-space: nowrap
+
+.contract-record-tabs
+  display: grid
+  gap: var(--base-size-16)
+  margin-block-start: var(--base-size-32)
+  min-width: 0
+
+  &__list
+    background: var(--bgColor-muted)
+    border: 1px solid var(--borderColor-default)
+    border-radius: var(--borderRadius-large)
+    display: flex
+    gap: var(--base-size-4)
+    overflow-x: auto
+    overscroll-behavior-inline: contain
+    padding: var(--base-size-6)
+    scrollbar-width: thin
+
+  &__tab
+    align-items: center
+    background: transparent
+    border: 1px solid transparent
+    border-radius: var(--borderRadius-medium)
+    color: var(--fgColor-muted)
+    cursor: pointer
+    display: inline-flex
+    flex: 1 0 max-content
+    font: inherit
+    font-weight: var(--base-text-weight-semibold)
+    gap: var(--base-size-8)
+    justify-content: center
+    min-height: 48px
+    min-width: 132px
+    padding: var(--base-size-8) var(--base-size-12)
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease
+
+    &:hover
+      color: var(--fgColor-default)
+
+    &:focus-visible
+      outline: 2px solid var(--focus-outlineColor)
+      outline-offset: 2px
+
+    &[aria-selected="true"]
+      background: var(--bgColor-default)
+      border-color: var(--borderColor-default)
+      box-shadow: var(--shadow-resting-small)
+      color: var(--fgColor-accent)
+
+  &__icon
+    font-size: 18px
+
+  &__panel
+    background: var(--bgColor-default)
+    border: 1px solid var(--borderColor-default)
+    border-radius: var(--borderRadius-large)
+    box-shadow: var(--shadow-resting-small)
+    min-width: 0
+    padding: var(--base-size-24)
+
+    &[hidden]
+      display: none
+
+    > section
+      margin: 0
+
+    > section > h2
+      margin-block-start: 0
+
+  &__section-header
+    align-items: center
+    display: flex
+    gap: var(--base-size-16)
+    justify-content: space-between
+    margin-block-end: var(--base-size-20)
+
+    h2
+      margin: 0
+
+.contract-adjustments
+  &__grid
+    display: grid
+    gap: var(--base-size-16)
+    grid-template-columns: repeat(4, minmax(0, 1fr))
+
+    > div
+      background: var(--bgColor-muted)
+      border: 1px solid var(--borderColor-muted)
+      border-radius: var(--borderRadius-medium)
+      display: grid
+      gap: var(--base-size-8)
+      padding: var(--base-size-16)
+
+    span
+      color: var(--fgColor-muted)
+      font-size: var(--text-body-size-small)
+
+    strong
+      font-size: var(--text-title-size-medium)
 
 .contract-dashboard
   --dashboard-active: var(--fgColor-success, #1a7f37)
@@ -306,12 +486,6 @@
       height: 100%
       min-width: 2px
 
-  &__table-card
-    padding-inline: 0
-
-    .contract-dashboard__card-header
-      padding-inline: var(--base-size-24)
-
   &__table-scroll
     overflow-x: auto
 
@@ -383,8 +557,19 @@
 
 @media screen and (max-width: 680px)
   .contract-management-form
+    &__tab-list
+      display: flex
+      overflow-x: auto
+      overscroll-behavior-inline: contain
+      scrollbar-width: thin
+
+    &__tab
+      flex: 0 0 auto
+      min-width: max-content
+
     &--section
       padding: var(--base-size-16)
+      min-height: 0
 
     &--grid
       grid-template-columns: 1fr
@@ -404,6 +589,15 @@
     &__visual-grid,
     &__status-layout
       grid-template-columns: 1fr
+
+  .contract-record-tabs
+    margin-block-start: var(--base-size-24)
+
+    &__panel
+      padding: var(--base-size-16)
+
+  .contract-adjustments__grid
+    grid-template-columns: 1fr
 
 .contract-management-form--months
   display: grid
@@ -479,12 +673,65 @@
     font-size: .75rem
     font-weight: 700
 
-  &__months td
-    background: var(--bgColor-muted)
+  &__matrix
+    font-variant-numeric: tabular-nums
+    min-width: 1900px
+
+    th,
+    td
+      white-space: nowrap
+
+    th:first-child,
+    td:first-child
+      left: 0
+      min-width: 76px
+      position: sticky
+      text-align: center
+      z-index: 2
+
+    th:nth-child(2),
+    td:nth-child(2)
+      left: 76px
+      min-width: 190px
+      position: sticky
+      z-index: 2
+
+    th:first-child,
+    th:nth-child(2)
+      background: var(--bgColor-muted)
+      z-index: 3
+
+    td:first-child,
+    td:nth-child(2)
+      background: var(--bgColor-default)
+
+    .contract-commitments__alert td:first-child,
+    .contract-commitments__alert td:nth-child(2)
+      background: var(--bgColor-attention-muted)
+
+  &__document
+    strong,
+    span,
+    a
+      display: block
 
     span
-      display: inline-block
-      margin: .25rem 1rem .25rem 0
+      color: var(--fgColor-muted)
+      font-size: var(--text-body-size-small)
+
+    a
+      margin-block-start: var(--base-size-4)
+
+  &__amount
+    min-width: 104px
+    text-align: right
+
+  &__total
+    border-inline-start: 2px solid var(--borderColor-default)
+    min-width: 132px
+
+  &__consumption
+    min-width: 140px
 
 @media screen and (max-width: 680px)
   .contract-management-form--months
@@ -508,9 +755,6 @@
 
     &__project-row small
       display: none
-
-    &__table-card
-      padding-inline: 0
 
 @media screen and (min-width: 681px) and (max-width: 1100px)
   .contract-dashboard

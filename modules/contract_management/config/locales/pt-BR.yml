@@ -10,6 +10,7 @@ pt-BR:
       alert_hint: "O sistema destacará o empenho quando o consumo atingir este percentual."
     commitments:
       label_plural: "Empenhos e comprometimentos futuros"
+      tab_label: "Empenhos"
       new: "Novo documento orçamentário"
       edit: "Editar documento orçamentário"
       new_appropriation: "Cadastrar nota de empenho"
@@ -23,6 +24,10 @@ pt-BR:
         manual: "Configurar os valores mensais manualmente"
       consumption_alert: "Limite de consumo atingido"
       alert_configured: "Alerta configurado para %{percentage}% de consumo do empenho."
+      table:
+        year: "Ano"
+        type: "Tipo"
+        total_consumption: "% consumo total"
       kinds:
         appropriation: "Nota de empenho"
         future: "Nota de comprometimento futuro"
@@ -101,7 +106,12 @@ pt-BR:
         operations: "Acompanhamento operacional"
         view_details: "Ver detalhes"
     form:
+      navigation: "Seções do formulário do contrato"
+      tab_alerts:
+        one: "%{count} pendência nesta seção"
+        other: "%{count} pendências nesta seção"
       no_invoice: "Sem nota fiscal associada"
+      select_measurement: "Selecione uma medição"
       no_adjustment_index: "Sem índice de reajuste"
       sections:
         identification: "Identificação"
@@ -128,6 +138,7 @@ pt-BR:
           adjustment_start_date: "Data da primeira incidência do reajuste. O cálculo parte desta data, e não do início do contrato."
           description: "Descreva o objeto contratado, o fornecedor e outras informações relevantes para identificação do contrato."
           deadline_notification_days: "Quantidade de dias de antecedência para avisar gestores e fiscais sobre o término do contrato e o vencimento de notas fiscais."
+          measurement_evaluation_business_days: "Prazo, em dias úteis (segunda a sexta), para o gestor ou fiscal avaliar uma nova medição."
         contract_measurement:
           number: "Identificador sequencial ou número oficial da medição."
           measured_on: "Data de referência ou fechamento da medição dos serviços executados."
@@ -137,6 +148,7 @@ pt-BR:
           invoice_id: "Nota fiscal emitida para esta medição, se já estiver cadastrada."
           description: "Registre o período medido, serviços executados, glosas ou observações da fiscalização."
         contract_invoice:
+          measurement_id: "Medição obrigatoriamente associada a esta nota fiscal."
           number: "Número da nota fiscal conforme o documento emitido pelo fornecedor."
           gross_amount: "Valor total da nota fiscal antes das retenções tributárias."
           issued_on: "Data de emissão indicada na nota fiscal."
@@ -232,6 +244,11 @@ pt-BR:
       label_plural: "Medições"
       new: "Nova medição"
       edit: "Editar medição"
+      approval_forbidden: "Somente gestores ou fiscais ativos deste contrato podem realizar o ateste positivo da medição."
+    adjustments:
+      label: "Reajustes"
+    operational_tabs:
+      navigation: "Cadastros e acompanhamento do contrato"
     invoices:
       label_plural: "Notas fiscais"
       new: "Nova nota fiscal"
@@ -267,10 +284,16 @@ pt-BR:
       greeting: "Olá, %{name}."
       contract_body: "O contrato %{contract} terá sua vigência encerrada em %{date}."
       invoice_body: "A nota fiscal %{invoice} do contrato %{contract} vencerá em %{date}."
+      measurement_created_body: "A medição %{measurement} do contrato %{contract} foi cadastrada e deve ser avaliada até %{date}."
+      measurement_evaluation_due_body: "O prazo de avaliação da medição %{measurement} do contrato %{contract} termina em %{date}."
+      commitment_consumption_body: "O empenho %{commitment} do contrato %{contract} atingiu %{percentage}% de consumo."
       open_contract: "Abrir contrato"
       subject:
         contract: "Contrato %{contract} vence em %{date}"
         invoice: "Nota fiscal %{invoice} do contrato %{contract} vence em %{date}"
+        measurement_created: "Nova medição %{measurement} no contrato %{contract}"
+        measurement_evaluation_due: "Medição %{measurement} aguarda avaliação até %{date}"
+        commitment_consumption: "Empenho %{commitment} atingiu %{percentage}% de consumo"
   activerecord:
     errors:
       models:
@@ -280,6 +303,10 @@ pt-BR:
               greater_than_or_equal_to_issued_on: "deve ser igual ou posterior à data de emissão"
             net_amount:
               less_than_or_equal_to_gross_amount: "deve ser menor ou igual ao valor bruto"
+        contract_measurement:
+          attributes:
+            approved_by:
+              not_contract_responsible: "deve ser um gestor ou fiscal ativo do contrato"
         contract_budget_commitment:
           attributes:
             monthly_distribution:
@@ -306,6 +333,7 @@ pt-BR:
         contract_adjustment_index_type_id: "Tipo de índice de reajuste"
         adjustment_start_date: "Data de início do reajuste"
         deadline_notification_days: "Notificar com antecedência (dias)"
+        measurement_evaluation_business_days: "Prazo para avaliar medição (dias úteis)"
         total_amount: "Valor atualizado"
         paid_amount: "Pago"
         balance: "Saldo"
@@ -321,6 +349,8 @@ pt-BR:
         invoice_id: "Nota fiscal"
         description: "Descrição"
       contract_invoice:
+        measurement: "Medição"
+        measurement_id: "Medição"
         number: "Nº da nota fiscal"
         gross_amount: "Valor bruto"
         issued_on: "Data de emissão"

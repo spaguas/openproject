@@ -17,44 +17,25 @@
 
   <% if commitments.any? %>
     <div class="contract-dashboard__table-scroll">
-      <table class="generic-table">
+      <table class="generic-table contract-commitments__matrix">
         <thead>
           <tr>
-            <th><%= ContractBudgetCommitment.human_attribute_name(:kind) %></th>
-            <th><%= ContractBudgetCommitment.human_attribute_name(:number) %></th>
-            <th><%= ContractBudgetCommitment.human_attribute_name(:fiscal_year) %></th>
+            <th><%= t("contract_management.commitments.table.year") %></th>
+            <th><%= t("contract_management.commitments.table.type") %></th>
+            <% ContractBudgetCommitment::MONTHS.each do |month| %>
+              <th class="contract-commitments__amount"><%= I18n.t("date.abbr_month_names")[month] %></th>
+            <% end %>
             <th><%= ContractBudgetCommitment.human_attribute_name(:total_amount) %></th>
-            <th><%= ContractBudgetCommitment.human_attribute_name(:consumed_amount) %></th>
-            <th><%= ContractBudgetCommitment.human_attribute_name(:remaining_amount) %></th>
-            <th><%= ContractBudgetCommitment.human_attribute_name(:execution_percentage) %></th>
-            <th><%= ContractBudgetCommitment.human_attribute_name(:status) %></th>
-            <th><%= ContractBudgetCommitment.human_attribute_name(:responsible) %></th>
-            <th></th>
+            <th><%= t("contract_management.commitments.table.total_consumption") %></th>
           </tr>
         </thead>
         <tbody>
           <% commitments.each do |commitment| %>
             <tr class="<%= "contract-commitments__alert" if commitment.alert? %>">
-              <td><%= t("contract_management.commitments.kinds.#{commitment.kind}") %></td>
-              <td><strong><%= commitment.number %></strong></td>
               <td><%= commitment.fiscal_year %></td>
-              <td><%= number_to_currency(commitment.total_amount) %></td>
-              <td><%= number_to_currency(commitment.consumed_amount) %></td>
-              <td><%= number_to_currency(commitment.remaining_amount) %></td>
-              <td>
-                <div class="contract-commitments__progress" role="progressbar"
-                     aria-valuemin="0" aria-valuemax="100"
-                     aria-valuenow="<%= commitment.execution_percentage %>">
-                  <span style="width: <%= [commitment.execution_percentage, 100].min %>%"></span>
-                </div>
-                <%= number_to_percentage(commitment.execution_percentage, precision: 1) %>
-                <% if commitment.alert? %>
-                  <span class="contract-commitments__alert-label"><%= t("contract_management.commitments.consumption_alert") %></span>
-                <% end %>
-              </td>
-              <td><%= t("contract_management.commitments.statuses.#{commitment.status}") %></td>
-              <td><%= commitment.responsible.name %></td>
-              <td>
+              <td class="contract-commitments__document">
+                <strong><%= t("contract_management.commitments.kinds.#{commitment.kind}") %></strong>
+                <span><%= commitment.number %></span>
                 <% if User.current.allowed_in_project?(:manage_contracts, @project) %>
                   <% if commitment.future? && commitment.remaining_amount.positive? %>
                     <%= link_to t("contract_management.commitments.convert"),
@@ -73,11 +54,21 @@
                   <% end %>
                 <% end %>
               </td>
-            </tr>
-            <tr class="contract-commitments__months">
-              <td colspan="10">
-                <% ContractBudgetCommitment::MONTHS.each do |month| %>
-                  <span><strong><%= I18n.t("date.abbr_month_names")[month] %></strong> <%= number_to_currency(commitment.month_amount(month)) %></span>
+              <% ContractBudgetCommitment::MONTHS.each do |month| %>
+                <td class="contract-commitments__amount"><%= number_to_currency(commitment.month_amount(month)) %></td>
+              <% end %>
+              <td class="contract-commitments__amount contract-commitments__total">
+                <strong><%= number_to_currency(commitment.total_amount) %></strong>
+              </td>
+              <td class="contract-commitments__consumption">
+                <div class="contract-commitments__progress" role="progressbar"
+                     aria-valuemin="0" aria-valuemax="100"
+                     aria-valuenow="<%= commitment.execution_percentage %>">
+                  <span style="width: <%= [commitment.execution_percentage, 100].min %>%"></span>
+                </div>
+                <strong><%= number_to_percentage(commitment.execution_percentage, precision: 1) %></strong>
+                <% if commitment.alert? %>
+                  <span class="contract-commitments__alert-label"><%= t("contract_management.commitments.consumption_alert") %></span>
                 <% end %>
               </td>
             </tr>

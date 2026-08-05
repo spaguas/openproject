@@ -19,6 +19,7 @@ class ContractBudgetCommitment < ApplicationRecord
            foreign_key: :budget_commitment_id,
            inverse_of: :budget_commitment,
            dependent: :nullify
+  has_many :contract_notifications, as: :subject, dependent: :destroy
 
   normalizes :number, with: ->(value) { OpenProject::RemoveInvisibleCharacters.call(value)&.strip }
 

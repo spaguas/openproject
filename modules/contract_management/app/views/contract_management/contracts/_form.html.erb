@@ -4,7 +4,56 @@
               url: @contract.persisted? ? project_contract_management_contract_path(@project, @contract) : project_contract_management_contracts_path(@project),
               method: @contract.persisted? ? :patch : :post,
               html: { class: "form contract-management-form" } do |form| %>
-  <fieldset class="form--fieldset contract-management-form--section">
+  <div class="contract-management-form__tabs"
+       data-controller="contract-form-tabs"
+       data-action="invalid->contract-form-tabs#revealInvalid:capture input->contract-form-tabs#refresh change->contract-form-tabs#refresh"
+       data-contract-form-tabs-alert-one="<%= t("contract_management.form.tab_alerts.one", count: "__COUNT__") %>"
+       data-contract-form-tabs-alert-other="<%= t("contract_management.form.tab_alerts.other", count: "__COUNT__") %>">
+    <div class="contract-management-form__tab-list"
+         role="tablist"
+         aria-label="<%= t("contract_management.form.navigation") %>">
+      <% section_attributes = {
+           "identification" => %i[number sei_process_number payment_sei_process_number],
+           "term" => %i[start_date end_date duration_months],
+           "financial" => %i[amount contract_adjustment_index_type_id adjustment_start_date],
+           "details" => %i[description deadline_notification_days measurement_evaluation_business_days]
+         } %>
+      <% %w[identification term financial details].each_with_index do |section, index| %>
+        <% error_count = (@contract.errors.attribute_names.map(&:to_sym) & section_attributes.fetch(section)).size %>
+        <button type="button"
+                id="contract-form-tab-<%= section %>"
+                class="contract-management-form__tab"
+                role="tab"
+                aria-controls="contract-form-panel-<%= section %>"
+                aria-selected="<%= index.zero? %>"
+                tabindex="<%= index.zero? ? 0 : -1 %>"
+                data-contract-form-tabs-target="tab"
+                data-contract-form-tabs-tab="<%= section %>"
+                data-action="click->contract-form-tabs#select keydown->contract-form-tabs#navigate"
+                data-contract-form-tabs-tab-param="<%= section %>">
+          <span class="contract-management-form__tab-step"><%= index + 1 %></span>
+          <span><%= t("contract_management.form.sections.#{section}") %></span>
+          <span class="contract-management-form__tab-badge"
+                <%= "hidden" if error_count.zero? %>
+                data-contract-form-tabs-target="badge"
+                data-contract-form-tabs-badge="<%= section %>"
+                data-server-error-count="<%= error_count %>">
+            <span aria-hidden="true">!</span>
+            <span aria-hidden="true" data-badge-count><%= error_count %></span>
+            <span class="sr-only" data-badge-label>
+              <%= t("contract_management.form.tab_alerts", count: error_count) unless error_count.zero? %>
+            </span>
+          </span>
+        </button>
+      <% end %>
+    </div>
+
+  <fieldset id="contract-form-panel-identification"
+            class="form--fieldset contract-management-form--section"
+            role="tabpanel"
+            aria-labelledby="contract-form-tab-identification"
+            data-contract-form-tabs-target="panel"
+            data-contract-form-tabs-panel="identification">
     <legend class="form--fieldset-legend"><%= t("contract_management.form.sections.identification") %></legend>
     <div class="contract-management-form--grid">
     <% %i[number sei_process_number payment_sei_process_number].each do |attribute| %>
@@ -21,7 +70,12 @@
     </div>
   </fieldset>
 
-  <fieldset class="form--fieldset contract-management-form--section">
+  <fieldset id="contract-form-panel-term"
+            class="form--fieldset contract-management-form--section"
+            role="tabpanel"
+            aria-labelledby="contract-form-tab-term"
+            data-contract-form-tabs-target="panel"
+            data-contract-form-tabs-panel="term">
     <legend class="form--fieldset-legend"><%= t("contract_management.form.sections.term") %></legend>
     <div class="contract-management-form--grid">
     <% %i[start_date end_date].each do |attribute| %>
@@ -39,7 +93,12 @@
     </div>
   </fieldset>
 
-  <fieldset class="form--fieldset contract-management-form--section">
+  <fieldset id="contract-form-panel-financial"
+            class="form--fieldset contract-management-form--section"
+            role="tabpanel"
+            aria-labelledby="contract-form-tab-financial"
+            data-contract-form-tabs-target="panel"
+            data-contract-form-tabs-panel="financial">
     <legend class="form--fieldset-legend"><%= t("contract_management.form.sections.financial") %></legend>
     <div class="contract-management-form--grid">
     <div class="form--field -required">
@@ -65,7 +124,12 @@
     </div>
   </fieldset>
 
-  <fieldset class="form--fieldset contract-management-form--section">
+  <fieldset id="contract-form-panel-details"
+            class="form--fieldset contract-management-form--section"
+            role="tabpanel"
+            aria-labelledby="contract-form-tab-details"
+            data-contract-form-tabs-target="panel"
+            data-contract-form-tabs-panel="details">
     <legend class="form--fieldset-legend"><%= t("contract_management.form.sections.details") %></legend>
     <div class="contract-management-form--grid">
     <div class="form--field -required contract-management-form--wide">
@@ -78,8 +142,14 @@
       <span class="form--field-container"><%= form.number_field :deadline_notification_days, required: true, min: 0, class: "form--text-field" %></span>
       <span class="form--field-instructions"><%= t("contract_management.form.hints.public_contract.deadline_notification_days") %></span>
     </div>
+    <div class="form--field -required">
+      <%= form.label :measurement_evaluation_business_days, class: "form--label" %>
+      <span class="form--field-container"><%= form.number_field :measurement_evaluation_business_days, required: true, min: 0, class: "form--text-field" %></span>
+      <span class="form--field-instructions"><%= t("contract_management.form.hints.public_contract.measurement_evaluation_business_days") %></span>
+    </div>
     </div>
   </fieldset>
+  </div>
 
   <div class="contract-management-form--actions">
     <%= styled_button_tag t(@contract.persisted? ? :button_save : :button_create), class: "-primary" %>

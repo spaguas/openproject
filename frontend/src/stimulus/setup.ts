@@ -37,6 +37,8 @@ import BudgetDashboardChartsController from './controllers/dynamic/overviews/bud
 import ProjectInsightsController from './controllers/dynamic/overviews/project-insights.controller';
 import ContractDashboardController from './controllers/dynamic/contract-dashboard.controller';
 import CommitmentDistributionController from './controllers/dynamic/commitment-distribution.controller';
+import ContractFormTabsController from './controllers/dynamic/contract-form-tabs.controller';
+import ContractSectionTabsController from './controllers/dynamic/contract-section-tabs.controller';
 
 import AutoSubmit from '@stimulus-components/auto-submit';
 import RevealController from '@stimulus-components/reveal';
@@ -106,6 +108,8 @@ OpenProjectStimulusApplication.preregister('overviews--budget-dashboard-charts',
 OpenProjectStimulusApplication.preregister('overviews--project-insights', ProjectInsightsController);
 OpenProjectStimulusApplication.preregister('contract-dashboard', ContractDashboardController);
 OpenProjectStimulusApplication.preregister('commitment-distribution', CommitmentDistributionController);
+OpenProjectStimulusApplication.preregister('contract-form-tabs', ContractFormTabsController);
+OpenProjectStimulusApplication.preregister('contract-section-tabs', ContractSectionTabsController);
 OpenProjectStimulusApplication.preregister('check-all', CheckAllController);
 OpenProjectStimulusApplication.preregister('checkable', CheckableController);
 OpenProjectStimulusApplication.preregister('truncation', TruncationController);

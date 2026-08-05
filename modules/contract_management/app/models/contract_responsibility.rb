@@ -11,7 +11,7 @@ class ContractResponsibility < ApplicationRecord
   validates :user_id, uniqueness: { scope: %i[public_contract_id role starts_on] }
   validate :ends_on_not_before_starts_on
 
-  scope :active_on, ->(date) { where(starts_on: ..date).where(ends_on: nil).or(where(ends_on: date..)) }
+  scope :active_on, ->(date) { where(starts_on: ..date).where("ends_on IS NULL OR ends_on >= ?", date) }
   scope :notifiable, -> { where(notify: true) }
 
   private

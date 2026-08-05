@@ -4,6 +4,7 @@ class ContractInvoice < ApplicationRecord
   STATUSES = %w[pending paid overdue cancelled].freeze
 
   belongs_to :public_contract
+  belongs_to :measurement, class_name: "ContractMeasurement"
   delegate :project, to: :public_contract
   acts_as_attachable view_permission: :view_contracts,
                      delete_permission: :manage_contracts,
@@ -27,6 +28,9 @@ class ContractInvoice < ApplicationRecord
   validates :tax_percentage, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
   validate :due_on_not_before_issued_on
   validate :net_amount_matches_tax
+  validate :measurement_belongs_to_contract
+
+  after_save :synchronize_measurement_invoice
 
   before_validation :recalculate_net_amount, if: -> { gross_amount.present? && tax_percentage.present? }
 
@@ -43,6 +47,20 @@ class ContractInvoice < ApplicationRecord
   end
 
   private
+
+  def measurement_belongs_to_contract
+    return if measurement.blank? || measurement.public_contract_id == public_contract_id
+
+    errors.add :measurement, :invalid
+  end
+
+  def synchronize_measurement_invoice
+    ContractMeasurement
+      .where(invoice_id: id)
+      .where.not(id: measurement_id)
+      .update_all(invoice_id: nil, updated_at: Time.current)
+    measurement.update_columns(invoice_id: id, updated_at: Time.current) unless measurement.invoice_id == id
+  end
 
   def due_on_not_before_issued_on
     return if issued_on.blank? || due_on.blank? || due_on >= issued_on

@@ -1,16 +1,19 @@
 <section id="<%= anchor %>">
-  <h2><%= title %></h2>
-  <% if User.current.allowed_in_project?(:manage_contracts, @project) %>
-    <p><%= link_to t("contract_management.actions.add"), new_path, class: "button -primary" %></p>
-  <% end %>
+  <div class="contract-record-tabs__section-header">
+    <h2><%= title %></h2>
+    <% if User.current.allowed_in_project?(:manage_contracts, @project) %>
+      <%= link_to t("contract_management.actions.add"), new_path, class: "button -primary" %>
+    <% end %>
+  </div>
   <% if records.any? %>
+    <div class="contract-dashboard__table-scroll">
     <table class="generic-table">
       <thead><tr>
         <% case kind
            when :measurement %>
           <th><%= ContractMeasurement.human_attribute_name(:number) %></th><th><%= ContractMeasurement.human_attribute_name(:measured_on) %></th><th><%= ContractMeasurement.human_attribute_name(:amount) %></th><th><%= ContractMeasurement.human_attribute_name(:status) %></th><th><%= ContractMeasurement.human_attribute_name(:invoice) %></th>
         <% when :invoice %>
-          <th><%= ContractInvoice.human_attribute_name(:number) %></th><th><%= ContractInvoice.human_attribute_name(:issued_on) %></th><th><%= ContractInvoice.human_attribute_name(:due_on) %></th><th><%= ContractInvoice.human_attribute_name(:gross_amount) %></th><th><%= ContractInvoice.human_attribute_name(:net_amount) %></th><th><%= ContractInvoice.human_attribute_name(:status) %></th><th><%= ContractInvoice.human_attribute_name(:file) %></th>
+          <th><%= ContractInvoice.human_attribute_name(:measurement) %></th><th><%= ContractInvoice.human_attribute_name(:number) %></th><th><%= ContractInvoice.human_attribute_name(:issued_on) %></th><th><%= ContractInvoice.human_attribute_name(:due_on) %></th><th><%= ContractInvoice.human_attribute_name(:gross_amount) %></th><th><%= ContractInvoice.human_attribute_name(:net_amount) %></th><th><%= ContractInvoice.human_attribute_name(:status) %></th><th><%= ContractInvoice.human_attribute_name(:file) %></th>
         <% when :amendment %>
           <th><%= ContractAmendment.human_attribute_name(:number) %></th><th><%= ContractAmendment.human_attribute_name(:start_date) %></th><th><%= ContractAmendment.human_attribute_name(:duration_months) %></th><th><%= ContractAmendment.human_attribute_name(:amount) %></th>
         <% when :responsibility %>
@@ -27,7 +30,7 @@
                when :measurement %>
               <td><%= record.number %></td><td><%= format_date(record.measured_on) %></td><td><%= number_to_currency(record.amount) %></td><td><%= t("contract_management.statuses.#{record.status}") %></td><td><%= record.invoice&.number || "—" %></td>
             <% when :invoice %>
-              <td><%= record.number %></td><td><%= format_date(record.issued_on) %></td><td><%= format_date(record.due_on) %></td><td><%= number_to_currency(record.gross_amount) %></td><td><%= number_to_currency(record.net_amount) %></td><td><%= t("contract_management.statuses.#{record.status}") %></td>
+              <td><%= record.measurement&.number || "—" %></td><td><%= record.number %></td><td><%= format_date(record.issued_on) %></td><td><%= format_date(record.due_on) %></td><td><%= number_to_currency(record.gross_amount) %></td><td><%= number_to_currency(record.net_amount) %></td><td><%= t("contract_management.statuses.#{record.status}") %></td>
               <td>
                 <% if (attachment = record.attachments.first) %>
                   <%= link_to attachment.filename,
@@ -55,6 +58,7 @@
         <% end %>
       </tbody>
     </table>
+    </div>
   <% else %>
     <p class="op-uc-empty-state"><%= t("contract_management.no_records") %></p>
   <% end %>

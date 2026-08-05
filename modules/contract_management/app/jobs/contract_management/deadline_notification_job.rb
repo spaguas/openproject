@@ -12,6 +12,37 @@ module ContractManagement
 
         notify_contract_deadline(contract, today)
         notify_invoice_deadlines(contract, today)
+        notify_measurement_events(contract, today)
+        notify_commitment_consumption(contract, today)
+      end
+    end
+
+    def notify_measurement_events(contract, today)
+      contract.measurements.where(status: "pending").find_each do |measurement|
+        ContractManagement::NotificationService.new(
+          subject: measurement,
+          kind: "measurement_created",
+          today:
+        ).call
+        next if measurement.evaluation_due_on.blank? || measurement.evaluation_due_on > today
+
+        ContractManagement::NotificationService.new(
+          subject: measurement,
+          kind: "measurement_evaluation_due",
+          today:
+        ).call
+      end
+    end
+
+    def notify_commitment_consumption(contract, today)
+      contract.budget_commitments.appropriations.active.find_each do |commitment|
+        next if commitment.execution_percentage < 95
+
+        ContractManagement::NotificationService.new(
+          subject: commitment,
+          kind: "commitment_consumption",
+          today:
+        ).call
       end
     end
 
