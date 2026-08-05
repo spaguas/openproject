@@ -1,0 +1,99 @@
+<% html_title t("contract_management.label_plural") %>
+
+<%= render(Primer::OpenProject::PageHeader.new) do |header|
+      header.with_title { t("contract_management.label_plural") }
+      header.with_breadcrumbs(
+        [{ href: project_overview_path(@project.id), text: @project.name },
+         t("contract_management.label_plural")]
+      )
+    end %>
+
+<% if User.current.allowed_in_project?(:manage_contracts, @project) %>
+  <%= render(Primer::OpenProject::SubHeader.new) do |subheader|
+        subheader.with_action_button(
+          tag: :a,
+          scheme: :primary,
+          leading_icon: :plus,
+          label: t("contract_management.actions.new_contract"),
+          href: new_project_contract_management_contract_path(@project)
+        ) { t("contract_management.actions.new_contract") }
+        subheader.with_action_button(
+          tag: :a,
+          leading_icon: :graph,
+          label: t("contract_management.adjustment_indices.label_plural"),
+          href: project_contract_management_adjustment_indices_path(@project)
+        ) { t("contract_management.adjustment_indices.label_plural") }
+      end %>
+<% end %>
+
+<% if @expiring_contracts.any? || @due_invoices.any? %>
+  <div class="op-toast -warning">
+    <div class="op-toast--content">
+      <p><strong><%= t("contract_management.alerts.title") %></strong></p>
+      <% @expiring_contracts.each do |contract| %>
+        <p><%= t("contract_management.alerts.contract_expiring", number: contract.number, date: format_date(contract.effective_end_date)) %></p>
+      <% end %>
+      <% @due_invoices.each do |invoice| %>
+        <p><%= t("contract_management.alerts.invoice_due", number: invoice.number, contract: invoice.public_contract.number, date: format_date(invoice.due_on)) %></p>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<% if @contracts.any? %>
+  <table class="generic-table">
+    <thead>
+      <tr>
+        <th><%= PublicContract.human_attribute_name(:number) %></th>
+        <th><%= PublicContract.human_attribute_name(:sei_process_number) %></th>
+        <th><%= PublicContract.human_attribute_name(:period) %></th>
+        <th><%= PublicContract.human_attribute_name(:total_amount) %></th>
+        <th><%= PublicContract.human_attribute_name(:paid_amount) %></th>
+        <th><%= PublicContract.human_attribute_name(:balance) %></th>
+        <th><%= PublicContract.human_attribute_name(:physical_execution_percentage) %></th>
+        <th><%= PublicContract.human_attribute_name(:financial_execution_percentage) %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @contracts.each do |contract| %>
+        <tr>
+          <td><%= link_to contract.number, project_contract_management_contract_path(@project, contract) %></td>
+          <td>
+            <% tooltip_id = "contract-#{contract.id}-sei-processes" %>
+            <span id="<%= tooltip_id %>"
+                  class="contract-management--sei-process"
+                  tabindex="0">
+              <%= contract.sei_process_number %>
+              <%= render Primer::Beta::Octicon.new(icon: :info, size: :small, color: :subtle) %>
+            </span>
+            <%= render Primer::Alpha::Tooltip.new(
+              for_id: tooltip_id,
+              type: :description,
+              direction: :se,
+              text: t(
+                "contract_management.contracts.sei_processes_tooltip",
+                primary: contract.sei_process_number,
+                payment: contract.payment_sei_process_number.presence || t("contract_management.contracts.same_sei_process")
+              )
+            ) %>
+          </td>
+          <td class="contract-management--period">
+            <%= format_date(contract.start_date) %>
+            <span aria-hidden="true">–</span>
+            <%= format_date(contract.effective_end_date) %>
+          </td>
+          <td><%= number_to_currency(contract.total_amount) %></td>
+          <td><%= number_to_currency(contract.paid_amount) %></td>
+          <td><%= number_to_currency(contract.balance) %></td>
+          <td><%= number_to_percentage(contract.physical_execution_percentage, precision: 1) %></td>
+          <td><%= number_to_percentage(contract.financial_execution_percentage, precision: 1) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <%= render(Primer::Beta::Blankslate.new) do |blankslate|
+        blankslate.with_visual_icon(icon: :law)
+        blankslate.with_heading(tag: :h2) { t("contract_management.empty") }
+      end %>
+<% end %>

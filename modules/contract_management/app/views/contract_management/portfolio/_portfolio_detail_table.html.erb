@@ -1,0 +1,52 @@
+<% compact = local_assigns.fetch(:compact, false) %>
+<% if contracts.any? %>
+  <div class="contract-dashboard__table-scroll">
+    <table class="generic-table contract-dashboard__table">
+      <thead>
+        <tr>
+          <th><%= PublicContract.human_attribute_name(:number) %></th>
+          <th><%= t("contract_management.portfolio.project") %></th>
+          <th><%= t("contract_management.portfolio.status") %></th>
+          <th><%= PublicContract.human_attribute_name(:end_date) %></th>
+          <th><%= PublicContract.human_attribute_name(:total_amount) %></th>
+          <th><%= PublicContract.human_attribute_name(:paid_amount) %></th>
+          <th><%= PublicContract.human_attribute_name(:balance) %></th>
+          <% unless compact %><th><%= t("contract_management.portfolio.responsible_people") %></th><% end %>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% contracts.each do |contract| %>
+          <% contract_status = portfolio.status_for(contract) %>
+          <tr>
+            <td><%= link_to contract.number, project_contract_management_contract_path(contract.project, contract) %></td>
+            <td><%= link_to_project contract.project %></td>
+            <td>
+              <span class="contract-dashboard__status contract-dashboard__status--<%= contract_status %>">
+                <%= t("contract_management.portfolio.statuses.#{contract_status}") %>
+              </span>
+            </td>
+            <td><%= format_date(contract.effective_end_date) %></td>
+            <td><%= number_to_currency(contract.total_amount) %></td>
+            <td><%= number_to_currency(contract.paid_amount) %></td>
+            <td><%= number_to_currency(contract.balance) %></td>
+            <% unless compact %>
+              <td><%= contract.responsibilities.map { |responsibility| responsibility.user.name }.uniq.join(", ").presence || "—" %></td>
+            <% end %>
+            <td>
+              <% if portfolio.manageable?(contract) %>
+                <%= link_to t(:button_edit), edit_project_contract_management_contract_path(contract.project, contract) %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <%= render(Primer::Beta::Blankslate.new) do |blankslate|
+        blankslate.with_visual_icon(icon: :law)
+        blankslate.with_heading(tag: :h3) { t("contract_management.portfolio.empty") }
+        blankslate.with_description { t("contract_management.portfolio.empty_description") }
+      end %>
+<% end %>

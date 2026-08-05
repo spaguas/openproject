@@ -1,0 +1,9 @@
+<% html_title t("contract_management.adjustment_index_types.edit") %>
+<%= render(Primer::OpenProject::PageHeader.new) do |header|
+      header.with_title { t("contract_management.adjustment_index_types.edit") }
+      header.with_breadcrumbs(
+        [{ href: project_contract_management_adjustment_index_types_path(@project), text: t("contract_management.adjustment_index_types.label_plural") },
+         @adjustment_index_type.name]
+      )
+    end %>
+<%= render "form" %>

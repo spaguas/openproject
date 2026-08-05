@@ -1,0 +1,236 @@
+<% title = t("contract_management.portfolio.title") %>
+<% html_title title %>
+<% status_counts = @portfolio.status_breakdown %>
+<% total_contracts = @portfolio.total_contracts %>
+<% project_breakdown = @portfolio.project_breakdown %>
+<% status_options = ContractManagement::ContractPortfolioQuery::STATUSES.map do |status|
+     [t("contract_management.portfolio.statuses.#{status}"), status]
+   end %>
+<% active_stop = total_contracts.zero? ? 0 : (status_counts["active"] * 360.0 / total_contracts).round(1) %>
+<% expiring_stop = total_contracts.zero? ? 0 : (active_stop + (status_counts["expiring"] * 360.0 / total_contracts)).round(1) %>
+<% adjusted_context = t(
+     "contract_management.portfolio.metrics.adjusted",
+     value: number_to_currency(@portfolio.adjusted_total_amount)
+   ) %>
+<% overdue_context = t(
+     "contract_management.portfolio.metrics.overdue_count",
+     count: @portfolio.overdue_invoices
+   ) %>
+<% status_aria = t(
+     "contract_management.portfolio.insights.status_aria",
+     active: status_counts["active"],
+     expiring: status_counts["expiring"],
+     expired: status_counts["expired"]
+   ) %>
+
+<div class="contract-dashboard" data-controller="contract-dashboard">
+  <%= render(Primer::OpenProject::PageHeader.new) do |header|
+        header.with_title { title }
+        header.with_description { t("contract_management.portfolio.description") }
+        header.with_breadcrumbs([title])
+      end %>
+
+  <section class="contract-dashboard__filters" aria-labelledby="contract-dashboard-filters">
+    <%= form_with url: contract_management_portfolio_path,
+                  method: :get,
+                  local: true,
+                  html: { class: "contract-dashboard__filter-form" } do |form| %>
+      <h2 id="contract-dashboard-filters" class="contract-dashboard__section-title">
+        <%= t("contract_management.portfolio.filters.title") %>
+      </h2>
+      <div class="contract-dashboard__filter-grid">
+        <div class="form--field">
+          <%= form.label :query, t("contract_management.portfolio.filters.query"), class: "form--label" %>
+          <%= form.search_field :query, value: @portfolio.query, class: "form--text-field" %>
+        </div>
+        <div class="form--field">
+          <%= form.label :project_id, t("contract_management.portfolio.filters.project"), class: "form--label" %>
+          <%= form.select :project_id,
+                          @portfolio.projects.map { |project| [project.name, project.id] },
+                          { include_blank: t("contract_management.portfolio.filters.all_projects"),
+                            selected: @portfolio.project_id },
+                          class: "form--select" %>
+        </div>
+        <div class="form--field">
+          <%= form.label :status, t("contract_management.portfolio.filters.status"), class: "form--label" %>
+          <%= form.select :status,
+                          status_options,
+                          { include_blank: t("contract_management.portfolio.filters.all_statuses"),
+                            selected: @portfolio.status },
+                          class: "form--select" %>
+        </div>
+        <div class="form--field">
+          <%= form.label :ending_from, t("contract_management.portfolio.filters.ending_from"), class: "form--label" %>
+          <%= form.date_field :ending_from, value: @portfolio.ending_from, class: "form--text-field" %>
+        </div>
+        <div class="form--field">
+          <%= form.label :ending_to, t("contract_management.portfolio.filters.ending_to"), class: "form--label" %>
+          <%= form.date_field :ending_to, value: @portfolio.ending_to, class: "form--text-field" %>
+        </div>
+      </div>
+      <div class="contract-dashboard__filter-actions">
+        <%= styled_button_tag t("contract_management.portfolio.filters.apply"), class: "-primary" %>
+        <%= link_to t("contract_management.portfolio.filters.clear"), contract_management_portfolio_path, class: "button" %>
+        <% if Project.allowed_to(User.current, :manage_contracts).exists? %>
+          <%= link_to t("contract_management.portfolio.new_contract"),
+                      new_contract_management_portfolio_contract_path,
+                      class: "button -with-icon icon-add" %>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="contract-dashboard__kpis" aria-label="<%= t("contract_management.portfolio.insights.summary") %>">
+    <% [
+         ["all", "law", t("contract_management.portfolio.metrics.contracts"), total_contracts, nil],
+         ["financial", "money", t("contract_management.portfolio.metrics.total_amount"),
+          number_to_currency(@portfolio.total_amount), adjusted_context],
+         ["financial", "checkmark", t("contract_management.portfolio.metrics.paid"),
+          number_to_currency(@portfolio.paid_amount), number_to_percentage(@portfolio.paid_percentage, precision: 1)],
+         ["attention", "warning", t("contract_management.portfolio.metrics.attention"),
+          @portfolio.attention_contracts.size, overdue_context]
+       ].each do |key, icon, label, value, context| %>
+      <button type="button"
+              class="contract-dashboard__kpi"
+              data-action="contract-dashboard#open"
+              data-contract-dashboard-key-param="<%= key %>"
+              data-contract-dashboard-title-param="<%= label %>">
+        <span class="contract-dashboard__kpi-icon icon-<%= icon %>" aria-hidden="true"></span>
+        <span class="contract-dashboard__kpi-label"><%= label %></span>
+        <strong class="contract-dashboard__kpi-value"><%= value %></strong>
+        <% if context %><span class="contract-dashboard__kpi-context"><%= context %></span><% end %>
+      </button>
+    <% end %>
+  </section>
+
+  <div class="contract-dashboard__visual-grid">
+    <section class="contract-dashboard__card" aria-labelledby="contract-status-title">
+      <div class="contract-dashboard__card-header">
+        <div>
+          <p class="contract-dashboard__eyebrow"><%= t("contract_management.portfolio.insights.portfolio") %></p>
+          <h2 id="contract-status-title"><%= t("contract_management.portfolio.insights.status_title") %></h2>
+        </div>
+      </div>
+      <div class="contract-dashboard__status-layout">
+        <div class="contract-dashboard__donut"
+             role="img"
+             aria-label="<%= status_aria %>"
+             style="--active-stop: <%= active_stop %>deg; --expiring-stop: <%= expiring_stop %>deg">
+          <span><strong><%= total_contracts %></strong><%= t("contract_management.portfolio.metrics.contracts") %></span>
+        </div>
+        <div class="contract-dashboard__legend">
+          <% ContractManagement::ContractPortfolioQuery::STATUSES.each do |status| %>
+            <button type="button"
+                    class="contract-dashboard__legend-row"
+                    data-action="contract-dashboard#open"
+                    data-contract-dashboard-key-param="status-<%= status %>"
+                    data-contract-dashboard-title-param="<%= t("contract_management.portfolio.statuses.#{status}") %>">
+              <span class="contract-dashboard__legend-dot contract-dashboard__legend-dot--<%= status %>"></span>
+              <span><%= t("contract_management.portfolio.statuses.#{status}") %></span>
+              <strong><%= status_counts[status] %></strong>
+            </button>
+          <% end %>
+        </div>
+      </div>
+    </section>
+
+    <section class="contract-dashboard__card" aria-labelledby="contract-finance-title">
+      <div class="contract-dashboard__card-header">
+        <div>
+          <p class="contract-dashboard__eyebrow"><%= t("contract_management.portfolio.insights.execution") %></p>
+          <h2 id="contract-finance-title"><%= t("contract_management.portfolio.insights.financial_title") %></h2>
+        </div>
+        <button type="button"
+                class="contract-dashboard__detail-link"
+                data-action="contract-dashboard#open"
+                data-contract-dashboard-key-param="financial"
+                data-contract-dashboard-title-param="<%= t("contract_management.portfolio.insights.financial_title") %>">
+          <%= t("contract_management.portfolio.insights.view_details") %>
+        </button>
+      </div>
+      <div class="contract-dashboard__progress-list">
+        <% [
+             [t("contract_management.portfolio.metrics.measured"), @portfolio.measured_amount, @portfolio.measured_percentage],
+             [t("contract_management.portfolio.metrics.invoiced"), @portfolio.invoiced_amount, @portfolio.invoiced_percentage],
+             [t("contract_management.portfolio.metrics.paid"), @portfolio.paid_amount, @portfolio.paid_percentage]
+           ].each do |label, amount, percentage| %>
+          <div class="contract-dashboard__progress-item">
+            <div><span><%= label %></span><strong><%= number_to_currency(amount) %></strong></div>
+            <div class="contract-dashboard__progress" role="progressbar" aria-valuenow="<%= percentage %>" aria-valuemin="0" aria-valuemax="100">
+              <span style="width: <%= [percentage, 100].min %>%"></span>
+            </div>
+            <small><%= number_to_percentage(percentage, precision: 1) %></small>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  </div>
+
+  <section class="contract-dashboard__card" aria-labelledby="contract-project-title">
+    <div class="contract-dashboard__card-header">
+      <div>
+        <p class="contract-dashboard__eyebrow"><%= t("contract_management.portfolio.insights.distribution") %></p>
+        <h2 id="contract-project-title"><%= t("contract_management.portfolio.insights.project_title") %></h2>
+      </div>
+    </div>
+    <% maximum_project_amount = project_breakdown.pluck(:total_amount).max.to_d %>
+    <div class="contract-dashboard__project-chart">
+      <% project_breakdown.first(8).each do |item| %>
+        <% width = maximum_project_amount.positive? ? ((item[:total_amount] / maximum_project_amount) * 100).round(1) : 0 %>
+        <button type="button"
+                class="contract-dashboard__project-row"
+                data-action="contract-dashboard#open"
+                data-contract-dashboard-key-param="project-<%= item[:project].id %>"
+                data-contract-dashboard-title-param="<%= item[:project].name %>">
+          <span class="contract-dashboard__project-name"><%= item[:project].name %></span>
+          <span class="contract-dashboard__project-track"><span style="width: <%= width %>%"></span></span>
+          <strong><%= number_to_currency(item[:total_amount]) %></strong>
+          <small><%= t("contract_management.portfolio.metrics.contract_count", count: item[:count]) %></small>
+        </button>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="contract-dashboard__card contract-dashboard__table-card" aria-labelledby="contract-list-title">
+    <div class="contract-dashboard__card-header">
+      <div>
+        <p class="contract-dashboard__eyebrow"><%= t("contract_management.portfolio.insights.operations") %></p>
+        <h2 id="contract-list-title"><%= t("contract_management.portfolio.relation") %></h2>
+      </div>
+    </div>
+    <%= render "portfolio_detail_table", contracts: @portfolio.contracts, portfolio: @portfolio %>
+  </section>
+
+  <% {
+       "all" => @portfolio.contracts,
+       "attention" => @portfolio.attention_contracts,
+       "financial" => @portfolio.contracts
+     }.each do |key, contracts| %>
+    <template data-contract-dashboard-target="template" data-detail-key="<%= key %>">
+      <%= render "portfolio_detail_table", contracts:, portfolio: @portfolio, compact: true %>
+    </template>
+  <% end %>
+  <% ContractManagement::ContractPortfolioQuery::STATUSES.each do |status| %>
+    <template data-contract-dashboard-target="template" data-detail-key="status-<%= status %>">
+      <%= render "portfolio_detail_table", contracts: @portfolio.contracts_for_status(status), portfolio: @portfolio, compact: true %>
+    </template>
+  <% end %>
+  <% project_breakdown.each do |item| %>
+    <template data-contract-dashboard-target="template" data-detail-key="project-<%= item[:project].id %>">
+      <%= render "portfolio_detail_table", contracts: item[:contracts], portfolio: @portfolio, compact: true %>
+    </template>
+  <% end %>
+
+  <dialog class="contract-dashboard__dialog"
+          data-contract-dashboard-target="dialog"
+          data-action="click->contract-dashboard#closeFromBackdrop cancel->contract-dashboard#close">
+    <div class="contract-dashboard__dialog-header">
+      <h2 data-contract-dashboard-target="dialogTitle"></h2>
+      <button type="button"
+              class="contract-dashboard__dialog-close"
+              aria-label="<%= t(:button_close) %>"
+              data-action="contract-dashboard#close">×</button>
+    </div>
+    <div class="contract-dashboard__dialog-body" data-contract-dashboard-target="dialogContent"></div>
+  </dialog>
+</div>

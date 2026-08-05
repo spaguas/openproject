@@ -1,0 +1,58 @@
+<%= error_messages_for @adjustment_index_type %>
+
+<%= form_with model: @adjustment_index_type,
+              url: @adjustment_index_type.persisted? ?
+                project_contract_management_adjustment_index_type_path(@project, @adjustment_index_type) :
+                project_contract_management_adjustment_index_types_path(@project),
+              method: @adjustment_index_type.persisted? ? :patch : :post,
+              html: { class: "form contract-management-form" } do |form| %>
+  <fieldset class="form--fieldset contract-management-form--section">
+    <legend class="form--fieldset-legend"><%= t("contract_management.adjustment_index_types.data") %></legend>
+    <div class="contract-management-form--grid">
+      <div class="form--field -required">
+        <%= form.label :name, class: "form--label" %>
+        <span class="form--field-container">
+          <%= form.text_field :name, required: true, class: "form--text-field" %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_adjustment_index_type.name") %></span>
+      </div>
+
+      <div class="form--field -required">
+        <%= form.label :external_series_code, class: "form--label" %>
+        <span class="form--field-container">
+          <%= form.number_field :external_series_code, required: true, min: 1, class: "form--text-field" %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_adjustment_index_type.external_series_code") %></span>
+      </div>
+
+      <div class="form--field -required">
+        <%= form.label :periodicity, class: "form--label" %>
+        <span class="form--field-container">
+          <%= form.select :periodicity,
+                          ContractAdjustmentIndexType::PERIODICITIES.map { |periodicity| [t("contract_management.periodicities.#{periodicity}"), periodicity] },
+                          {},
+                          required: true,
+                          class: "form--select" %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_adjustment_index_type.periodicity") %></span>
+      </div>
+
+      <div class="form--field">
+        <%= form.label :active, class: "form--label" %>
+        <span class="form--field-container"><%= form.check_box :active %></span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_adjustment_index_type.active") %></span>
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="contract-management-form--actions">
+    <%= styled_button_tag t(@adjustment_index_type.persisted? ? :button_save : :button_create), class: "-primary" %>
+    <%= link_to t(:button_cancel), project_contract_management_adjustment_index_types_path(@project), class: "button" %>
+    <% if @adjustment_index_type.persisted? %>
+      <%= link_to t(:button_delete),
+                  project_contract_management_adjustment_index_type_path(@project, @adjustment_index_type),
+                  data: { turbo_confirm: t("contract_management.confirm_delete"), turbo_method: :delete },
+                  class: "button -danger" %>
+    <% end %>
+  </div>
+<% end %>

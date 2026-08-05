@@ -43,7 +43,9 @@ apt-get install -yq --no-install-recommends \
   libffi8 \
   unrtf \
   tesseract-ocr \
+  tesseract-ocr-por \
   poppler-utils \
+  zbar-tools \
   catdoc \
   imagemagick \
   libjemalloc2

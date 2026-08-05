@@ -1,0 +1,82 @@
+<section id="budget_commitments" class="contract-commitments">
+  <div class="contract-commitments__header">
+    <div>
+      <h2><%= t("contract_management.commitments.label_plural") %></h2>
+      <p><%= t("contract_management.commitments.alert_configured", percentage: @contract_setting.commitment_consumption_alert_percentage) %></p>
+    </div>
+    <% if User.current.allowed_in_project?(:manage_contracts, @project) %>
+      <%= link_to t("contract_management.commitments.new_appropriation"),
+                  new_project_contract_management_contract_budget_commitment_path(
+                    @project,
+                    @contract,
+                    kind: "appropriation"
+                  ),
+                  class: "button -primary" %>
+    <% end %>
+  </div>
+
+  <% if commitments.any? %>
+    <div class="contract-dashboard__table-scroll">
+      <table class="generic-table contract-commitments__matrix">
+        <thead>
+          <tr>
+            <th><%= t("contract_management.commitments.table.year") %></th>
+            <th><%= t("contract_management.commitments.table.type") %></th>
+            <% ContractBudgetCommitment::MONTHS.each do |month| %>
+              <th class="contract-commitments__amount"><%= I18n.t("date.abbr_month_names")[month] %></th>
+            <% end %>
+            <th><%= ContractBudgetCommitment.human_attribute_name(:total_amount) %></th>
+            <th><%= t("contract_management.commitments.table.total_consumption") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% commitments.each do |commitment| %>
+            <tr class="<%= "contract-commitments__alert" if commitment.alert? %>">
+              <td><%= commitment.fiscal_year %></td>
+              <td class="contract-commitments__document">
+                <strong><%= t("contract_management.commitments.kinds.#{commitment.kind}") %></strong>
+                <span><%= commitment.number %></span>
+                <% if User.current.allowed_in_project?(:manage_contracts, @project) %>
+                  <% if commitment.future? && commitment.remaining_amount.positive? %>
+                    <%= link_to t("contract_management.commitments.convert"),
+                                new_project_contract_management_contract_budget_commitment_conversion_path(
+                                  @project,
+                                  @contract,
+                                  commitment
+                                ) %>
+                  <% else %>
+                    <%= link_to t(:button_edit),
+                                edit_project_contract_management_contract_budget_commitment_path(
+                                  @project,
+                                  @contract,
+                                  commitment
+                                ) %>
+                  <% end %>
+                <% end %>
+              </td>
+              <% ContractBudgetCommitment::MONTHS.each do |month| %>
+                <td class="contract-commitments__amount"><%= number_to_currency(commitment.month_amount(month)) %></td>
+              <% end %>
+              <td class="contract-commitments__amount contract-commitments__total">
+                <strong><%= number_to_currency(commitment.total_amount) %></strong>
+              </td>
+              <td class="contract-commitments__consumption">
+                <div class="contract-commitments__progress" role="progressbar"
+                     aria-valuemin="0" aria-valuemax="100"
+                     aria-valuenow="<%= commitment.execution_percentage %>">
+                  <span style="width: <%= [commitment.execution_percentage, 100].min %>%"></span>
+                </div>
+                <strong><%= number_to_percentage(commitment.execution_percentage, precision: 1) %></strong>
+                <% if commitment.alert? %>
+                  <span class="contract-commitments__alert-label"><%= t("contract_management.commitments.consumption_alert") %></span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="op-uc-empty-state"><%= t("contract_management.no_records") %></p>
+  <% end %>
+</section>

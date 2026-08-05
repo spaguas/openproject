@@ -1,0 +1,765 @@
+.contract-management-form
+  max-width: 1100px
+
+  &__tabs
+    display: grid
+    gap: var(--base-size-16)
+
+  &__tab-list
+    background: var(--bgColor-muted)
+    border: 1px solid var(--borderColor-default)
+    border-radius: var(--borderRadius-large)
+    display: grid
+    gap: var(--base-size-4)
+    grid-template-columns: repeat(4, minmax(0, 1fr))
+    padding: var(--base-size-6)
+
+  &__tab
+    align-items: center
+    background: transparent
+    border: 1px solid transparent
+    border-radius: var(--borderRadius-medium)
+    color: var(--fgColor-muted)
+    cursor: pointer
+    display: flex
+    font: inherit
+    font-weight: var(--base-text-weight-semibold)
+    gap: var(--base-size-8)
+    justify-content: center
+    min-height: 44px
+    padding: var(--base-size-8) var(--base-size-12)
+    text-align: center
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease
+
+    &:hover
+      color: var(--fgColor-default)
+
+    &:focus-visible
+      outline: 2px solid var(--focus-outlineColor)
+      outline-offset: 2px
+
+    &[aria-selected="true"]
+      background: var(--bgColor-default)
+      border-color: var(--borderColor-default)
+      box-shadow: var(--shadow-resting-small)
+      color: var(--fgColor-accent)
+
+  &__tab-step
+    align-items: center
+    background: var(--bgColor-neutral-muted)
+    border-radius: 50%
+    display: inline-flex
+    flex: 0 0 auto
+    font-size: var(--text-body-size-small)
+    height: 24px
+    justify-content: center
+    width: 24px
+
+    [aria-selected="true"] &
+      background: var(--bgColor-accent-muted)
+      color: var(--fgColor-accent)
+
+  &__tab-badge
+    align-items: center
+    background: var(--bgColor-danger-emphasis)
+    border-radius: 999px
+    color: var(--fgColor-onEmphasis)
+    display: inline-flex
+    flex: 0 0 auto
+    font-size: var(--text-body-size-small)
+    font-weight: var(--base-text-weight-semibold)
+    gap: 3px
+    justify-content: center
+    line-height: 20px
+    min-width: 24px
+    padding-inline: var(--base-size-6)
+
+    &[hidden]
+      display: none
+
+  &--section
+    background: var(--bgColor-default)
+    border: 1px solid var(--borderColor-default)
+    border-radius: var(--borderRadius-large)
+    box-shadow: var(--shadow-resting-small)
+    margin: 0
+    min-height: 280px
+    padding: var(--base-size-24) var(--base-size-32) var(--base-size-32)
+
+    &[hidden]
+      display: none
+
+  &--grid
+    display: grid
+    gap: var(--base-size-20) var(--base-size-24)
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+
+    .form--field
+      margin-block-end: 0
+      max-width: none
+
+    .form--field-container,
+    .form--text-field,
+    .form--text-area,
+    .form--select
+      width: 100%
+
+  &--wide
+    grid-column: 1 / -1
+
+  &--actions
+    align-items: center
+    display: flex
+    flex-wrap: wrap
+    gap: var(--base-size-8)
+    padding-block: var(--base-size-8) var(--base-size-24)
+
+.contract-management--sei-process
+  align-items: center
+  cursor: help
+  display: inline-flex
+  gap: var(--base-size-4)
+
+.contract-management--period
+  white-space: nowrap
+
+.contract-record-tabs
+  display: grid
+  gap: var(--base-size-16)
+  margin-block-start: var(--base-size-32)
+  min-width: 0
+
+  &__list
+    background: var(--bgColor-muted)
+    border: 1px solid var(--borderColor-default)
+    border-radius: var(--borderRadius-large)
+    display: flex
+    gap: var(--base-size-4)
+    overflow-x: auto
+    overscroll-behavior-inline: contain
+    padding: var(--base-size-6)
+    scrollbar-width: thin
+
+  &__tab
+    align-items: center
+    background: transparent
+    border: 1px solid transparent
+    border-radius: var(--borderRadius-medium)
+    color: var(--fgColor-muted)
+    cursor: pointer
+    display: inline-flex
+    flex: 1 0 max-content
+    font: inherit
+    font-weight: var(--base-text-weight-semibold)
+    gap: var(--base-size-8)
+    justify-content: center
+    min-height: 48px
+    min-width: 132px
+    padding: var(--base-size-8) var(--base-size-12)
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease
+
+    &:hover
+      color: var(--fgColor-default)
+
+    &:focus-visible
+      outline: 2px solid var(--focus-outlineColor)
+      outline-offset: 2px
+
+    &[aria-selected="true"]
+      background: var(--bgColor-default)
+      border-color: var(--borderColor-default)
+      box-shadow: var(--shadow-resting-small)
+      color: var(--fgColor-accent)
+
+  &__icon
+    font-size: 18px
+
+  &__panel
+    background: var(--bgColor-default)
+    border: 1px solid var(--borderColor-default)
+    border-radius: var(--borderRadius-large)
+    box-shadow: var(--shadow-resting-small)
+    min-width: 0
+    padding: var(--base-size-24)
+
+    &[hidden]
+      display: none
+
+    > section
+      margin: 0
+
+    > section > h2
+      margin-block-start: 0
+
+  &__section-header
+    align-items: center
+    display: flex
+    gap: var(--base-size-16)
+    justify-content: space-between
+    margin-block-end: var(--base-size-20)
+
+    h2
+      margin: 0
+
+.contract-adjustments
+  &__grid
+    display: grid
+    gap: var(--base-size-16)
+    grid-template-columns: repeat(4, minmax(0, 1fr))
+
+    > div
+      background: var(--bgColor-muted)
+      border: 1px solid var(--borderColor-muted)
+      border-radius: var(--borderRadius-medium)
+      display: grid
+      gap: var(--base-size-8)
+      padding: var(--base-size-16)
+
+    span
+      color: var(--fgColor-muted)
+      font-size: var(--text-body-size-small)
+
+    strong
+      font-size: var(--text-title-size-medium)
+
+.contract-dashboard
+  --dashboard-active: var(--fgColor-success, #1a7f37)
+  --dashboard-expiring: var(--fgColor-attention, #bf8700)
+  --dashboard-expired: var(--fgColor-danger, #cf222e)
+  --dashboard-accent: var(--fgColor-accent, #0969da)
+  display: grid
+  gap: var(--base-size-24)
+  padding-block-end: var(--base-size-32)
+
+  &__filters,
+  &__card,
+  &__kpi
+    background: var(--bgColor-default)
+    border: 1px solid var(--borderColor-default)
+    border-radius: var(--borderRadius-large, 12px)
+    box-shadow: var(--shadow-resting-small, 0 1px 3px rgba(31, 35, 40, .08))
+
+  &__filters
+    padding: var(--base-size-20) var(--base-size-24)
+
+  &__section-title
+    font-size: var(--text-body-size-medium)
+    margin: 0 0 var(--base-size-16)
+
+  &__filter-grid
+    align-items: end
+    display: grid
+    gap: var(--base-size-16)
+    grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(150px, 1fr))
+
+    .form--field
+      margin: 0
+      max-width: none
+
+    .form--text-field,
+    .form--select
+      width: 100%
+
+  &__filter-actions
+    align-items: center
+    display: flex
+    flex-wrap: wrap
+    gap: var(--base-size-8)
+    margin-block-start: var(--base-size-16)
+
+  &__kpis
+    display: grid
+    gap: var(--base-size-16)
+    grid-template-columns: repeat(4, minmax(0, 1fr))
+
+  &__kpi
+    color: var(--fgColor-default)
+    cursor: pointer
+    display: grid
+    gap: var(--base-size-4)
+    min-height: 150px
+    padding: var(--base-size-20)
+    position: relative
+    text-align: start
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease
+
+    &:hover,
+    &:focus-visible
+      border-color: var(--dashboard-accent)
+      box-shadow: var(--shadow-resting-medium, 0 4px 12px rgba(31, 35, 40, .12))
+      transform: translateY(-2px)
+
+  &__kpi-icon
+    align-items: center
+    background: var(--bgColor-accent-muted, #ddf4ff)
+    border-radius: 10px
+    color: var(--dashboard-accent)
+    display: inline-flex
+    font-size: 18px
+    height: 36px
+    justify-content: center
+    margin-block-end: var(--base-size-8)
+    width: 36px
+
+  &__kpi-label,
+  &__kpi-context,
+  &__eyebrow
+    color: var(--fgColor-muted)
+
+  &__kpi-value
+    font-size: clamp(1.35rem, 2vw, 1.8rem)
+    line-height: 1.2
+
+  &__kpi-context
+    font-size: var(--text-body-size-small)
+
+  &__visual-grid
+    display: grid
+    gap: var(--base-size-16)
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+
+  &__card
+    min-width: 0
+    padding: var(--base-size-24)
+
+  &__card-header
+    align-items: flex-start
+    display: flex
+    gap: var(--base-size-16)
+    justify-content: space-between
+    margin-block-end: var(--base-size-24)
+
+    h2
+      font-size: var(--text-title-size-medium)
+      margin: 0
+
+  &__eyebrow
+    font-size: var(--text-body-size-small)
+    font-weight: var(--base-text-weight-semibold)
+    letter-spacing: .06em
+    margin: 0 0 var(--base-size-4)
+    text-transform: uppercase
+
+  &__detail-link,
+  &__legend-row,
+  &__project-row
+    background: transparent
+    border: 0
+    color: inherit
+    cursor: pointer
+
+  &__detail-link
+    color: var(--dashboard-accent)
+    font-weight: var(--base-text-weight-semibold)
+
+  &__status-layout
+    align-items: center
+    display: grid
+    gap: var(--base-size-32)
+    grid-template-columns: minmax(180px, .8fr) minmax(210px, 1.2fr)
+
+  &__donut
+    align-items: center
+    aspect-ratio: 1
+    background: conic-gradient(var(--dashboard-active) 0 var(--active-stop), var(--dashboard-expiring) var(--active-stop) var(--expiring-stop), var(--dashboard-expired) var(--expiring-stop) 360deg)
+    border-radius: 50%
+    display: flex
+    justify-content: center
+    margin: auto
+    max-width: 220px
+    position: relative
+    width: 100%
+
+    &::after
+      background: var(--bgColor-default)
+      border-radius: 50%
+      content: ""
+      inset: 18%
+      position: absolute
+
+    span
+      align-items: center
+      display: flex
+      flex-direction: column
+      font-size: var(--text-body-size-small)
+      position: relative
+      text-align: center
+      z-index: 1
+
+    strong
+      font-size: 2rem
+
+  &__legend
+    display: grid
+    gap: var(--base-size-8)
+
+  &__legend-row
+    align-items: center
+    border-radius: var(--borderRadius-medium)
+    display: grid
+    gap: var(--base-size-12)
+    grid-template-columns: auto 1fr auto
+    padding: var(--base-size-12)
+    text-align: start
+
+    &:hover,
+    &:focus-visible
+      background: var(--bgColor-muted)
+
+  &__legend-dot
+    border-radius: 50%
+    height: 10px
+    width: 10px
+
+    &--active
+      background: var(--dashboard-active)
+
+    &--expiring
+      background: var(--dashboard-expiring)
+
+    &--expired
+      background: var(--dashboard-expired)
+
+  &__progress-list
+    display: grid
+    gap: var(--base-size-20)
+
+  &__progress-item
+    display: grid
+    gap: var(--base-size-8)
+    grid-template-columns: 1fr auto
+
+    > div:first-child
+      display: flex
+      gap: var(--base-size-16)
+      grid-column: 1 / -1
+      justify-content: space-between
+
+    small
+      color: var(--fgColor-muted)
+
+  &__progress
+    background: var(--bgColor-muted)
+    border-radius: 999px
+    height: 10px
+    overflow: hidden
+
+    span
+      background: var(--dashboard-accent)
+      border-radius: inherit
+      display: block
+      height: 100%
+
+  &__project-chart
+    display: grid
+    gap: var(--base-size-8)
+
+  &__project-row
+    align-items: center
+    border-radius: var(--borderRadius-medium)
+    display: grid
+    gap: var(--base-size-12)
+    grid-template-columns: minmax(150px, 1fr) minmax(180px, 3fr) minmax(120px, auto) minmax(90px, auto)
+    padding: var(--base-size-10)
+    text-align: start
+
+    &:hover,
+    &:focus-visible
+      background: var(--bgColor-muted)
+
+  &__project-name
+    font-weight: var(--base-text-weight-semibold)
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+
+  &__project-track
+    background: var(--bgColor-muted)
+    border-radius: 999px
+    height: 18px
+    overflow: hidden
+
+    span
+      background: var(--dashboard-accent)
+      border-radius: inherit
+      display: block
+      height: 100%
+      min-width: 2px
+
+  &__table-scroll
+    overflow-x: auto
+
+  &__table
+    margin: 0
+    min-width: 900px
+
+  &__status
+    border-radius: 999px
+    display: inline-flex
+    font-size: var(--text-body-size-small)
+    font-weight: var(--base-text-weight-semibold)
+    padding: 2px var(--base-size-8)
+
+    &--active
+      background: var(--bgColor-success-muted, #dafbe1)
+      color: var(--dashboard-active)
+
+    &--expiring
+      background: var(--bgColor-attention-muted, #fff8c5)
+      color: var(--dashboard-expiring)
+
+    &--expired
+      background: var(--bgColor-danger-muted, #ffebe9)
+      color: var(--dashboard-expired)
+
+  &__dialog
+    background: var(--bgColor-default)
+    border: 1px solid var(--borderColor-default)
+    border-radius: var(--borderRadius-large, 12px)
+    color: var(--fgColor-default)
+    max-height: min(80vh, 760px)
+    max-width: min(1100px, calc(100vw - 32px))
+    padding: 0
+    width: 100%
+
+    &::backdrop
+      background: rgba(31, 35, 40, .55)
+
+  &__dialog-header
+    align-items: center
+    border-bottom: 1px solid var(--borderColor-default)
+    display: flex
+    justify-content: space-between
+    padding: var(--base-size-20) var(--base-size-24)
+
+    h2
+      margin: 0
+
+  &__dialog-close
+    background: transparent
+    border: 0
+    border-radius: var(--borderRadius-medium)
+    color: var(--fgColor-muted)
+    cursor: pointer
+    font-size: 1.75rem
+    height: 40px
+    line-height: 1
+    width: 40px
+
+    &:hover,
+    &:focus-visible
+      background: var(--bgColor-muted)
+
+  &__dialog-body
+    max-height: calc(80vh - 82px)
+    overflow: auto
+    padding-block-end: var(--base-size-16)
+
+@media screen and (max-width: 680px)
+  .contract-management-form
+    &__tab-list
+      display: flex
+      overflow-x: auto
+      overscroll-behavior-inline: contain
+      scrollbar-width: thin
+
+    &__tab
+      flex: 0 0 auto
+      min-width: max-content
+
+    &--section
+      padding: var(--base-size-16)
+      min-height: 0
+
+    &--grid
+      grid-template-columns: 1fr
+
+    &--wide
+      grid-column: auto
+
+  .contract-dashboard
+    gap: var(--base-size-16)
+
+    &__filters,
+    &__card
+      padding: var(--base-size-16)
+
+    &__filter-grid,
+    &__kpis,
+    &__visual-grid,
+    &__status-layout
+      grid-template-columns: 1fr
+
+  .contract-record-tabs
+    margin-block-start: var(--base-size-24)
+
+    &__panel
+      padding: var(--base-size-16)
+
+  .contract-adjustments__grid
+    grid-template-columns: 1fr
+
+.contract-management-form--months
+  display: grid
+  gap: 1rem
+  grid-template-columns: repeat(4, minmax(8rem, 1fr))
+
+.contract-management-form--distribution-mode
+  display: flex
+  flex-wrap: wrap
+  gap: 1.5rem
+  margin-bottom: .75rem
+
+  label
+    align-items: center
+    cursor: pointer
+    display: inline-flex
+    gap: .5rem
+
+  input
+    margin: 0
+
+.contract-management-form--distribution-period
+  display: grid
+  gap: 1rem
+  grid-template-columns: repeat(2, minmax(10rem, 16rem))
+  margin-bottom: 1rem
+
+  &[hidden]
+    display: none
+
+.contract-management-form input[readonly]
+  background: var(--bgColor-muted)
+  color: var(--fgColor-muted)
+
+.contract-commitments
+  margin-block: 2rem
+
+  &__header
+    align-items: flex-start
+    display: flex
+    gap: 1rem
+    justify-content: space-between
+
+    h2
+      margin-bottom: .25rem
+
+    p
+      color: var(--fgColor-muted)
+      margin-top: 0
+
+  &__progress
+    background: var(--bgColor-neutral-muted)
+    border-radius: 999px
+    height: .5rem
+    margin-bottom: .35rem
+    min-width: 8rem
+    overflow: hidden
+
+    span
+      background: var(--bgColor-accent-emphasis)
+      display: block
+      height: 100%
+
+  &__alert
+    background: var(--bgColor-attention-muted)
+
+    .contract-commitments__progress span
+      background: var(--bgColor-attention-emphasis)
+
+  &__alert-label
+    color: var(--fgColor-attention)
+    display: block
+    font-size: .75rem
+    font-weight: 700
+
+  &__matrix
+    font-variant-numeric: tabular-nums
+    min-width: 1900px
+
+    th,
+    td
+      white-space: nowrap
+
+    th:first-child,
+    td:first-child
+      left: 0
+      min-width: 76px
+      position: sticky
+      text-align: center
+      z-index: 2
+
+    th:nth-child(2),
+    td:nth-child(2)
+      left: 76px
+      min-width: 190px
+      position: sticky
+      z-index: 2
+
+    th:first-child,
+    th:nth-child(2)
+      background: var(--bgColor-muted)
+      z-index: 3
+
+    td:first-child,
+    td:nth-child(2)
+      background: var(--bgColor-default)
+
+    .contract-commitments__alert td:first-child,
+    .contract-commitments__alert td:nth-child(2)
+      background: var(--bgColor-attention-muted)
+
+  &__document
+    strong,
+    span,
+    a
+      display: block
+
+    span
+      color: var(--fgColor-muted)
+      font-size: var(--text-body-size-small)
+
+    a
+      margin-block-start: var(--base-size-4)
+
+  &__amount
+    min-width: 104px
+    text-align: right
+
+  &__total
+    border-inline-start: 2px solid var(--borderColor-default)
+    min-width: 132px
+
+  &__consumption
+    min-width: 140px
+
+@media screen and (max-width: 680px)
+  .contract-management-form--months
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+
+  .contract-management-form--distribution-period
+    grid-template-columns: 1fr
+
+  .contract-commitments__header
+    display: block
+
+    &__kpi
+      min-height: 130px
+
+    &__project-row
+      grid-template-columns: 1fr auto
+
+    &__project-track
+      grid-column: 1 / -1
+      grid-row: 2
+
+    &__project-row small
+      display: none
+
+@media screen and (min-width: 681px) and (max-width: 1100px)
+  .contract-dashboard
+    &__filter-grid
+      grid-template-columns: repeat(2, minmax(0, 1fr))
+
+    &__kpis
+      grid-template-columns: repeat(2, minmax(0, 1fr))

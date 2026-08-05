@@ -1,0 +1,191 @@
+<% resource = local_assigns.fetch(:resource) %>
+<% invoice_form_data = if resource.is_a?(ContractInvoice)
+                         { controller: "contract-invoice", action: "input->contract-invoice#calculate" }
+                       else
+                         {}
+                       end %>
+<%= error_messages_for resource %>
+
+<%= form_with model: resource,
+              url: { action: resource.persisted? ? :update : :create, id: resource.persisted? ? resource.id : nil },
+              method: resource.persisted? ? :patch : :post,
+              html: {
+                class: "form contract-management-form",
+                data: invoice_form_data
+              } do |form| %>
+  <% if resource.is_a?(ContractInvoice) && @invoice_extraction.present? %>
+    <%= hidden_field_tag :extraction_id, @invoice_extraction.id %>
+    <div class="op-toast -info">
+      <div class="op-toast--content">
+        <p><strong><%= t("contract_management.invoice_extraction.review_title") %></strong></p>
+        <p><%= t("contract_management.invoice_extraction.review_description", filename: @invoice_extraction.attachments.first&.filename) %></p>
+      </div>
+    </div>
+  <% end %>
+  <fieldset class="form--fieldset contract-management-form--section">
+    <legend class="form--fieldset-legend"><%= t("contract_management.form.sections.#{controller_name}") %></legend>
+    <div class="contract-management-form--grid">
+  <% case resource
+     when ContractMeasurement %>
+    <% %i[number measured_on amount status approved_on description].each do |attribute| %>
+      <% required = %i[number measured_on amount status].include?(attribute) %>
+      <div class="form--field <%= "-required" if required %> <%= "contract-management-form--wide" if attribute == :description %>">
+        <%= form.label attribute, class: "form--label" %>
+        <span class="form--field-container">
+          <% case attribute
+             when :measured_on, :approved_on %>
+            <%= form.date_field attribute, required:, class: "form--text-field" %>
+          <% when :amount %>
+            <%= form.number_field attribute, required: true, min: 0, step: "0.01", class: "form--text-field" %>
+          <% when :status %>
+            <%= form.select attribute,
+                            @measurement_statuses.map { |status| [t("contract_management.statuses.#{status}"), status] },
+                            {},
+                            required: true,
+                            class: "form--select" %>
+          <% when :description %>
+            <%= form.text_area attribute, rows: 4, class: "form--text-area" %>
+          <% else %>
+            <%= form.text_field attribute, required:, class: "form--text-field" %>
+          <% end %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_measurement.#{attribute}") %></span>
+      </div>
+    <% end %>
+  <% when ContractInvoice %>
+    <% %i[measurement_id number gross_amount issued_on due_on tax_percentage net_amount status].each do |attribute| %>
+      <div class="form--field -required">
+        <%= form.label attribute, class: "form--label" %>
+        <span class="form--field-container">
+          <% case attribute
+             when :measurement_id %>
+            <%= form.select attribute,
+                            @measurements.map { |measurement| [measurement.number, measurement.id] },
+                            { include_blank: t("contract_management.form.select_measurement") },
+                            required: true,
+                            class: "form--select" %>
+          <% when :issued_on, :due_on %>
+            <%= form.date_field attribute, required: true, class: "form--text-field" %>
+          <% when :gross_amount %>
+            <%= form.number_field attribute,
+                                  required: true,
+                                  min: 0,
+                                  step: "0.01",
+                                  class: "form--text-field",
+                                  data: { "contract-invoice-target": "grossAmount" } %>
+          <% when :tax_percentage %>
+            <%= form.number_field attribute,
+                                  required: true,
+                                  min: 0,
+                                  max: 100,
+                                  step: "0.0001",
+                                  class: "form--text-field",
+                                  data: { "contract-invoice-target": "taxPercentage" } %>
+          <% when :net_amount %>
+            <%= form.number_field attribute,
+                                  readonly: true,
+                                  step: "0.01",
+                                  class: "form--text-field",
+                                  data: { "contract-invoice-target": "netAmount" } %>
+          <% when :status %>
+            <%= form.select attribute,
+                            ContractInvoice::STATUSES.map { |status| [t("contract_management.statuses.#{status}"), status] },
+                            {},
+                            required: true,
+                            class: "form--select" %>
+          <% else %>
+            <%= form.text_field attribute, required: true, class: "form--text-field" %>
+          <% end %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_invoice.#{attribute}") %></span>
+      </div>
+    <% end %>
+  <% when ContractAmendment %>
+    <% %i[number start_date duration_months amount description].each do |attribute| %>
+      <div class="form--field -required <%= "contract-management-form--wide" if attribute == :description %>">
+        <%= form.label attribute, class: "form--label" %>
+        <span class="form--field-container">
+          <% case attribute
+             when :start_date %>
+            <%= form.date_field attribute, required: true, class: "form--text-field" %>
+          <% when :duration_months %>
+            <%= form.number_field attribute, required: true, min: 1, class: "form--text-field" %>
+          <% when :amount %>
+            <%= form.number_field attribute, required: true, step: "0.01", class: "form--text-field" %>
+          <% when :description %>
+            <%= form.text_area attribute, required: true, rows: 4, class: "form--text-area" %>
+          <% else %>
+            <%= form.text_field attribute, required: true, class: "form--text-field" %>
+          <% end %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_amendment.#{attribute}") %></span>
+      </div>
+    <% end %>
+  <% when ContractResponsibility %>
+    <% %i[user_id role starts_on ends_on notify].each do |attribute| %>
+      <% required = %i[user_id role starts_on].include?(attribute) %>
+      <div class="form--field <%= "-required" if required %>">
+        <%= form.label attribute, class: "form--label" %>
+        <span class="form--field-container">
+          <% case attribute
+             when :user_id %>
+            <%= form.select attribute, @users.map { |user| [user.name, user.id] }, {}, required: true, class: "form--select" %>
+          <% when :role %>
+            <%= form.select attribute,
+                            ContractResponsibility::ROLES.map { |role| [t("contract_management.roles.#{role}"), role] },
+                            {},
+                            required: true,
+                            class: "form--select" %>
+          <% when :starts_on, :ends_on %>
+            <%= form.date_field attribute, required:, class: "form--text-field" %>
+          <% when :notify %>
+            <%= form.check_box attribute %>
+          <% end %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_responsibility.#{attribute}") %></span>
+      </div>
+    <% end %>
+  <% when ContractBankOrder %>
+    <% %i[number issued_on amount budget_commitment_id invoice_ids description].each do |attribute| %>
+      <% required = %i[number issued_on amount].include?(attribute) %>
+      <div class="form--field <%= "-required" if required %> <%= "contract-management-form--wide" if %i[invoice_ids description].include?(attribute) %>">
+        <%= form.label attribute, class: "form--label" %>
+        <span class="form--field-container">
+          <% case attribute
+             when :issued_on %>
+            <%= form.date_field attribute, required: true, class: "form--text-field" %>
+          <% when :amount %>
+            <%= form.number_field attribute, required: true, min: 0, step: "0.01", class: "form--text-field" %>
+          <% when :invoice_ids %>
+            <%= form.collection_check_boxes attribute, @invoices, :id, :number %>
+          <% when :budget_commitment_id %>
+            <%= form.collection_select attribute,
+                                       @budget_commitments,
+                                       :id,
+                                       ->(commitment) { "#{commitment.number} (#{commitment.fiscal_year})" },
+                                       { include_blank: true },
+                                       class: "form--select" %>
+          <% when :description %>
+            <%= form.text_area attribute, rows: 4, class: "form--text-area" %>
+          <% else %>
+            <%= form.text_field attribute, required: true, class: "form--text-field" %>
+          <% end %>
+        </span>
+        <span class="form--field-instructions"><%= t("contract_management.form.hints.contract_bank_order.#{attribute}") %></span>
+      </div>
+    <% end %>
+  <% end %>
+    </div>
+  </fieldset>
+
+  <div class="contract-management-form--actions">
+    <%= styled_button_tag t(resource.persisted? ? :button_save : :button_create), class: "-primary" %>
+    <%= link_to t(:button_cancel), project_contract_management_contract_path(@project, @contract), class: "button" %>
+    <% if resource.persisted? %>
+      <%= link_to t(:button_delete),
+                  url_for(action: :destroy, id: resource.id),
+                  data: { turbo_confirm: t("contract_management.confirm_delete"), turbo_method: :delete },
+                  class: "button -danger" %>
+    <% end %>
+  </div>
+<% end %>

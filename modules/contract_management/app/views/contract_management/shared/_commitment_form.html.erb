@@ -1,0 +1,153 @@
+<% title = commitment.persisted? ? t("contract_management.commitments.edit") : t("contract_management.commitments.new") %>
+<% title = t("contract_management.commitments.convert") if local_assigns[:converting] %>
+<% form_url = local_assigns[:url] %>
+<% if form_url.blank? %>
+  <% form_url = if commitment.persisted?
+                  project_contract_management_contract_budget_commitment_path(@project, @contract, commitment)
+                else
+                  project_contract_management_contract_budget_commitments_path(@project, @contract)
+                end %>
+<% end %>
+<% month_names = I18n.t("date.abbr_month_names") %>
+
+<%= render(Primer::OpenProject::PageHeader.new) do |header|
+      header.with_title { title }
+      header.with_breadcrumbs(
+        [{ href: project_contract_management_contract_path(@project, @contract), text: @contract.number }, title]
+      )
+    end %>
+
+<%= error_messages_for commitment %>
+
+<%= form_with model: commitment,
+              url: form_url,
+              scope: :contract_budget_commitment,
+              html: {
+                class: "contract-management-form",
+                data: { controller: "commitment-distribution" }
+              } do |form| %>
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend"><%= t("contract_management.commitments.identification") %></legend>
+    <div class="contract-management-form--grid">
+      <% unless local_assigns[:converting] %>
+        <div class="form--field -required">
+          <%= form.label :kind, class: "form--label" %>
+          <%= form.select :kind,
+                          ContractBudgetCommitment::KINDS.map { |kind| [t("contract_management.commitments.kinds.#{kind}"), kind] },
+                          {},
+                          class: "form--select" %>
+        </div>
+      <% end %>
+      <div class="form--field -required">
+        <%= form.label :number, class: "form--label" %>
+        <%= form.text_field :number, class: "form--text-field" %>
+      </div>
+      <div class="form--field -required">
+        <%= form.label :issued_on, class: "form--label" %>
+        <%= form.date_field :issued_on, class: "form--text-field" %>
+      </div>
+      <div class="form--field -required">
+        <%= form.label :fiscal_year, class: "form--label" %>
+        <%= form.number_field :fiscal_year,
+                              min: @contract.start_date.year,
+                              max: @contract.effective_end_date.year,
+                              class: "form--text-field",
+                              data: {
+                                "commitment-distribution-target": "fiscalYear",
+                                action: "input->commitment-distribution#recalculate"
+                              } %>
+      </div>
+      <div class="form--field -required">
+        <%= form.label :total_amount, class: "form--label" %>
+        <%= form.number_field :total_amount,
+                              min: 0.01,
+                              step: 0.01,
+                              autocomplete: "off",
+                              class: "form--text-field",
+                              data: {
+                                "commitment-distribution-target": "total",
+                                action: "input->commitment-distribution#recalculate"
+                              } %>
+      </div>
+      <div class="form--field -required">
+        <%= form.label :responsible_id, class: "form--label" %>
+        <%= form.collection_select :responsible_id, @users, :id, :name, {}, class: "form--select" %>
+      </div>
+      <% unless local_assigns[:converting] %>
+        <div class="form--field -required">
+          <%= form.label :status, class: "form--label" %>
+          <%= form.select :status,
+                          ContractBudgetCommitment::STATUSES.map { |status| [t("contract_management.commitments.statuses.#{status}"), status] },
+                          {},
+                          class: "form--select" %>
+        </div>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend"><%= t("contract_management.commitments.monthly_distribution") %></legend>
+    <div class="contract-management-form--distribution-mode">
+      <% ContractBudgetCommitment::DISTRIBUTION_MODES.each do |mode| %>
+        <label>
+          <%= form.radio_button :distribution_mode,
+                                mode,
+                                data: {
+                                  "commitment-distribution-target": "mode",
+                                  action: "change->commitment-distribution#changeMode"
+                                } %>
+          <span><%= t("contract_management.commitments.distribution_modes.#{mode}") %></span>
+        </label>
+      <% end %>
+    </div>
+    <div class="contract-management-form--distribution-period"
+         data-commitment-distribution-target="period">
+      <div class="form--field">
+        <%= form.label :distribution_start_month, class: "form--label" %>
+        <%= form.select :distribution_start_month,
+                        ContractBudgetCommitment::MONTHS.map { |month| [month_names[month], month] },
+                        {},
+                        class: "form--select",
+                        data: {
+                          "commitment-distribution-target": "startMonth",
+                          action: "change->commitment-distribution#recalculate"
+                        } %>
+      </div>
+      <div class="form--field">
+        <%= form.label :distribution_end_month, class: "form--label" %>
+        <%= form.select :distribution_end_month,
+                        ContractBudgetCommitment::MONTHS.map { |month| [month_names[month], month] },
+                        {},
+                        class: "form--select",
+                        data: {
+                          "commitment-distribution-target": "endMonth",
+                          action: "change->commitment-distribution#recalculate"
+                        } %>
+      </div>
+    </div>
+    <p class="form--field-instructions"><%= t("contract_management.commitments.distribution_hint") %></p>
+    <div class="contract-management-form--months">
+      <% ContractBudgetCommitment::MONTHS.each do |month| %>
+        <div class="form--field">
+          <%= label_tag "contract_budget_commitment_monthly_distribution_#{month}",
+                        month_names[month],
+                        class: "form--label" %>
+          <%= number_field_tag "contract_budget_commitment[monthly_distribution][#{month}]",
+                               commitment.month_amount(month),
+                               min: 0,
+                               step: 0.01,
+                               autocomplete: "off",
+                               class: "form--text-field",
+                               data: {
+                                 "commitment-distribution-target": "month",
+                                 month: month,
+                                 action: "input->commitment-distribution#sumMonths"
+                               } %>
+        </div>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <%= styled_button_tag t(:button_save), class: "-primary" %>
+  <%= link_to t(:button_cancel), project_contract_management_contract_path(@project, @contract), class: "button" %>
+<% end %>

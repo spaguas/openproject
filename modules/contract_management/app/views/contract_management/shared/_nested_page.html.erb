@@ -1,0 +1,12 @@
+<% resource = local_assigns.fetch(:resource) %>
+<% title = t("contract_management.#{controller_name}.#{resource.persisted? ? "edit" : "new"}") %>
+<% html_title title %>
+<%= render(Primer::OpenProject::PageHeader.new) do |header|
+      header.with_title { title }
+      header.with_breadcrumbs(
+        [{ href: project_contract_management_contracts_path(@project), text: t("contract_management.label_plural") },
+         { href: project_contract_management_contract_path(@project, @contract), text: @contract.number },
+         title]
+      )
+    end %>
+<%= render "contract_management/shared/nested_form", resource: resource %>
